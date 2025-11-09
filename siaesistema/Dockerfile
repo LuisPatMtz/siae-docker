@@ -16,7 +16,7 @@ RUN npm install
 COPY . .
 
 # Construimos la aplicación de React para producción
-RUN npm run dev
+RUN npm run build
 
 # --- ETAPA 2: Servidor (Serve) ---
 FROM nginx:stable-alpine
