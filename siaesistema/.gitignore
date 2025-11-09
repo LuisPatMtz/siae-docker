@@ -1,0 +1,19 @@
+# Dependencias de Node.js
+/node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Archivos de entorno (guarda tus contraseñas de API aquí)
+.env
+.env.local
+
+# Archivos de build (lo que Vite genera para producción)
+/dist
+
+# Caché del sistema operativo
+.DS_Store
+Thumbs.db

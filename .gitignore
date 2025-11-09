@@ -1,0 +1,13 @@
+# Entorno virtual de Python
+.venv/
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+
+# Dependencias de Node
+node_modules/
+
+# Archivos de 'build' del frontend (Vite/React)
+dist/
+build/
