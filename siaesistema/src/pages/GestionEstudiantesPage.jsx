@@ -1,10 +1,11 @@
 // src/pages/GestionEstudiantesPage.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/axios'; // Importamos el cliente API
-import { PlusCircle, UserPlus, XCircle, Link2, Users, CheckCircle, AlertCircle, Edit3, Trash2, ChevronDown, Calendar, CalendarDays, Clock } from 'lucide-react';
-import StudentGroupsNav from '../components/Dashboard/StudentGroupsNav.jsx'; // Reutilizamos el filtro de grupos
+import { PlusCircle, UserPlus, XCircle, Link2, Users, CheckCircle, AlertCircle, Edit3, Trash2, ChevronDown, Calendar, CalendarDays, Clock, RefreshCw } from 'lucide-react';
+import StudentSemesterFilter from '../components/Students/StudentSemesterFilter.jsx'; // Filtro por semestre
 import StudentLinkTable from '../components/Students/StudentLinkTable.jsx'; // Componente nuevo para la tabla
 import LinkNfcModal from '../components/Students/LinkNfcModal.jsx'; // Componente nuevo para el modal
+import BulkChangeModal from '../components/Students/BulkChangeModal.jsx'; // Modal para cambios masivos
 import CreateGroupModal from '../components/Groups/CreateGroupModal.jsx'; // Modal para crear grupos
 import EditGroupModal from '../components/Groups/EditGroupModal.jsx'; // Modal para editar grupos
 import DeleteGroupModal from '../components/Groups/DeleteGroupModal.jsx'; // Modal para eliminar grupos
@@ -90,13 +91,20 @@ const GestionEstudiantesPage = () => {
     const [idCiclo, setIdCiclo] = useState('');
 
     // Estados para la lista y filtro de "Vincular"
-    const [semestersData, setSemestersData] = useState({}); // Para el filtro de grupos
-    const [filteredStudents, setFilteredStudents] = useState([]); // Lista filtrada por grupo
-    const [selectedGroupFilter, setSelectedGroupFilter] = useState('all'); // Grupo seleccionado
+    const [semestersData, setSemestersData] = useState({}); // Para el filtro de semestres
+    const [filteredStudents, setFilteredStudents] = useState([]); // Lista filtrada por semestre
+    const [selectedSemesterFilter, setSelectedSemesterFilter] = useState('all'); // Semestre seleccionado
+    const [selectedStudents, setSelectedStudents] = useState([]); // Matrículas de estudiantes seleccionados
+    const [allStudents, setAllStudents] = useState([]); // Todos los estudiantes sin filtrar
 
     // Estados para el MODAL de vincular NFC
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
     const [studentToLink, setStudentToLink] = useState(null); // Guarda el estudiante completo
+
+    // Estados para el MODAL de cambio masivo
+    const [isBulkChangeModalOpen, setIsBulkChangeModalOpen] = useState(false);
+    const [bulkChangeType, setBulkChangeType] = useState(''); // 'group' o 'semester'
+    const [isProcessingBulkChange, setIsProcessingBulkChange] = useState(false);
 
     // Estados generales
     const [isLoading, setIsLoading] = useState(false); // Para la lista de estudiantes
@@ -114,28 +122,30 @@ const GestionEstudiantesPage = () => {
 
     const clearFields = () => {
         setNombre(''); setApellido(''); setMatricula(''); setCorreo(''); setIdGrupo(''); setIdCiclo('');
-        setSelectedGroupFilter('all'); setStudentToLink(null);
+        setSelectedSemesterFilter('all'); setStudentToLink(null); setSelectedStudents([]);
     };
 
-    // *** INTERRUPTOR #1: Cargar Grupos (para el filtro) ***
-    useEffect(() => {
-        // Solo carga si la vista de lista está activa
-        if (!isLinkListViewVisible) return;
-
-        const fetchGroups = async () => {
-            try {
-                // Usamos el mismo endpoint del dashboard para obtener los grupos
-                const response = await apiClient.get('/dashboard/turno?modo=general');
-                setSemestersData(response.data.groups);
-            } catch (error) {
-                console.error("Error al obtener grupos:", error);
-                showError('Error al cargar filtros de grupo');
+    // Funciones para manejo de selección de estudiantes
+    const handleSelectStudent = (matricula) => {
+        setSelectedStudents(prev => {
+            if (prev.includes(matricula)) {
+                return prev.filter(m => m !== matricula);
+            } else {
+                return [...prev, matricula];
             }
-        };
-        fetchGroups();
-    }, [isLinkListViewVisible]);
+        });
+    };
 
-    // *** INTERRUPTOR #2: Cargar Lista de Estudiantes (para Vincular) ***
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            const allMatriculas = filteredStudents.map(s => s.matricula);
+            setSelectedStudents(allMatriculas);
+        } else {
+            setSelectedStudents([]);
+        }
+    };
+
+    // *** INTERRUPTOR #1: Cargar Estudiantes (para el filtro por semestre) ***
     useEffect(() => {
         // Solo carga si la vista de lista está activa
         if (!isLinkListViewVisible) return;
@@ -143,26 +153,58 @@ const GestionEstudiantesPage = () => {
         setIsLoading(true);
         const fetchStudents = async () => {
             try {
-                // Filtramos por grupo 'all' (todos) o un grupo específico
-                let url = '/estudiantes';
-                if (selectedGroupFilter !== 'all') {
-                    url = `/estudiantes/salon/${selectedGroupFilter}`;
-                }
+                const response = await apiClient.get('/estudiantes');
+                const estudiantesConSemestre = response.data.map(estudiante => ({
+                    ...estudiante,
+                    semestre: estudiante.grupo?.semestre || null,
+                    salon_nombre: estudiante.grupo?.nombre || 'Sin grupo',
+                    tarjetas: estudiante.nfc ? [estudiante.nfc] : []
+                }));
                 
-                const response = await apiClient.get(url);
-                // La API ahora devuelve EstudianteReadForLinking
-                // que incluye { matricula, nombre, apellido, salon_nombre, tarjetas: [] }
-                setFilteredStudents(response.data); 
+                setAllStudents(estudiantesConSemestre);
+                
+                // Crear estructura de semestres para el filtro
+                const semestres = {};
+                estudiantesConSemestre.forEach(estudiante => {
+                    if (estudiante.semestre) {
+                        if (!semestres[estudiante.semestre]) {
+                            semestres[estudiante.semestre] = [];
+                        }
+                        if (!semestres[estudiante.semestre].includes(estudiante.semestre)) {
+                            semestres[estudiante.semestre].push(estudiante.semestre);
+                        }
+                    }
+                });
+                setSemestersData(semestres);
+                
+                // Cargar grupos para el modal de cambio masivo
+                const gruposResponse = await apiClient.get('/grupos');
+                setGrupos(gruposResponse.data);
+                
             } catch (error) {
                 console.error("Error al obtener estudiantes:", error);
                 showError('Error al cargar estudiantes');
-                setFilteredStudents([]); // Limpiamos la lista en caso de error
+                setAllStudents([]);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchStudents();
-    }, [isLinkListViewVisible, selectedGroupFilter]); // Se re-ejecuta si cambia el filtro
+    }, [isLinkListViewVisible]);
+
+    // *** INTERRUPTOR #2: Filtrar estudiantes por semestre ***
+    useEffect(() => {
+        if (selectedSemesterFilter === 'all') {
+            setFilteredStudents(allStudents);
+        } else {
+            const filtered = allStudents.filter(student => 
+                student.semestre === selectedSemesterFilter
+            );
+            setFilteredStudents(filtered);
+        }
+        // Limpiar selección al cambiar de filtro
+        setSelectedStudents([]);
+    }, [selectedSemesterFilter, allStudents]);
 
     // *** INTERRUPTOR #2.5: Cargar Lista de Grupos (para Gestión) ***
     useEffect(() => {
@@ -356,24 +398,31 @@ const GestionEstudiantesPage = () => {
         if (!studentToLink || !nfcId) return;
         setIsSaving(true);
 
-        // Usamos los nombres de campo de la API (TarjetaCreate)
+        // Usamos los nombres de campo correctos del API
         const linkData = {
-            nfc_id: nfcId,
-            estudiante_matricula: studentToLink.matricula, // Usamos la matrícula
+            nfc_uid: nfcId,
+            matricula_estudiante: studentToLink.matricula,
         };
         
         try {
-            // --- API POST /tarjetas ---
-            const response = await apiClient.post('/tarjetas', linkData);
-            const linkedCard = response.data; // La API devuelve la tarjeta creada
+            // --- API POST /nfc/vincular ---
+            const response = await apiClient.post('/nfc/vincular', linkData);
+            const linkedCard = response.data; // La API devuelve la tarjeta vinculada
             // ----------------------------------------------------------------------
             
-            showSuccess(`¡NFC vinculado a ${studentToLink.nombre} correctamente!`);
+            showSuccess(`¡NFC vinculado a ${studentToLink.nombre} ${studentToLink.apellido} correctamente!`);
 
             // Actualiza la lista local para reflejar el cambio (deshabilita el botón)
             setFilteredStudents(prevStudents => prevStudents.map(s =>
                 s.matricula === studentToLink.matricula 
-                    ? { ...s, tarjetas: [...s.tarjetas, linkedCard] } // Añade la nueva tarjeta a la lista
+                    ? { ...s, tarjetas: [linkedCard] } // Reemplaza/añade la nueva tarjeta
+                    : s
+            ));
+            
+            // También actualizar allStudents
+            setAllStudents(prevStudents => prevStudents.map(s =>
+                s.matricula === studentToLink.matricula 
+                    ? { ...s, tarjetas: [linkedCard] }
                     : s
             ));
 
@@ -382,17 +431,62 @@ const GestionEstudiantesPage = () => {
         } catch (error) {
             console.error("Error al vincular NFC:", error);
             const errorMsg = error.response?.data?.detail || 'Error desconocido al vincular.';
-            // En lugar de poner el feedback en la página, lo pasamos al modal
-            // (Asumiremos que LinkNfcModal puede mostrar un error)
-            // O, si LinkNfcModal no puede, lo mostramos en el modal:
-            // setModalError(errorMsg); // (Necesitarías añadir este estado al modal)
-            
-            // Por ahora, lo mostramos en la página principal:
             showError(`Error: ${errorMsg}`);
             // Cerramos el modal incluso si hay error
             closeLinkModal();
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    // *** Funciones para manejar cambios masivos ***
+    const handleBulkChangeGroup = () => {
+        setBulkChangeType('group');
+        setIsBulkChangeModalOpen(true);
+    };
+
+    const handleBulkChangeSemester = () => {
+        setBulkChangeType('semester');
+        setIsBulkChangeModalOpen(true);
+    };
+
+    const handleConfirmBulkChange = async (value) => {
+        setIsProcessingBulkChange(true);
+        
+        try {
+            const isGroupChange = bulkChangeType === 'group';
+            
+            // Usar el endpoint de bulk-move-group
+            const payload = {
+                matriculas: selectedStudents,
+                nuevo_id_grupo: parseInt(value)
+            };
+
+            const response = await apiClient.patch('/estudiantes/bulk-move-group', payload);
+            
+            // Recargar lista de estudiantes
+            const estudiantesResponse = await apiClient.get('/estudiantes');
+            const estudiantesConSemestre = estudiantesResponse.data.map(estudiante => ({
+                ...estudiante,
+                semestre: estudiante.grupo?.semestre || null,
+                salon_nombre: estudiante.grupo?.nombre || 'Sin grupo',
+                tarjetas: estudiante.nfc ? [estudiante.nfc] : []
+            }));
+            setAllStudents(estudiantesConSemestre);
+
+            // Mostrar resultados
+            showSuccess(`¡${response.data.estudiantes_afectados} estudiante(s) actualizado(s) correctamente!`);
+
+            // Limpiar selección y cerrar modal
+            setSelectedStudents([]);
+            setIsBulkChangeModalOpen(false);
+
+        } catch (error) {
+            console.error("Error en cambio masivo:", error);
+            const errorMsg = error.response?.data?.detail || 'Error al procesar el cambio masivo';
+            showError(errorMsg);
+        } finally {
+            setIsProcessingBulkChange(false);
         }
     };
 
@@ -859,31 +953,66 @@ const GestionEstudiantesPage = () => {
                 {isLinkListViewVisible && (
                     <div className="student-link-view card">
                         <div className="form-header">
-                            <h2 className="card-title">Vincular NFC a Estudiante</h2>
+                            <h2 className="card-title">Gestión de Estudiantes por Semestre</h2>
                             <button onClick={hideLinkListView} className="close-form-btn" title="Cerrar vista">
                                 <XCircle size={24} />
                             </button>
                         </div>
 
-                        {/* Filtro por Grupo */}
+                        {/* Filtro por Semestre */}
                         <div className="student-group-filter-container">
-                            <StudentGroupsNav
-                                semesters={semestersData} // ¡Datos de la API!
-                                selectedGroup={selectedGroupFilter} // Estado del grupo seleccionado
-                                onGroupSelect={setSelectedGroupFilter} // Handler para cambiar grupo
-                                showAllOption={true} // Le decimos que muestre "Mostrar Todos"
+                            <StudentSemesterFilter
+                                semesters={semestersData}
+                                selectedSemester={selectedSemesterFilter}
+                                onSemesterSelect={setSelectedSemesterFilter}
                             />
                         </div>
 
-
+                        {/* Controles de acciones para estudiantes seleccionados */}
+                        {selectedStudents.length > 0 && (
+                            <div className="bulk-actions-bar">
+                                <div className="selection-info">
+                                    <CheckCircle size={20} />
+                                    <span>{selectedStudents.length} estudiante(s) seleccionado(s)</span>
+                                </div>
+                                <div className="bulk-actions">
+                                    <select
+                                        className="bulk-action-select"
+                                        onChange={(e) => {
+                                            if (e.target.value === 'changeGroup') {
+                                                handleBulkChangeGroup();
+                                            } else if (e.target.value === 'changeSemester') {
+                                                handleBulkChangeSemester();
+                                            }
+                                            e.target.value = ''; // Reset
+                                        }}
+                                        defaultValue=""
+                                    >
+                                        <option value="" disabled>Seleccionar acción...</option>
+                                        <option value="changeGroup">Cambiar de Grupo</option>
+                                        <option value="changeSemester">Cambiar de Semestre</option>
+                                    </select>
+                                    <button
+                                        className="action-button clear-button"
+                                        onClick={() => setSelectedStudents([])}
+                                        title="Limpiar selección"
+                                    >
+                                        Limpiar Selección
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Tabla de Estudiantes */}
                         {isLoading ? (
                             <div className="loading-message">Cargando estudiantes...</div>
                         ) : (
                             <StudentLinkTable
-                                students={filteredStudents} // Pasa lista filtrada de la API
-                                onOpenLinkModal={openLinkModal} // Pasa handler para abrir modal
+                                students={filteredStudents}
+                                onOpenLinkModal={openLinkModal}
+                                selectedStudents={selectedStudents}
+                                onSelectStudent={handleSelectStudent}
+                                onSelectAll={handleSelectAll}
                             />
                         )}
                     </div>
@@ -1171,6 +1300,19 @@ const GestionEstudiantesPage = () => {
                 isSaving={isSaving} // Pasa el estado de guardado
             />
             {/* --- FIN MODAL NFC --- */}
+
+            {/* --- MODAL PARA CAMBIO MASIVO DE GRUPO/SEMESTRE --- */}
+            <BulkChangeModal
+                isOpen={isBulkChangeModalOpen}
+                onClose={() => setIsBulkChangeModalOpen(false)}
+                onConfirm={handleConfirmBulkChange}
+                isProcessing={isProcessingBulkChange}
+                selectedCount={selectedStudents.length}
+                changeType={bulkChangeType}
+                availableGroups={grupos}
+                availableSemesters={[1, 2, 3, 4, 5, 6]}
+            />
+            {/* --- FIN MODAL CAMBIO MASIVO --- */}
 
             {/* --- MODAL PARA CREAR GRUPO (se muestra sobre todo) --- */}
             <CreateGroupModal

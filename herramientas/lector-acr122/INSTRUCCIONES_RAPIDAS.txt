@@ -1,0 +1,38 @@
+# Instrucciones Rápidas - Lector ACR122
+
+## Inicio Rápido
+
+1. Conecta el lector ACR122 al USB
+2. Ejecuta: `lector-acr122.exe`
+3. Abre SIAE en el navegador
+4. Ve a Gestión de Estudiantes > Vincular Matrícula con NFC
+5. Selecciona estudiante y haz clic en vincular
+6. Haz clic en el campo de UID
+7. Acerca la tarjeta al lector
+8. El UID se escribirá automáticamente
+9. Haz clic en Vincular
+
+## Requisitos
+
+- Driver ACR122 instalado (descargar de acs.com.hk)
+- Sistema SIAE corriendo
+- Navegador abierto con el modal de vinculación
+
+## Si No Funciona
+
+- Verifica que el lector aparezca en Administrador de Dispositivos
+- Cierra otras aplicaciones que usen el lector
+- Asegúrate de que el campo de texto esté enfocado
+- Acerca más la tarjeta al lector (máximo 5 cm)
+
+## Alternativa
+
+Si prefieres entrada manual:
+1. Abre Notepad
+2. Acerca la tarjeta
+3. Copia el UID que aparece
+4. Pégalo en el sistema SIAE
+
+---
+
+Consulta README.md en esta carpeta para documentación completa.

@@ -2,41 +2,76 @@
 import React from 'react';
 import { Link2 } from 'lucide-react'; // Icono para el botón
 
-const StudentLinkTable = ({ students, onOpenLinkModal }) => {
+const StudentLinkTable = ({ 
+    students, 
+    onOpenLinkModal, 
+    selectedStudents = [], 
+    onSelectStudent, 
+    onSelectAll 
+}) => {
+    // Verificar si todos los estudiantes están seleccionados
+    const allSelected = students.length > 0 && selectedStudents.length === students.length;
+    const someSelected = selectedStudents.length > 0 && selectedStudents.length < students.length;
+
     return (
         <div className="student-link-table-container">
             {students.length === 0 ? (
-                <p className="no-students-message">No hay estudiantes en este grupo o no se encontraron.</p>
+                <p className="no-students-message">No hay estudiantes en este semestre o no se encontraron.</p>
             ) : (
                 <table className="student-link-table">
                     <thead>
                         <tr>
+                            <th className="checkbox-column">
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    ref={input => {
+                                        if (input) {
+                                            input.indeterminate = someSelected;
+                                        }
+                                    }}
+                                    onChange={(e) => onSelectAll(e.target.checked)}
+                                    title={allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                                />
+                            </th>
                             <th>Nombre Completo</th>
                             <th>Grupo</th>
+                            <th>Semestre</th>
                             <th>Matrícula</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {students.map((student) => (
-                            <tr key={student.id}>
-                                <td>{student.nombre}</td>
-                                <td>{student.grupo}</td>
-                                <td>{student.matricula}</td>
-                                <td>
-                                    <button
-                                        className="action-button link-button"
-                                        onClick={() => onOpenLinkModal(student)}
-                                        // Deshabilita si ya tiene un nfcId vinculado
-                                        disabled={!!student.nfcId}
-                                        title={student.nfcId ? 'NFC ya vinculado' : 'Vincular NFC'}
-                                    >
-                                        <Link2 size={16} />
-                                        {student.nfcId ? 'Vinculado' : 'Vincular'}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {students.map((student) => {
+                            const isSelected = selectedStudents.includes(student.matricula);
+                            return (
+                                <tr key={student.matricula} className={isSelected ? 'selected-row' : ''}>
+                                    <td className="checkbox-column">
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => onSelectStudent(student.matricula)}
+                                        />
+                                    </td>
+                                    <td>{student.nombre} {student.apellido}</td>
+                                    <td>{student.salon_nombre || 'Sin grupo'}</td>
+                                    <td>{student.semestre || 'N/A'}</td>
+                                    <td>{student.matricula}</td>
+                                    <td>
+                                        <button
+                                            className="action-button link-button"
+                                            onClick={() => onOpenLinkModal(student)}
+                                            // Deshabilita si ya tiene tarjetas NFC vinculadas
+                                            disabled={student.tarjetas && student.tarjetas.length > 0}
+                                            title={student.tarjetas && student.tarjetas.length > 0 ? 'NFC ya vinculado' : 'Vincular NFC'}
+                                        >
+                                            <Link2 size={16} />
+                                            {student.tarjetas && student.tarjetas.length > 0 ? 'Vinculado' : 'Vincular'}
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             )}

@@ -4,11 +4,11 @@ import io
 
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlmodel import Session, select
+from sqlmodel import Session, select, update
 from sqlalchemy.orm import selectinload
 
 from database import get_session
-from models import (
+from models import ( 
     Estudiante, 
     EstudianteCreate, 
     EstudianteRead, 
@@ -16,7 +16,8 @@ from models import (
     EstudianteReadComplete,
     Grupo,
     CicloEscolar,
-    NFC
+    NFC,
+    EstudianteBulkMoveGrupo
 )
 from security import get_current_user
 
@@ -315,6 +316,58 @@ async def upload_estudiantes_csv(
         )
     
     return {"status": "success", "agregados": len(estudiantes_a_crear)}
+
+
+@router.patch("/bulk-move-group", summary="Mover varios estudiantes a un nuevo grupo")
+def move_estudiantes_de_grupo(
+    *,
+    session: Session = Depends(get_session),
+    payload: EstudianteBulkMoveGrupo
+):
+    """
+    Actualiza el grupo de una lista de estudiantes en una sola transacción.
+    """
+    
+    # 1. Validar que el grupo de destino existe
+    grupo_destino = session.get(Grupo, payload.nuevo_id_grupo)
+    if not grupo_destino:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"El grupo de destino con ID {payload.nuevo_id_grupo} no existe."
+        )
+        
+    # 2. Validar que la lista no esté vacía
+    if not payload.matriculas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La lista de matrículas no puede estar vacía."
+        )
+
+    # 3. Ejecutar la actualización masiva (Eficaz y transaccional)
+    # Esto genera una sola consulta: UPDATE estudiante SET id_grupo = X WHERE matricula IN (...)
+    statement = (
+        update(Estudiante)
+        .where(Estudiante.matricula.in_(payload.matriculas))
+        .values(id_grupo=payload.nuevo_id_grupo)
+    )
+    
+    try:
+        results = session.exec(statement)
+        session.commit()
+        
+        # results.rowcount te dice cuántas filas fueron realmente actualizadas
+        return {
+            "mensaje": "Estudiantes movidos exitosamente.",
+            "estudiantes_afectados": results.rowcount,
+            "id_grupo_destino": payload.nuevo_id_grupo
+        }
+        
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno al mover estudiantes: {str(e)}"
+        )
 
 @router.delete("/{matricula}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_estudiante(

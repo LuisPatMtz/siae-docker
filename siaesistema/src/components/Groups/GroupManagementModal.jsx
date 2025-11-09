@@ -306,14 +306,6 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
             <div className="form-container">
               <div className="form-header">
                 <h3>Agregar Nuevo Grupo</h3>
-                <button 
-                  onClick={() => setShowForm(false)}
-                  className="back-btn"
-                  disabled={isSubmitting}
-                >
-                  <X size={16} />
-                  Volver
-                </button>
               </div>
 
               <form onSubmit={handleSubmit} className="group-form">
@@ -392,17 +384,25 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="btn-secondary"
+                    className="modal-btn modal-btn-secondary"
                     disabled={isSubmitting}
                   >
+                    <X size={16} />
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="btn-primary"
+                    className="modal-btn modal-btn-primary"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Creando...' : 'Crear Grupo'}
+                    {isSubmitting ? (
+                      'Creando...'
+                    ) : (
+                      <>
+                        <Plus size={16} />
+                        Crear Grupo
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

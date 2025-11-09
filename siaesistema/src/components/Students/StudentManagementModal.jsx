@@ -13,6 +13,9 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedCycle, setSelectedCycle] = useState('');
   
+  // Estados para selección múltiple
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  
   // Estados del formulario
   const [showForm, setShowForm] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -158,6 +161,53 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
     setShowForm(false);
   };
 
+  // Funciones para selección múltiple
+  const handleSelectStudent = (matricula) => {
+    setSelectedStudents(prev => {
+      if (prev.includes(matricula)) {
+        return prev.filter(m => m !== matricula);
+      } else {
+        return [...prev, matricula];
+      }
+    });
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const allMatriculas = filteredStudents.map(s => s.matricula);
+      setSelectedStudents(allMatriculas);
+    } else {
+      setSelectedStudents([]);
+    }
+  };
+
+  const handleBulkChangeGroup = async (groupId) => {
+    if (!groupId || selectedStudents.length === 0) return;
+    
+    try {
+      setLoading(true);
+      
+      // Usar el endpoint de bulk-move-group
+      const payload = {
+        matriculas: selectedStudents,
+        nuevo_id_grupo: parseInt(groupId)
+      };
+
+      const response = await axiosInstance.patch('/estudiantes/bulk-move-group', payload);
+      
+      onSuccess(`¡${response.data.estudiantes_afectados} estudiante(s) actualizado(s) correctamente!`, 'success');
+
+      setSelectedStudents([]);
+      loadStudents();
+    } catch (error) {
+      console.error('Error en cambio masivo:', error);
+      const errorMsg = error.response?.data?.detail || 'Error al procesar el cambio masivo';
+      onSuccess(errorMsg, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          student.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -249,6 +299,43 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
               {/* Tabla de estudiantes */}
               <div className="management-table-container">
+                {/* Barra de acciones masivas */}
+                {selectedStudents.length > 0 && (
+                  <div className="bulk-actions-bar">
+                    <div className="selection-info">
+                      <Users size={20} />
+                      <span>{selectedStudents.length} estudiante(s) seleccionado(s)</span>
+                    </div>
+                    <div className="bulk-actions">
+                      <select
+                        className="bulk-action-select"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleBulkChangeGroup(e.target.value);
+                            e.target.value = '';
+                          }
+                        }}
+                        defaultValue=""
+                        disabled={loading}
+                      >
+                        <option value="" disabled>Cambiar grupo a...</option>
+                        {groups.map(group => (
+                          <option key={group.id} value={group.id}>
+                            {group.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        className="action-button clear-button"
+                        onClick={() => setSelectedStudents([])}
+                        title="Limpiar selección"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {loading ? (
                   <div className="table-loading">
                     Cargando estudiantes...
@@ -257,6 +344,19 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                   <table className="management-table">
                     <thead>
                       <tr>
+                        <th className="checkbox-column">
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                            ref={input => {
+                              if (input) {
+                                input.indeterminate = selectedStudents.length > 0 && selectedStudents.length < filteredStudents.length;
+                              }
+                            }}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                            title={selectedStudents.length === filteredStudents.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                          />
+                        </th>
                         <th>Matrícula</th>
                         <th>Nombre Completo</th>
                         <th>Correo</th>
@@ -267,46 +367,56 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                     </thead>
                     <tbody>
                       {filteredStudents.length > 0 ? (
-                        filteredStudents.map(student => (
-                          <tr key={student.id}>
-                            <td className="matricula-cell">{student.matricula}</td>
-                            <td className="student-name">
-                              {student.nombre} {student.apellido}
-                            </td>
-                            <td className="student-email">{student.correo || 'Sin correo'}</td>
-                            <td className="student-group">
-                              <span className="group-badge">
-                                <BookOpen size={14} />
-                                {getGroupName(student.id_grupo)}
-                              </span>
-                            </td>
-                            <td className="student-cycle">
-                              <span className="cycle-badge">
-                                <Calendar size={14} />
-                                {getCycleName(student.id_ciclo)}
-                              </span>
-                            </td>
-                            <td className="table-actions">
-                              <button
-                                onClick={() => handleEdit(student)}
-                                className="action-btn edit-btn"
-                                title="Editar estudiante"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteClick(student)}
-                                className="action-btn delete-btn"
-                                title="Eliminar estudiante"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                        filteredStudents.map(student => {
+                          const isSelected = selectedStudents.includes(student.matricula);
+                          return (
+                            <tr key={student.id} className={isSelected ? 'selected-row' : ''}>
+                              <td className="checkbox-column">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleSelectStudent(student.matricula)}
+                                />
+                              </td>
+                              <td className="matricula-cell">{student.matricula}</td>
+                              <td className="student-name">
+                                {student.nombre} {student.apellido}
+                              </td>
+                              <td className="student-email">{student.correo || 'Sin correo'}</td>
+                              <td className="student-group">
+                                <span className="group-badge">
+                                  <BookOpen size={14} />
+                                  {getGroupName(student.id_grupo)}
+                                </span>
+                              </td>
+                              <td className="student-cycle">
+                                <span className="cycle-badge">
+                                  <Calendar size={14} />
+                                  {getCycleName(student.id_ciclo)}
+                                </span>
+                              </td>
+                              <td className="table-actions">
+                                <button
+                                  onClick={() => handleEdit(student)}
+                                  className="action-btn edit-btn"
+                                  title="Editar estudiante"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteClick(student)}
+                                  className="action-btn delete-btn"
+                                  title="Eliminar estudiante"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr>
-                          <td colSpan="6" className="table-no-data">
+                          <td colSpan="7" className="table-no-data">
                             {searchTerm || selectedGroup || selectedCycle 
                               ? 'No se encontraron estudiantes con los filtros aplicados'
                               : 'No hay estudiantes registrados'

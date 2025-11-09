@@ -165,6 +165,10 @@ class EstudianteUpdate(SQLModel):
     id_grupo: Optional[int] = None
     id_ciclo: Optional[int] = None
 
+class EstudianteBulkMoveGrupo(SQLModel):
+    matriculas: List[str]  # La lista de matrículas a mover
+    nuevo_id_grupo: int    # El ID del grupo de destino
+
 # --- DTOs para NFC ---
 class NFCCreate(SQLModel):
     nfc_uid: str
