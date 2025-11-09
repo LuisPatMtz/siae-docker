@@ -15,6 +15,8 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import AlertasPage from './pages/AlertasPage.jsx';
 import GestionUsuariosPage from './pages/GestionUsuariosPage.jsx';
 import GestionEstudiantesPage from './pages/GestionEstudiantesPage.jsx';
+import RegistroAccesoPage from './pages/RegistroAccesoPage.jsx';
+import HistorialAccesosPage from './pages/HistorialAccesosPage.jsx';
 
 // Importamos nuestro CSS
 import './Dashboard.css';
@@ -86,6 +88,22 @@ function App() {
                             element={
                                 <PermissionRoute requiredPermission="canEditStudents">
                                     <GestionEstudiantesPage />
+                                </PermissionRoute>
+                            } 
+                        />
+                        
+                        {/* Registro de Accesos - Página pública dentro del sistema */}
+                        <Route 
+                            path="/registro-acceso" 
+                            element={<RegistroAccesoPage />} 
+                        />
+                        
+                        {/* Historial de Accesos - Protegido por permiso canViewDashboard */}
+                        <Route 
+                            path="/historial-accesos" 
+                            element={
+                                <PermissionRoute requiredPermission="canViewDashboard">
+                                    <HistorialAccesosPage />
                                 </PermissionRoute>
                             } 
                         />

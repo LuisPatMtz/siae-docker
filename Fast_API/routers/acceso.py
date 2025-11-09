@@ -52,8 +52,12 @@ def vincular_nfc(nfc_in: NFCCreate, session: Session = Depends(get_session)):
 @router.post("/acceso/registrar", response_model=AccesoRead, status_code=status.HTTP_201_CREATED)
 def registrar_acceso(payload: NfcPayload, session: Session = Depends(get_session)):
     """
-    Registra un acceso cuando se escanea una tarjeta NFC
+    Registra un acceso cuando se escanea una tarjeta NFC.
+    Solo permite un acceso por estudiante por día.
     """
+    from datetime import date
+    from sqlalchemy import func
+    
     nfc = session.get(NFC, payload.nfc_uid)
     
     if not nfc:
@@ -72,7 +76,29 @@ def registrar_acceso(payload: NfcPayload, session: Session = Depends(get_session
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No hay un ciclo escolar activo."
         )
+    
+    # Verificar si ya existe un acceso hoy para este estudiante
+    hoy = date.today()
+    acceso_existente = session.exec(
+        select(Acceso)
+        .where(
+            Acceso.nfc_uid == nfc.nfc_uid,
+            Acceso.id_ciclo == ciclo_activo.id,
+            func.date(Acceso.hora_registro) == hoy
+        )
+    ).first()
+    
+    if acceso_existente:
+        # Obtener el estudiante para mostrar su nombre
+        estudiante = session.get(Estudiante, nfc.matricula_estudiante)
+        nombre_completo = f"{estudiante.nombre} {estudiante.apellido}" if estudiante else "el estudiante"
+        
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Ya se registró un acceso hoy para {nombre_completo} a las {acceso_existente.hora_registro.strftime('%H:%M:%S')}."
+        )
 
+    # Crear nuevo acceso
     nuevo_acceso = Acceso(
         nfc_uid=nfc.nfc_uid,
         id_ciclo=ciclo_activo.id

@@ -61,6 +61,24 @@ const Header = () => {
                 GESTIÓN DE ESTUDIANTES
               </NavLink>
             )}
+            
+            {/* Registro de Accesos - Disponible para todos los usuarios autenticados */}
+            <NavLink 
+              to="/registro-acceso"
+              className={({ isActive }) => isActive ? 'active' : ''}
+            >
+              REGISTRO DE ACCESOS
+            </NavLink>
+            
+            {/* Historial de Accesos - Solo si tiene permiso canViewDashboard */}
+            {hasPermission('canViewDashboard') && (
+              <NavLink 
+                to="/historial-accesos"
+                className={({ isActive }) => isActive ? 'active' : ''}
+              >
+                HISTORIAL
+              </NavLink>
+            )}
           </nav>
         </div>
 

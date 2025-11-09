@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link2, CheckCircle } from 'lucide-react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import { nfcService } from '../../api/services';
 
 const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
     // Hook optimizado para manejar ESC
