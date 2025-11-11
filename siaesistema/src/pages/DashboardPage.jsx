@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import apiClient from '../api/axios'; // ¡Importamos nuestro cliente API!
+import apiClient from '../api/axios';
 
 import DashboardControls from '../components/Dashboard/DashboardControls.jsx';
 import StatsCard from '../components/Dashboard/StatsCard.jsx';
 import StudentGroupsNav from '../components/Dashboard/StudentGroupsNav.jsx';
 import GroupAttendanceCard from '../components/Dashboard/GroupAttendanceCard.jsx';
+import PeriodStatsCard from '../components/Dashboard/PeriodStatsCard.jsx';
 
 const DashboardPage = () => {
   const [activeMode, setActiveMode] = useState('general');
@@ -21,6 +22,10 @@ const DashboardPage = () => {
   const [groupAttendanceData, setGroupAttendanceData] = useState(null);
   const [isTurnLoading, setIsTurnLoading] = useState(true);
   const [isGroupLoading, setIsGroupLoading] = useState(false);
+  
+  // Estado para estadísticas por períodos
+  const [periodStatsData, setPeriodStatsData] = useState(null);
+  const [isLoadingPeriodStats, setIsLoadingPeriodStats] = useState(false);
 
   // Función para cargar grupos desde la API
   const fetchGroups = async () => {
@@ -39,6 +44,25 @@ const DashboardPage = () => {
       setSemestersData({});
     } finally {
       setIsLoadingGroups(false);
+    }
+  };
+
+  // Función para cargar estadísticas por períodos
+  const fetchPeriodStats = async () => {
+    setIsLoadingPeriodStats(true);
+    try {
+      const turnoParam = activeMode === 'general' ? '' : `turno=${activeMode}`;
+      const grupoParam = selectedGroup ? `grupo_id=${selectedGroup}` : '';
+      const params = [turnoParam, grupoParam].filter(p => p).join('&');
+      const url = `/dashboard/estadisticas/periodos${params ? '?' + params : ''}`;
+      
+      const response = await apiClient.get(url);
+      setPeriodStatsData(response.data);
+    } catch (error) {
+      console.error('Error al cargar estadísticas de períodos:', error);
+      setPeriodStatsData(null);
+    } finally {
+      setIsLoadingPeriodStats(false);
     }
   };
 
@@ -78,30 +102,33 @@ const DashboardPage = () => {
     }
   }, [activeMode, grupos]);
 
+  // Cargar estadísticas de períodos cuando cambie el turno o grupo seleccionado
+  useEffect(() => {
+    // Solo cargar si hay un grupo seleccionado
+    if (selectedGroup) {
+      fetchPeriodStats();
+    } else {
+      setPeriodStatsData(null);
+    }
+  }, [activeMode, selectedGroup]);
+
   
   // *** INTERRUPTOR #1: Cargar datos del TURNO (StatsCard) ***
   useEffect(() => {
     setIsTurnLoading(true);
     const fetchTurnData = async () => {
       try {
-        // --- CAMBIO: La API solo trae las estadísticas ---
         const response = await apiClient.get(`/dashboard/turno?modo=${activeMode}`);
         const apiData = response.data;
-        // ----------------------------------------
         
         // Solo actualizamos las estadísticas
         setStatsData(apiData.stats); 
-        
-        // Ya NO actualizamos 'semestersData', porque es fijo
-        // setSemestersData(apiData.groups); // <--- LÍNEA ELIMINADA
         
         setSelectedGroup(null); 
         setGroupAttendanceData(null); 
       } catch (error) {
         console.error("Error al obtener datos del turno:", error);
-        // Si falla (ej. 404), mostrar datos vacíos
         setStatsData({ totalStudents: 0, averageAttendance: 0.0 });
-        // No tocamos semestersData, se queda con la lista fija
       } finally {
         setIsTurnLoading(false);
       }
@@ -113,7 +140,6 @@ const DashboardPage = () => {
 
 
   // *** INTERRUPTOR #2: Cargar datos de ASISTENCIA POR GRUPO/PERIODO ***
-  // (Esta lógica no cambia, sigue funcionando igual)
   useEffect(() => {
     if (!selectedGroup) {
       setGroupAttendanceData(null);
@@ -132,7 +158,6 @@ const DashboardPage = () => {
         
       } catch (error) {
         console.error("Error al obtener datos de asistencia:", error);
-        // Si falla (ej. 404), seteamos a null para que la tarjeta muestre "0"
         setGroupAttendanceData(null);
       } finally {
         setIsGroupLoading(false); 
@@ -178,17 +203,25 @@ const DashboardPage = () => {
               averageAttendance={statsData.averageAttendance}
             />
             <StudentGroupsNav 
-              semesters={semestersData} // Pasa los grupos reales organizados por semestre
+              semesters={semestersData}
               selectedGroup={selectedGroup}
               onGroupSelect={handleSelectGroup}
-              activeMode={activeMode} // Pasar el modo activo para mostrar información contextual
+              activeMode={activeMode}
             />
           </div>
-          
+
           <div className="group-attendance-section">
+            {/* Mostrar estadísticas por período si hay un grupo seleccionado */}
+            {selectedGroup && !isLoadingPeriodStats && periodStatsData && (
+              <PeriodStatsCard 
+                periodData={periodStatsData} 
+                selectedPeriod={attendancePeriod}
+              />
+            )}
+            
             <GroupAttendanceCard 
               groupName={selectedGroup}
-              attendanceData={groupAttendanceData} // Pasa los datos (o null si no hay)
+              attendanceData={groupAttendanceData}
               selectedPeriod={attendancePeriod}
               onPeriodChange={setAttendancePeriod}
               isLoading={isGroupLoading}

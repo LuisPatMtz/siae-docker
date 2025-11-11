@@ -62,6 +62,16 @@ def create_ciclo_escolar(
     session.commit()
     session.refresh(db_ciclo)
     
+    # Si el ciclo se creó como activo, actualizar todos los estudiantes
+    if db_ciclo.activo:
+        from models import Estudiante
+        estudiantes = session.exec(select(Estudiante)).all()
+        for estudiante in estudiantes:
+            estudiante.id_ciclo = db_ciclo.id
+            session.add(estudiante)
+        session.commit()
+        session.refresh(db_ciclo)
+    
     return db_ciclo
 
 @router.get("", response_model=List[CicloEscolarRead])
@@ -167,6 +177,13 @@ def update_ciclo_escolar(
         for ciclo_activo in ciclos_activos:
             ciclo_activo.activo = False
             session.add(ciclo_activo)
+        
+        # Actualizar todos los estudiantes al nuevo ciclo activo
+        from models import Estudiante
+        estudiantes = session.exec(select(Estudiante)).all()
+        for estudiante in estudiantes:
+            estudiante.id_ciclo = id_ciclo
+            session.add(estudiante)
     
     # Actualizar los campos que no son None
     update_data = ciclo_update.model_dump(exclude_unset=True)
@@ -220,6 +237,7 @@ def activar_ciclo_escolar(
 ):
     """
     Activa un ciclo escolar específico y desactiva todos los demás.
+    Automáticamente actualiza todos los estudiantes al nuevo ciclo activo.
     """
     db_ciclo = session.get(CicloEscolar, id_ciclo)
     if not db_ciclo:
@@ -239,6 +257,14 @@ def activar_ciclo_escolar(
     # Activar el ciclo seleccionado
     db_ciclo.activo = True
     session.add(db_ciclo)
+    
+    # Actualizar todos los estudiantes al nuevo ciclo activo
+    from models import Estudiante
+    estudiantes = session.exec(select(Estudiante)).all()
+    for estudiante in estudiantes:
+        estudiante.id_ciclo = id_ciclo
+        session.add(estudiante)
+    
     session.commit()
     session.refresh(db_ciclo)
     

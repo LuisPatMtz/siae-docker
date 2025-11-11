@@ -55,8 +55,13 @@ def registrar_acceso(payload: NfcPayload, session: Session = Depends(get_session
     Registra un acceso cuando se escanea una tarjeta NFC.
     Solo permite un acceso por estudiante por día.
     """
-    from datetime import date
+    from datetime import datetime
     from sqlalchemy import func
+    import pytz
+    
+    # Usar zona horaria de México
+    MEXICO_TZ = pytz.timezone('America/Mexico_City')
+    hoy = datetime.now(MEXICO_TZ).date()
     
     nfc = session.get(NFC, payload.nfc_uid)
     
@@ -78,7 +83,6 @@ def registrar_acceso(payload: NfcPayload, session: Session = Depends(get_session
         )
     
     # Verificar si ya existe un acceso hoy para este estudiante
-    hoy = date.today()
     acceso_existente = session.exec(
         select(Acceso)
         .where(

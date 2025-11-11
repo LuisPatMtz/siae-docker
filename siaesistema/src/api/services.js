@@ -343,6 +343,15 @@ export const dashboardService = {
     getEstadisticasResumen: async () => {
         const response = await apiClient.get('/dashboard/estadisticas/resumen');
         return response.data;
+    },
+    
+    getEstadisticasPeriodos: async (turno = null, grupoId = null) => {
+        const params = {};
+        if (turno) params.turno = turno;
+        if (grupoId) params.grupo_id = grupoId;
+        
+        const response = await apiClient.get('/dashboard/estadisticas/periodos', { params });
+        return response.data;
     }
 };
 

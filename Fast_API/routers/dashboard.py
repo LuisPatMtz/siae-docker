@@ -173,6 +173,11 @@ def get_grupo_data(
     """
     Obtiene las estadísticas de asistencia para un grupo específico.
     """
+    import pytz
+    
+    # Usar zona horaria de México
+    MEXICO_TZ = pytz.timezone('America/Mexico_City')
+    today = datetime.now(MEXICO_TZ).date()
     
     # Verificar que el grupo existe
     grupo = session.get(Grupo, grupo_id)
@@ -211,7 +216,6 @@ def get_grupo_data(
     total_estudiantes = len(estudiantes_ids)
 
     # Definir el rango de fechas según el período
-    today = date.today()
     start_date = today
     end_date = today
 
@@ -306,4 +310,89 @@ def get_estadisticas_resumen(
         },
         "accesos_hoy": accesos_hoy,
         "total_grupos": total_grupos
+    }
+
+@router.get("/estadisticas/periodos")
+def get_estadisticas_periodos(
+    turno: Optional[str] = Query(None, enum=["matutino", "vespertino"]),
+    grupo_id: Optional[int] = Query(None),
+    session: Session = Depends(get_session)
+):
+    """
+    Obtiene estadísticas de asistencia por períodos (semana, mes, ciclo).
+    Puede filtrarse por turno o grupo específico.
+    
+    Parámetros:
+    - turno: Filtrar por turno (matutino/vespertino) - opcional
+    - grupo_id: Filtrar por grupo específico - opcional
+    """
+    # Obtener el ciclo activo
+    ciclo_activo = session.exec(
+        select(CicloEscolar).where(CicloEscolar.activo == True)
+    ).first()
+    
+    if not ciclo_activo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay un ciclo escolar activo."
+        )
+    
+    # Base query para estudiantes
+    estudiantes_query = select(Estudiante).where(Estudiante.id_ciclo == ciclo_activo.id)
+    
+    # Aplicar filtros
+    if grupo_id:
+        estudiantes_query = estudiantes_query.where(Estudiante.id_grupo == grupo_id)
+    elif turno:
+        estudiantes_query = (
+            estudiantes_query
+            .join(Grupo, Estudiante.id_grupo == Grupo.id, isouter=True)
+            .where(Grupo.turno == turno)
+        )
+    
+    estudiantes = session.exec(estudiantes_query).all()
+    estudiantes_ids = [e.matricula for e in estudiantes]
+    
+    # Calcular fechas usando zona horaria de México
+    import pytz
+    MEXICO_TZ = pytz.timezone('America/Mexico_City')
+    hoy = datetime.now(MEXICO_TZ).date()
+    
+    # Semana actual (Lunes a Domingo)
+    inicio_semana = hoy - timedelta(days=hoy.weekday())
+    fin_semana = inicio_semana + timedelta(days=6)
+    
+    # Mes actual
+    inicio_mes = hoy.replace(day=1)
+    ultimo_dia_mes = calendar.monthrange(hoy.year, hoy.month)[1]
+    fin_mes = hoy.replace(day=ultimo_dia_mes)
+    
+    # Ciclo completo
+    inicio_ciclo = ciclo_activo.fecha_inicio
+    fin_ciclo = ciclo_activo.fecha_fin
+    
+    # Calcular porcentajes de asistencia
+    asistencia_semana = get_asistencia_porcentaje(session, estudiantes_ids, inicio_semana, fin_semana)
+    asistencia_mes = get_asistencia_porcentaje(session, estudiantes_ids, inicio_mes, fin_mes)
+    asistencia_ciclo = get_asistencia_porcentaje(session, estudiantes_ids, inicio_ciclo, fin_ciclo)
+    
+    return {
+        "week": {
+            "porcentaje": asistencia_semana,
+            "inicio": str(inicio_semana),
+            "fin": str(fin_semana),
+            "dias_habiles": get_dias_habiles(inicio_semana, fin_semana)
+        },
+        "month": {
+            "porcentaje": asistencia_mes,
+            "inicio": str(inicio_mes),
+            "fin": str(fin_mes),
+            "dias_habiles": get_dias_habiles(inicio_mes, fin_mes)
+        },
+        "semester": {
+            "porcentaje": asistencia_ciclo,
+            "inicio": str(inicio_ciclo),
+            "fin": str(fin_ciclo),
+            "dias_habiles": get_dias_habiles(inicio_ciclo, fin_ciclo)
+        }
     }

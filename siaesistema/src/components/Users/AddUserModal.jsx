@@ -10,7 +10,6 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     // Estados para todos los campos del formulario
     const [username, setUsername] = useState('');
     const [fullName, setFullName] = useState('');
-    const [role, setRole] = useState('');
     const [password, setPassword] = useState('');
     
     // Estado para los checkboxes de permisos
@@ -31,7 +30,6 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     const clearForm = () => {
         setUsername('');
         setFullName('');
-        setRole('');
         setPassword('');
         setPermissions({
             canViewDashboard: true, canManageAlerts: false,
@@ -44,8 +42,8 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         e.preventDefault();
         setError('');
         
-        if (!username || !role || !password) {
-            setError('Usuario, Rol y Contraseña son obligatorios.');
+        if (!username || !fullName || !password) {
+            setError('Usuario, Nombre Completo y Contraseña son obligatorios.');
             return;
         }
 
@@ -55,7 +53,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
             username,
             full_name: fullName,
             password,
-            role,
+            role: fullName,
             permissions,
         };
 
@@ -106,11 +104,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
                             </div>
                             <div className="modal-input-group">
                                 <label htmlFor="fullName">Nombre Completo:</label>
-                                <input type="text" id="fullName" value={fullName} onChange={e => setFullName(e.target.value)} />
-                            </div>
-                            <div className="modal-input-group">
-                                <label htmlFor="role">Rol (Puesto):</label>
-                                <input type="text" id="role" value={role} onChange={e => setRole(e.target.value)} placeholder="Ej: Prefecto, Coordinador" required />
+                                <input type="text" id="fullName" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ej: Juan Pérez García" required />
                             </div>
                             <div className="modal-input-group">
                                 <label htmlFor="password">Contraseña Inicial:</label>

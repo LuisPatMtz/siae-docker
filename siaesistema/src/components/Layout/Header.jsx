@@ -86,7 +86,7 @@ const Header = () => {
         <div className="header-right">
           <div className="user-info">
             <span className="user-name">{user?.username || 'Usuario'}</span>
-            <span className="user-role">({user?.role || 'Sin rol'})</span>
+            <span className="user-role">({user?.full_name || user?.role || 'Sin información'})</span>
           </div>
           <button onClick={logout} className="logout-button" title="Cerrar sesión">
             <LogOut size={20} />

@@ -45,8 +45,8 @@ const LoginPage = () => {
     <div className="login-container">
       <div className="login-card">
         <span className="login-logo">SIAE</span>
-        <h1 className="login-title">Ingreso Al Panel General Del Sistema</h1>
-        <p className="login-subtitle">Sistema Inteligente de Asistencia Estudiantil</p>
+        <h1 className="login-title">Ingreso al panel general del sistema</h1>
+        <p className="login-subtitle">Sistema de Identificacion de Asistencia Estudiantil</p>
         
         <form className="login-form" onSubmit={handleSubmit}>
           {error && <div className="login-error">{error}</div>}

@@ -4,6 +4,14 @@ from datetime import datetime, date, time
 from pydantic import conint
 # Importaciones de SQLModel y SQLAlchemy
 from sqlmodel import Field, Session, SQLModel, Relationship, UniqueConstraint, func, JSON, Column
+import pytz
+
+# Zona horaria de México
+MEXICO_TZ = pytz.timezone('America/Mexico_City')
+
+def get_mexico_time():
+    """Retorna la hora actual en la zona horaria de México sin timezone info"""
+    return datetime.now(MEXICO_TZ).replace(tzinfo=None)
 
 # --- 1. MODELOS DE TABLAS (Base de Datos) ---
 
@@ -79,7 +87,7 @@ class Acceso(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     nfc_uid: str = Field(foreign_key="nfc.nfc_uid")
     id_ciclo: int = Field(foreign_key="ciclo_escolar.id")
-    hora_registro: datetime = Field(default_factory=datetime.utcnow)
+    hora_registro: datetime = Field(default_factory=get_mexico_time)
     
     # Relaciones
     nfc: NFC = Relationship(back_populates="accesos")
