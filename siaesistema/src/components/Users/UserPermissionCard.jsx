@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit3 } from 'lucide-react';
 import DeleteUserConfirmModal from './DeleteUserConfirmModal.jsx';
 
 // --- CAMBIO 1 ---
@@ -26,7 +26,7 @@ const PermissionToggle = ({ label, isChecked, onChange, userId }) => {
 };
 
 // Componente principal de la tarjeta
-const UserPermissionCard = ({ user, onPermissionChange, onDelete }) => {
+const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     
@@ -67,7 +67,7 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete }) => {
             <div className="user-info-header">
                 <h3 className="user-name">{user.full_name || user.username}</h3>
                 <span className="user-role-badge">{user.role}</span>
-                <span className="user-username">(@{user.username})</span>
+                <span className="user-username">{user.username}</span>
             </div>
             
             <div className="permissions-list">
@@ -99,13 +99,25 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete }) => {
                 />
             </div>
             
-            <button 
-                className="delete-user-btn-full"
-                onClick={handleDelete}
-            >
-                <Trash2 size={16} />
-                Eliminar Usuario
-            </button>
+            <div className="card-actions-group">
+                <button 
+                    className="edit-user-btn"
+                    onClick={() => onEdit(user)}
+                    title="Editar usuario"
+                >
+                    <Edit3 size={16} />
+                    Editar Usuario
+                </button>
+                
+                <button 
+                    className="delete-user-btn-full"
+                    onClick={handleDelete}
+                    title="Eliminar usuario"
+                >
+                    <Trash2 size={16} />
+                    Eliminar Usuario
+                </button>
+            </div>
 
             <DeleteUserConfirmModal
                 isOpen={isDeleteModalOpen}

@@ -4,8 +4,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
 
 /* 2. Estilos base simples */
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
 body {
   margin: 0; /* Quitamos el margen por defecto */
+  padding: 0;
+  height: 100%;
+  width: 100%;
   font-family: 'Inter', sans-serif;
   background-color: #F8F9FB; /* Este es tu color 'siae-gray-bg' */
   color: #374151; /* Este es tu color 'siae-dark' */

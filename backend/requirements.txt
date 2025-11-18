@@ -1,0 +1,11 @@
+
+fastapi
+uvicorn[standard]
+sqlmodel
+python-jose[cryptography]
+bcrypt
+python-multipart
+psycopg2-binary
+python-dotenv
+pytz
+pydantic-settings

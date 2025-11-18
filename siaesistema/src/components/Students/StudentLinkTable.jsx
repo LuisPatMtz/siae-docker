@@ -21,22 +21,8 @@ const StudentLinkTable = ({
                 <table className="student-link-table">
                     <thead>
                         <tr>
-                            <th className="checkbox-column">
-                                <input
-                                    type="checkbox"
-                                    checked={allSelected}
-                                    ref={input => {
-                                        if (input) {
-                                            input.indeterminate = someSelected;
-                                        }
-                                    }}
-                                    onChange={(e) => onSelectAll(e.target.checked)}
-                                    title={allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
-                                />
-                            </th>
                             <th>Nombre Completo</th>
                             <th>Grupo</th>
-                            <th>Semestre</th>
                             <th>Matrícula</th>
                             <th>Acción</th>
                         </tr>
@@ -46,16 +32,8 @@ const StudentLinkTable = ({
                             const isSelected = selectedStudents.includes(student.matricula);
                             return (
                                 <tr key={student.matricula} className={isSelected ? 'selected-row' : ''}>
-                                    <td className="checkbox-column">
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => onSelectStudent(student.matricula)}
-                                        />
-                                    </td>
                                     <td>{student.nombre} {student.apellido}</td>
                                     <td>{student.salon_nombre || 'Sin grupo'}</td>
-                                    <td>{student.semestre || 'N/A'}</td>
                                     <td>{student.matricula}</td>
                                     <td>
                                         <button

@@ -234,10 +234,12 @@ export const nfcService = {
 // SERVICIOS DE ACCESOS
 // ============================================
 export const accesosService = {
-    registrar: async (nfcUid) => {
-        const response = await apiClient.post('/acceso/registrar', {
-            nfc_uid: nfcUid
-        });
+    registrar: async (nfcUid, fechaRegistro = null) => {
+        const payload = { nfc_uid: nfcUid };
+        if (fechaRegistro) {
+            payload.fecha_registro = fechaRegistro;
+        }
+        const response = await apiClient.post('/acceso/registrar', payload);
         return response.data;
     },
     

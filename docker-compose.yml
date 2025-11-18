@@ -1,75 +1,56 @@
-# Archivo: /SIAE_DEV/docker-compose.yml
+# docker-compose.yml - SIAE Sistema de Asistencia NFC
+# Orquestación completa: Backend (FastAPI) + Frontend (React) + PostgreSQL
 
-version: '3.8' # Especifica la versión de Docker Compose
+version: '3.8'
 
-# 'services' es el corazón del archivo, donde definimos cada "caja"
 services:
-
-  # --- 1. Servicio de Base de Datos (Postgres) ---
+  # --- 1. Base de Datos PostgreSQL ---
   db:
-    image: postgres:15-alpine  # Usa una imagen oficial de Postgres
-    container_name: postgres_db
-    restart: always # Siempre reinicia el contenedor si se cae
+    image: postgres:15-alpine
+    container_name: siae-postgres
+    restart: always
     environment:
-      # Lee las variables del archivo .env que está en la misma carpeta
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      # Mapea el puerto 5432 de tu laptop (host) al 5432 del contenedor (db)
-      # "HOST:CONTENEDOR"
       - "5432:5432"
     volumes:
-      # Monta un "volumen" para que los datos de la BD no se borren
-      # cuando apagues el contenedor.
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # --- 2. Servicio de Backend (FastAPI) ---
+  # --- 2. Backend FastAPI ---
   backend:
-    container_name: fastapi_backend
-    # 'build' le dice a Docker que construya la imagen
-    # usando el Dockerfile de la carpeta ./Fast_API
-    build: ./Fast_API
+    container_name: siae-backend
+    build: ./backend
     restart: always
     ports:
-      # Mapea el puerto 8000 de tu laptop al 8000 del contenedor
       - "8000:8000"
     volumes:
-      # Sincroniza tu carpeta local ./Fast_API con la carpeta /app
-      # dentro del contenedor. Si cambias tu código, el contenedor
-      # lo verá y (si uvicorn está en modo --reload) se reiniciará solo.
-      - ./Fast_API:/app
+      - ./backend:/app
     environment:
-      # ¡Esta es la clave! La URL de la BD usa el nombre del servicio 'db',
-      # no 'localhost'. Docker se encarga de que 'db' apunte al contenedor
-      # de Postgres.
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}"
     depends_on:
-      # Le dice a Docker que no inicie este servicio 'backend'
-      # hasta que el servicio 'db' esté listo.
-      - db
+      db:
+        condition: service_healthy
 
-  # --- 3. Servicio de Frontend (React) ---
+  # --- 3. Frontend React + Vite ---
   frontend:
-    container_name: react_frontend
-    # Construye la imagen usando el Dockerfile de la carpeta ./frontend
+    container_name: siae-frontend
     build: ./siaesistema
     restart: always
     ports:
-      # Mapea el puerto 80 de tu laptop al 80 del contenedor (Nginx)
-      # Esto te permite ver tu app en http://localhost
       - "80:80"
-    volumes:
-      # En producción no se usa 'volumes' para React. Pero para
-      # desarrollo, se puede configurar para hot-reloading.
-      # Por ahora, con la compilación Nginx, este volumen no es necesario
-      # a menos que configuremos algo más avanzado.
-      - ./frontend/src:/app/src # Ejemplo si quisieras hot-reload
     depends_on:
-      # Opcional: espera a que el backend esté listo
       - backend
 
-# Definición del volumen que usará Postgres
 volumes:
   postgres_data:
     driver: local

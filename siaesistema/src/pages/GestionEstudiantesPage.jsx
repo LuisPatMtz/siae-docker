@@ -1,7 +1,7 @@
 // src/pages/GestionEstudiantesPage.jsx
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/axios'; // Importamos el cliente API
-import { PlusCircle, UserPlus, XCircle, Link2, Users, CheckCircle, AlertCircle, Edit3, Trash2, ChevronDown, Calendar, CalendarDays, Clock, RefreshCw } from 'lucide-react';
+import { PlusCircle, UserPlus, XCircle, Link2, Users, CheckCircle, AlertCircle, Edit3, Trash2, ChevronDown, Calendar, CalendarDays, Clock, RefreshCw, ArrowLeft, Home, Search } from 'lucide-react';
 import StudentSemesterFilter from '../components/Students/StudentSemesterFilter.jsx'; // Filtro por semestre
 import StudentLinkTable from '../components/Students/StudentLinkTable.jsx'; // Componente nuevo para la tabla
 import LinkNfcModal from '../components/Students/LinkNfcModal.jsx'; // Componente nuevo para el modal
@@ -15,6 +15,8 @@ import DeleteCycleModal from '../components/SchoolCycles/DeleteCycleModal.jsx'; 
 import StudentManagementModal from '../components/Students/StudentManagementModal.jsx'; // Modal de gestión completa de estudiantes
 import GroupManagementModal from '../components/Groups/GroupManagementModal.jsx'; // Modal de gestión completa de grupos
 import { useToast } from '../components/UI/ToastContainer.jsx'; // Sistema de notificaciones
+import Modal from '../components/UI/Modal.jsx'; // Modal reutilizable
+import useEscapeKey from '../hooks/useEscapeKey'; // Hook para cerrar con ESC
 
 // --- ¡MOCK DATA ELIMINADO! ---
 
@@ -92,10 +94,15 @@ const GestionEstudiantesPage = () => {
 
     // Estados para la lista y filtro de "Vincular"
     const [semestersData, setSemestersData] = useState({}); // Para el filtro de semestres
-    const [filteredStudents, setFilteredStudents] = useState([]); // Lista filtrada por semestre
+    const [filteredStudents, setFilteredStudents] = useState([]); // Lista filtrada
     const [selectedSemesterFilter, setSelectedSemesterFilter] = useState('all'); // Semestre seleccionado
     const [selectedStudents, setSelectedStudents] = useState([]); // Matrículas de estudiantes seleccionados
     const [allStudents, setAllStudents] = useState([]); // Todos los estudiantes sin filtrar
+    
+    // Nuevos estados para filtros adicionales en vista de vinculación NFC
+    const [linkSearchTerm, setLinkSearchTerm] = useState(''); // Búsqueda por nombre/matrícula
+    const [linkSelectedGroup, setLinkSelectedGroup] = useState(''); // Filtro por grupo
+    const [linkNfcFilter, setLinkNfcFilter] = useState('all'); // 'all', 'linked', 'unlinked'
 
     // Estados para el MODAL de vincular NFC
     const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -113,10 +120,29 @@ const GestionEstudiantesPage = () => {
     // --- Control de Vistas ---
     const showAddForm = () => { setIsAddFormVisible(true); setIsLinkListViewVisible(false); setIsGroupManagementVisible(false); setIsSchoolCycleVisible(false); clearFields(); };
     const hideAddForm = () => setIsAddFormVisible(false);
-    const showLinkListView = () => { setIsLinkListViewVisible(true); setIsAddFormVisible(false); setIsGroupManagementVisible(false); setIsSchoolCycleVisible(false); clearFields(); };
-    const hideLinkListView = () => setIsLinkListViewVisible(false);
+    const showLinkListView = () => { 
+        setIsLinkListViewVisible(true); 
+        setIsAddFormVisible(false); 
+        setIsGroupManagementVisible(false); 
+        setIsSchoolCycleVisible(false); 
+        clearFields(); 
+    };
+    const hideLinkListView = () => {
+        setIsLinkListViewVisible(false);
+        // Limpiar filtros
+        setLinkSearchTerm('');
+        setLinkSelectedGroup('');
+        setLinkNfcFilter('all');
+    };
     const showGroupManagement = () => { setIsGroupManagementVisible(true); setIsAddFormVisible(false); setIsLinkListViewVisible(false); setIsSchoolCycleVisible(false); clearFields(); };
     const hideGroupManagement = () => setIsGroupManagementVisible(false);
+    
+    // Cerrar modal de estudiantes por semestre con ESC
+    useEscapeKey(() => {
+        if (isLinkListViewVisible) {
+            hideLinkListView();
+        }
+    }, isLinkListViewVisible);
     const showSchoolCycleManagement = () => { setIsSchoolCycleVisible(true); setIsAddFormVisible(false); setIsLinkListViewVisible(false); setIsGroupManagementVisible(false); clearFields(); };
     const hideSchoolCycleManagement = () => setIsSchoolCycleVisible(false);
 
@@ -192,19 +218,44 @@ const GestionEstudiantesPage = () => {
         fetchStudents();
     }, [isLinkListViewVisible]);
 
-    // *** INTERRUPTOR #2: Filtrar estudiantes por semestre ***
+    // *** INTERRUPTOR #2: Filtrar estudiantes con múltiples criterios ***
     useEffect(() => {
-        if (selectedSemesterFilter === 'all') {
-            setFilteredStudents(allStudents);
-        } else {
-            const filtered = allStudents.filter(student => 
-                student.semestre === selectedSemesterFilter
+        let filtered = [...allStudents];
+        
+        // Filtro por búsqueda (nombre, apellido, matrícula)
+        if (linkSearchTerm) {
+            const search = linkSearchTerm.toLowerCase();
+            filtered = filtered.filter(student => 
+                student.nombre.toLowerCase().includes(search) ||
+                student.apellido.toLowerCase().includes(search) ||
+                student.matricula.toLowerCase().includes(search)
             );
-            setFilteredStudents(filtered);
         }
-        // Limpiar selección al cambiar de filtro
+        
+        // Filtro por grupo
+        if (linkSelectedGroup) {
+            filtered = filtered.filter(student => student.id_grupo == linkSelectedGroup);
+        }
+        
+        // Filtro por estado de vinculación NFC
+        if (linkNfcFilter === 'linked') {
+            // Estudiantes con NFC vinculado (tiene tarjetas o tiene nfc)
+            filtered = filtered.filter(student => 
+                (student.nfc && Object.keys(student.nfc).length > 0) || 
+                (student.tarjetas && student.tarjetas.length > 0)
+            );
+        } else if (linkNfcFilter === 'unlinked') {
+            // Estudiantes sin NFC vinculado
+            filtered = filtered.filter(student => 
+                (!student.nfc || Object.keys(student.nfc).length === 0) &&
+                (!student.tarjetas || student.tarjetas.length === 0)
+            );
+        }
+        
+        setFilteredStudents(filtered);
+        // Limpiar selección al cambiar filtros
         setSelectedStudents([]);
-    }, [selectedSemesterFilter, allStudents]);
+    }, [linkSearchTerm, linkSelectedGroup, linkNfcFilter, allStudents]);
 
     // *** INTERRUPTOR #2.5: Cargar Lista de Grupos (para Gestión) ***
     useEffect(() => {
@@ -810,12 +861,36 @@ const GestionEstudiantesPage = () => {
     // Determina si CUALQUIER formulario/vista está activo
     const formActive = isAddFormVisible || isLinkListViewVisible || isGroupManagementVisible || isSchoolCycleVisible;
 
+    // Determina el título del breadcrumb actual
+    const getCurrentSection = () => {
+        if (isLinkListViewVisible) return 'Vincular Matrícula con NFC';
+        if (isGroupManagementVisible) return 'Gestión de Grupos';
+        if (isSchoolCycleVisible) return 'Gestión de Ciclo Escolar';
+        if (isAddFormVisible) return 'Agregar Estudiante';
+        return null;
+    };
+
     return (
         <main className="dashboard-main">
-            <div className="page-title-container">
-                <h1 className="page-title">Gestión de Estudiantes</h1>
-                <div className="title-decorator"></div>
-            </div>
+            {/* Breadcrumbs */}
+            {formActive && (
+                <div className="breadcrumbs-nav">
+                    <button onClick={() => {
+                        hideAddForm();
+                        hideLinkListView();
+                        hideGroupManagement();
+                        hideSchoolCycleManagement();
+                    }} className="breadcrumb-back-btn">
+                        <ArrowLeft size={18} />
+                        <span>Volver al menú</span>
+                    </button>
+                    <div className="breadcrumb-path">
+                        <Home size={16} />
+                        <span className="breadcrumb-separator">/</span>
+                        <span className="breadcrumb-current">{getCurrentSection()}</span>
+                    </div>
+                </div>
+            )}
 
             <div className={`student-management-container ${formActive ? 'form-active' : ''}`}>
 
@@ -949,73 +1024,112 @@ const GestionEstudiantesPage = () => {
                     </div>
                 )}
 
-                {/* ----- VISTA 2: VINCULAR NFC (Condicional) ----- */}
+                {/* ----- VISTA 2: VINCULAR NFC (Modal) ----- */}
                 {isLinkListViewVisible && (
-                    <div className="student-link-view card">
-                        <div className="form-header">
-                            <h2 className="card-title">Gestión de Estudiantes por Semestre</h2>
-                            <button onClick={hideLinkListView} className="close-form-btn" title="Cerrar vista">
-                                <XCircle size={24} />
-                            </button>
-                        </div>
-
-                        {/* Filtro por Semestre */}
-                        <div className="student-group-filter-container">
-                            <StudentSemesterFilter
-                                semesters={semestersData}
-                                selectedSemester={selectedSemesterFilter}
-                                onSemesterSelect={setSelectedSemesterFilter}
-                            />
-                        </div>
-
-                        {/* Controles de acciones para estudiantes seleccionados */}
-                        {selectedStudents.length > 0 && (
-                            <div className="bulk-actions-bar">
-                                <div className="selection-info">
-                                    <CheckCircle size={20} />
-                                    <span>{selectedStudents.length} estudiante(s) seleccionado(s)</span>
-                                </div>
-                                <div className="bulk-actions">
-                                    <select
-                                        className="bulk-action-select"
-                                        onChange={(e) => {
-                                            if (e.target.value === 'changeGroup') {
-                                                handleBulkChangeGroup();
-                                            } else if (e.target.value === 'changeSemester') {
-                                                handleBulkChangeSemester();
-                                            }
-                                            e.target.value = ''; // Reset
-                                        }}
-                                        defaultValue=""
-                                    >
-                                        <option value="" disabled>Seleccionar acción...</option>
-                                        <option value="changeGroup">Cambiar de Grupo</option>
-                                        <option value="changeSemester">Cambiar de Semestre</option>
-                                    </select>
-                                    <button
-                                        className="action-button clear-button"
-                                        onClick={() => setSelectedStudents([])}
-                                        title="Limpiar selección"
-                                    >
-                                        Limpiar Selección
-                                    </button>
-                                </div>
+                    <Modal
+                        isOpen={isLinkListViewVisible}
+                        onClose={hideLinkListView}
+                        title={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Link2 size={20} />
+                                Vincular Tarjetas NFC
                             </div>
-                        )}
+                        }
+                        size="xl"
+                    >
+                        <div className="student-management-content">
+                            {/* Controles superiores - Filtros */}
+                            <div className="management-controls">
+                                {/* Búsqueda */}
+                                <div className="search-input-group">
+                                    <Search size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar por nombre, apellido o matrícula..."
+                                        value={linkSearchTerm}
+                                        onChange={(e) => setLinkSearchTerm(e.target.value)}
+                                        className="search-input"
+                                    />
+                                </div>
 
-                        {/* Tabla de Estudiantes */}
-                        {isLoading ? (
-                            <div className="loading-message">Cargando estudiantes...</div>
-                        ) : (
-                            <StudentLinkTable
-                                students={filteredStudents}
-                                onOpenLinkModal={openLinkModal}
-                                selectedStudents={selectedStudents}
-                                onSelectStudent={handleSelectStudent}
-                                onSelectAll={handleSelectAll}
-                            />
-                        )}
-                    </div>
+                                {/* Filtro por Grupo */}
+                                <select
+                                    value={linkSelectedGroup}
+                                    onChange={(e) => setLinkSelectedGroup(e.target.value)}
+                                    className="filter-select"
+                                >
+                                    <option value="">Todos los Grupos</option>
+                                    {grupos.map(group => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.nombre}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* Filtro por estado de vinculación NFC */}
+                                <select
+                                    value={linkNfcFilter}
+                                    onChange={(e) => setLinkNfcFilter(e.target.value)}
+                                    className="filter-select"
+                                >
+                                    <option value="all">Todos los Estados</option>
+                                    <option value="linked">Vinculados</option>
+                                    <option value="unlinked">No Vinculados</option>
+                                </select>
+                            </div>
+
+                            {/* Acciones masivas (si hay estudiantes seleccionados) */}
+                            {selectedStudents.length > 0 && (
+                                <div className="bulk-actions-floating">
+                                    <div className="bulk-actions-content">
+                                        <span className="selection-count">
+                                            <CheckCircle size={16} />
+                                            {selectedStudents.length} seleccionado(s)
+                                        </span>
+                                        <select
+                                            className="bulk-select"
+                                            value=""
+                                            onChange={(e) => {
+                                                if (e.target.value === 'changeGroup') {
+                                                    handleBulkChangeGroup();
+                                                } else if (e.target.value === 'changeSemester') {
+                                                    handleBulkChangeSemester();
+                                                }
+                                            }}
+                                        >
+                                            <option value="" disabled>Acciones masivas...</option>
+                                            <option value="changeGroup">Cambiar Grupo</option>
+                                            <option value="changeSemester">Cambiar Semestre</option>
+                                        </select>
+                                        <button
+                                            className="bulk-clear-btn"
+                                            onClick={() => setSelectedStudents([])}
+                                            title="Limpiar selección"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Tabla de Estudiantes */}
+                            <div className="students-table-wrapper">
+                                {isLoading ? (
+                                    <div className="empty-state">
+                                        <p>Cargando estudiantes...</p>
+                                    </div>
+                                ) : (
+                                    <StudentLinkTable
+                                        students={filteredStudents}
+                                        onOpenLinkModal={openLinkModal}
+                                        selectedStudents={selectedStudents}
+                                        onSelectStudent={handleSelectStudent}
+                                        onSelectAll={handleSelectAll}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </Modal>
                 )}
                 {/* --- FIN VISTA 2 --- */}
 

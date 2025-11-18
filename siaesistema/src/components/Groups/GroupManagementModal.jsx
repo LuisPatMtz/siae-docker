@@ -1,8 +1,10 @@
 // src/components/Groups/GroupManagementModal.jsx
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit, Trash2, Search, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Users } from 'lucide-react';
 import axiosInstance from '../../api/axios';
-import { useEscapeKey } from '../../hooks/useEscapeKey';
+import Modal from '../UI/Modal';
+import Card from '../UI/Card';
+import Tag from '../UI/Tag';
 
 const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const [groups, setGroups] = useState([]);
@@ -20,9 +22,6 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Hook para manejar ESC
-  useEscapeKey(isOpen, onClose);
 
   // Cargar datos cuando se abre el modal
   useEffect(() => {
@@ -152,38 +151,33 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content student-management-modal">
-        <div className="modal-header">
-          <h2>
-            <Users size={24} />
-            Gestión de Grupos
-          </h2>
-          <button 
-            onClick={handleClose} 
-            className="close-button"
-            disabled={loading}
-          >
-            <X size={20} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Users size={24} />
+          Gestión de Grupos
         </div>
-
-        <div className="student-management-content">
-          {!showForm ? (
-            <>
-              {/* Controles superiores */}
-              <div className="management-controls">
-                <div className="search-and-filters">
-                  <div className="search-box">
-                    <Search size={18} />
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre de grupo..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="search-input"
-                    />
-                  </div>
+      }
+      size="xl"
+    >
+      <div className="student-management-content">
+        {!showForm ? (
+          <>
+            {/* Controles superiores */}
+            <div className="management-controls">
+              <div className="search-and-filters">
+                <div className="search-box">
+                  <Search size={18} />
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre de grupo..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
                   
                   <div className="filter-controls">
                     <select 
@@ -409,8 +403,7 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 };
 

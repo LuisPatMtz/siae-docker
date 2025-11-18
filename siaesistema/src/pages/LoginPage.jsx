@@ -40,51 +40,50 @@ const LoginPage = () => {
     // }
   };
 
-  // --- El JSX ahora usa el 'isLoading' GLOBAL ---
-  return (
-    <div className="login-container">
-      <div className="login-card">
-        <span className="login-logo">SIAE</span>
-        <h1 className="login-title">Ingreso al panel general del sistema</h1>
-        <p className="login-subtitle">Sistema de Identificacion de Asistencia Estudiantil</p>
-        
-        <form className="login-form" onSubmit={handleSubmit}>
-          {error && <div className="login-error">{error}</div>}
-          
-          <div className="input-group">
-            <label htmlFor="username">Usuario</label>
-            <input 
-              type="text" 
-              id="username" 
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required 
-            />
-          </div>
-          
-          <div className="input-group">
-            <label htmlFor="password">Contraseña</label>
-            <input 
-              type="password" 
-              id="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
-          </div>
-          
-          <button 
-            type="submit" 
-            className="login-button" 
-            // ¡Ahora usamos el 'isLoading' del contexto!
-            disabled={isLoading}
-          >
-            {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-export default LoginPage;
+  // --- El JSX ahora usa el 'isLoading' GLOBAL ---
+  return (
+    <div className="login-container">
+      <div className="login-card">
+        <span className="login-logo">SIAE</span>
+        <h1 className="login-title">Ingreso al panel general del sistema</h1>
+        <p className="login-subtitle">Sistema de Identificación de Asistencia Estudiantil</p>
+        
+        <form className="login-form" onSubmit={handleSubmit}>
+          {error && <div className="login-error">{error}</div>}
+          
+          <div className="input-group">
+            <label htmlFor="username">Usuario</label>
+            <input 
+              type="text" 
+              id="username" 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required 
+              autoComplete="username"
+            />
+          </div>
+          
+          <div className="input-group">
+            <label htmlFor="password">Contraseña</label>
+            <input 
+              type="password" 
+              id="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required 
+              autoComplete="current-password"
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            className="login-button" 
+            disabled={isLoading}
+          >
+            {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};export default LoginPage;

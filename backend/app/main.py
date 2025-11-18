@@ -1,0 +1,90 @@
+# app/main.py
+"""
+Aplicación principal FastAPI para el Sistema SIAE.
+"""
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
+
+# Importar base para registrar modelos
+from app.db import base  # noqa: F401
+from app.db.database import create_db_and_tables
+from app.core.config import ALLOWED_ORIGINS
+from app.core.logging import LoggingMiddleware, api_logger
+
+# Importar routers
+from app.api.v1 import (
+    auth_router,
+    users_router,
+    estudiantes_router,
+    grupos_router,
+    ciclos_router,
+    dashboard_router,
+    acceso_router,
+    tarjetas_router,
+    faltas_router
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Función que se ejecuta al iniciar la API.
+    Crea todas las tablas definidas en models si no existen.
+    """
+    api_logger.info("=== Iniciando SIAE API ===")
+    api_logger.info("Creando tablas de base de datos si no existen...")
+    create_db_and_tables()
+    api_logger.info("Base de datos inicializada correctamente")
+    yield
+    api_logger.info("=== Apagando SIAE API ===")
+
+
+# Inicializa la aplicación FastAPI
+app = FastAPI(
+    lifespan=lifespan,
+    title="SIAE API",
+    description="Sistema Inteligente de Asistencia Estudiantil",
+    version="2.0.0"
+)
+
+
+# --- Configuración de CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Middleware de Logging ---
+app.add_middleware(LoggingMiddleware)
+
+
+# === REGISTRAR ROUTERS ===
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(estudiantes_router)
+app.include_router(grupos_router)
+app.include_router(ciclos_router)
+app.include_router(dashboard_router)
+app.include_router(acceso_router)
+app.include_router(tarjetas_router)
+app.include_router(faltas_router)
+
+
+@app.get("/")
+def read_root():
+    """Endpoint raíz de bienvenida."""
+    return {
+        "message": "Bienvenido a la API del SIAE",
+        "version": "1.0.0",
+        "docs": "/docs"
+    }
+
+
+@app.get("/health")
+def health_check():
+    """Endpoint de health check."""
+    return {"status": "healthy"}

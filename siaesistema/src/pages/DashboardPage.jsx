@@ -178,11 +178,6 @@ const DashboardPage = () => {
 
   return (
     <main className="dashboard-main">
-      <div className="page-title-container">
-        <h1 className="page-title">INICIO</h1>
-        <div className="title-decorator"></div>
-      </div>
-
       <DashboardControls 
         activeMode={activeMode}
         onModeChange={setActiveMode}

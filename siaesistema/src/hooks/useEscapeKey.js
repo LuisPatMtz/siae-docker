@@ -26,4 +26,5 @@ const useEscapeKey = (isOpen, onClose) => {
   }, [isOpen, onClose]);
 };
 
+export default useEscapeKey;
 export { useEscapeKey };

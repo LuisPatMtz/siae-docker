@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api/axios'; // Importa tu cliente Axios
 
-// --- 1. Importa los 4 componentes que me pasaste ---
+// --- 1. Importa los componentes ---
 import UserPermissionCard from '../components/Users/UserPermissionCard.jsx';
 import AddUserModal from '../components/Users/AddUserModal.jsx';
+import EditUserModal from '../components/Users/EditUserModal.jsx';
 import DeleteUserSelectModal from '../components/Users/DeleteUserSelectModal.jsx';
 import DeleteConfirmModal from '../components/Users/DeleteConfirmModal.jsx';
 import { useToast } from '../components/UI/ToastContainer.jsx';
@@ -16,6 +17,8 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState({ id: null, name: '' });
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+    const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+    const [userToEdit, setUserToEdit] = useState(null);
     
     // Estado para feedback general (ej. 'Permisos actualizados')
     const [feedback, setFeedback] = useState({ message: '', type: '' });
@@ -127,6 +130,40 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
         // El modal se cierra solo desde su propio 'handleSubmit'
     };
 
+    // --- Funciones para Modal Editar Usuario ---
+    const openEditUserModal = (user) => {
+        setUserToEdit(user);
+        setIsEditUserModalOpen(true);
+    };
+    
+    const closeEditUserModal = () => {
+        setIsEditUserModalOpen(false);
+        setUserToEdit(null);
+    };
+
+    // *** INTERRUPTOR #3B: Actualizar Usuario Existente ***
+    const handleEditUser = async (userId, updatedUserData) => {
+        try {
+            // --- CONEXIÓN API ---
+            const response = await apiClient.put(`/users/${userId}`, updatedUserData);
+            const updatedUser = response.data;
+            // --------------------
+
+            // Actualizar el estado local con los nuevos datos
+            setUsers(currentUsers => 
+                currentUsers.map(user => 
+                    user.id === userId ? updatedUser : user
+                )
+            );
+            showSuccess(`Usuario "${updatedUser.full_name || updatedUser.username}" actualizado exitosamente`);
+        } catch (error) {
+            console.error("Error al actualizar usuario:", error);
+            const apiErrorMessage = error.response?.data?.detail || 'Error al actualizar el usuario';
+            showError(apiErrorMessage);
+            throw error;
+        }
+    };
+
     // --- Funciones para Eliminar Usuario ---
     const openDeleteUserModal = () => setIsDeleteSelectOpen(true);
     const closeDeleteUserModal = () => {
@@ -188,22 +225,15 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
 
     return (
         <main className="dashboard-main">
-            <div className="page-title-container with-actions">
-                <div className="title-group">
-                    <h1 className="page-title">Gestión de Usuarios y Permisos</h1>
-                    <div className="title-decorator"></div>
-                </div>
-                <div className="page-actions">
-                    <button className="action-button add-button" onClick={openAddUserModal}>
-                        <PlusCircle size={18} />
-                        Agregar Usuario
-                    </button>
-                </div>
+            <div className="page-actions-bar">
+                <p className="page-subtitle">
+                    Asigna o revoca permisos a los perfiles de usuario que acceden al sistema.
+                </p>
+                <button className="action-button add-button" onClick={openAddUserModal}>
+                    <PlusCircle size={18} />
+                    Agregar Usuario
+                </button>
             </div>
-
-            <p className="page-subtitle">
-                Asigna o revoca permisos a los perfiles de usuario que acceden al sistema.
-            </p>
 
             {isLoading ? (
                 <div className="loading-message">Cargando usuarios...</div>
@@ -216,6 +246,7 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
                                 user={user}
                                 onPermissionChange={handlePermissionChange}
                                 onDelete={handleIndividualDelete}
+                                onEdit={openEditUserModal}
                             />
                         ))
                     ) : (
@@ -229,6 +260,13 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
                 isOpen={isAddUserModalOpen}
                 onClose={closeAddUserModal}
                 onSubmit={handleAddUser}
+            />
+
+            <EditUserModal
+                isOpen={isEditUserModalOpen}
+                onClose={closeEditUserModal}
+                onSubmit={handleEditUser}
+                user={userToEdit}
             />
 
             <DeleteUserSelectModal

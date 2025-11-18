@@ -29,7 +29,7 @@ const UnauthorizedPage = () => {
                     <ShieldX size={80} className="unauthorized-icon" />
                     <h1 className="unauthorized-title">Acceso No Autorizado</h1>
                     <p className="unauthorized-message">
-                        Lo sentimos, <strong>{user?.username}</strong>. No tienes permisos 
+                        Lo sentimos, <strong>{user?.full_name || user?.username}</strong>. No tienes permisos 
                         para acceder a esta sección del sistema.
                     </p>
                     <p className="unauthorized-role">

@@ -133,11 +133,6 @@ const AlertasPage = () => {
 
     return (
         <main className="dashboard-main">
-            <div className="page-title-container">
-                <h1 className="page-title">Panel de Gestión de Alertas</h1>
-                <div className="title-decorator"></div>
-            </div>
-
             {/* Pasamos el nuevo handler openHistoryModal a DashboardControls */}
             <DashboardControls
                 activeMode={activeMode}

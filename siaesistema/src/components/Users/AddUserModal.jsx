@@ -11,6 +11,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     const [username, setUsername] = useState('');
     const [fullName, setFullName] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('Docente'); // Rol por defecto
     
     // Estado para los checkboxes de permisos
     const [permissions, setPermissions] = useState({
@@ -31,6 +32,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         setUsername('');
         setFullName('');
         setPassword('');
+        setRole('Docente');
         setPermissions({
             canViewDashboard: true, canManageAlerts: false,
             canEditStudents: false, canManageUsers: false,
@@ -53,7 +55,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
             username,
             full_name: fullName,
             password,
-            role: fullName,
+            role,
             permissions,
         };
 
@@ -110,6 +112,17 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
                                 <label htmlFor="password">Contraseña Inicial:</label>
                                 <input type="password" id="password" value={password} onChange={e => setPassword(e.target.value)} required />
                             </div>
+                        </div>
+
+                        <h3 className="form-section-title">Rol del Usuario</h3>
+                        <div className="modal-input-group">
+                            <label htmlFor="role">Selecciona el rol:</label>
+                            <select id="role" value={role} onChange={e => setRole(e.target.value)} required>
+                                <option value="Administrador">Administrador</option>
+                                <option value="Orientador">Orientador</option>
+                                <option value="Prefecto">Prefecto</option>
+                                <option value="Docente">Docente</option>
+                            </select>
                         </div>
 
                         <h3 className="form-section-title">Permisos del Usuario</h3>

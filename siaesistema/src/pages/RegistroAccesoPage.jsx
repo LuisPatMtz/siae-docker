@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle, XCircle, Clock, User, Calendar } from 'lucide-react';
 import { accesosService, ciclosService, estudiantesService } from '../api/services';
-import '../Dashboard.css';
 
 const RegistroAccesoPage = () => {
     const [nfcInput, setNfcInput] = useState('');
@@ -10,6 +9,10 @@ const RegistroAccesoPage = () => {
     const [estado, setEstado] = useState('esperando'); // esperando, exito, error, duplicado
     const [mensaje, setMensaje] = useState('Acerque la tarjeta NFC al lector...');
     const [historialHoy, setHistorialHoy] = useState([]);
+    const [modoManual, setModoManual] = useState(false);
+    const [fechaSeleccionada, setFechaSeleccionada] = useState(
+        new Date().toISOString().split('T')[0]
+    );
     const inputRef = useRef(null);
     const timeoutRef = useRef(null);
 
@@ -54,7 +57,9 @@ const RegistroAccesoPage = () => {
             setEstado('procesando');
             setMensaje('Registrando acceso...');
 
-            const acceso = await accesosService.registrar(nfcUid);
+            // Usar la fecha seleccionada si está en modo manual
+            const fechaParaRegistro = modoManual ? fechaSeleccionada : null;
+            const acceso = await accesosService.registrar(nfcUid, fechaParaRegistro);
 
             // Obtener información del estudiante asociado
             const estudiantes = await estudiantesService.getAll();
@@ -145,6 +150,37 @@ const RegistroAccesoPage = () => {
         <div className="registro-acceso-container">
             <div className="registro-acceso-main">
                 <h1 className="page-title">Registro de Accesos</h1>
+
+                {/* Panel de configuración de modo prueba */}
+                <div className="modo-prueba-panel">
+                    <div className="modo-toggle">
+                        <label className="toggle-label">
+                            <input
+                                type="checkbox"
+                                checked={modoManual}
+                                onChange={(e) => setModoManual(e.target.checked)}
+                            />
+                            <span className="toggle-text">
+                                {modoManual ? 'Modo de pruebas' : 'Modo normal'}
+                            </span>
+                        </label>
+                    </div>
+                    
+                    {modoManual && (
+                        <div className="fecha-selector">
+                            <label htmlFor="fecha-registro">
+                                Fecha para registro:
+                            </label>
+                            <input
+                                type="date"
+                                id="fecha-registro"
+                                value={fechaSeleccionada}
+                                onChange={(e) => setFechaSeleccionada(e.target.value)}
+                                className="input-fecha"
+                            />
+                        </div>
+                    )}
+                </div>
 
                 {/* Input oculto para captura NFC */}
                 <input

@@ -16,7 +16,7 @@ const BulkChangeModal = ({
     const [selectedValue, setSelectedValue] = useState('');
     const [error, setError] = useState('');
 
-    useEscapeKey(onClose, isOpen);
+    useEscapeKey(isOpen, onClose);
 
     useEffect(() => {
         if (isOpen) {

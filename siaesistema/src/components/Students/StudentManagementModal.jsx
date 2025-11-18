@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit, Trash2, Search, Users, BookOpen, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Users, BookOpen, Calendar, Upload, X } from 'lucide-react';
 import axiosInstance from '../../api/axios';
-import { useEscapeKey } from '../../hooks/useEscapeKey';
+import Modal from '../UI/Modal';
+import Card from '../UI/Card';
+import Tag from '../UI/Tag';
 import DeleteConfirmModal from '../Users/DeleteConfirmModal';
 
 const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
@@ -42,9 +44,6 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
     }
   }, [isOpen]);
 
-  // Cerrar modal con ESC (hook optimizado)
-  useEscapeKey(isOpen, onClose);
-
   const loadStudents = async () => {
     try {
       setLoading(true);
@@ -82,8 +81,8 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
       setLoading(true);
       
       if (editingStudent) {
-        // Actualizar estudiante
-        await axiosInstance.put(`/estudiantes/${editingStudent.id}`, formData);
+        // Actualizar estudiante - usar matrícula en lugar de id
+        await axiosInstance.put(`/estudiantes/${editingStudent.matricula}`, formData);
         onSuccess('Estudiante actualizado correctamente', 'success');
       } else {
         // Crear estudiante
@@ -95,7 +94,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
       loadStudents();
     } catch (error) {
       console.error('Error saving student:', error);
-      const errorMessage = error.response?.data?.error || 'Error al guardar estudiante';
+      const errorMessage = error.response?.data?.detail || error.response?.data?.error || 'Error al guardar estudiante';
       onSuccess(errorMessage, 'error');
     } finally {
       setLoading(false);
@@ -231,94 +230,89 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content student-management-modal">
-        <div className="modal-header">
-          <h2 className="modal-title">
-            <Users size={20} />
-            Gestión de Alumnado
-          </h2>
-          <button onClick={onClose} className="close-form-btn">
-            <X size={20} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Users size={20} />
+          Gestión de Alumnado
         </div>
+      }
+      size="xl"
+    >
+      <div className="student-management-content">
         {!showForm ? (
-          <div className="student-management-content">
-            {/* Controles superiores */}
+          <>
+            {/* Controles superiores - Todo en una línea */}
             <div className="management-controls">
-              <div className="search-and-filters">
-                <div className="search-input-group">
-                  <Search size={20} />
-                  <input
-                    type="text"
-                    placeholder="Buscar por nombre, apellido o matrícula..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="search-input"
-                  />
-                </div>
-                  
-                  <div className="filter-controls">
-                    <select 
-                      value={selectedGroup} 
-                      onChange={(e) => setSelectedGroup(e.target.value)}
-                      className="filter-select"
-                    >
-                      <option value="">Todos los grupos</option>
-                      {groups.map(group => (
-                        <option key={group.id} value={group.id}>
-                          {group.nombre}
-                        </option>
-                      ))}
-                    </select>
-                    
-                    <select 
-                      value={selectedCycle} 
-                      onChange={(e) => setSelectedCycle(e.target.value)}
-                      className="filter-select"
-                    >
-                      <option value="">Todos los ciclos</option>
-                      {cycles.map(cycle => (
-                        <option key={cycle.id} value={cycle.id}>
-                          {cycle.nombre}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => setShowForm(true)}
-                  className="add-item-btn"
-                  disabled={loading}
-                >
-                  <Plus size={18} />
-                  Agregar Estudiante
-                </button>
+              <div className="search-input-group">
+                <Search size={18} />
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
+                
+              <select 
+                value={selectedGroup} 
+                onChange={(e) => setSelectedGroup(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Todos los grupos</option>
+                {groups.map(group => (
+                  <option key={group.id} value={group.id}>
+                    {group.nombre}
+                  </option>
+                ))}
+              </select>
+              
+              <select 
+                value={selectedCycle} 
+                onChange={(e) => setSelectedCycle(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Todos los ciclos</option>
+                {cycles.map(cycle => (
+                  <option key={cycle.id} value={cycle.id}>
+                    {cycle.nombre}
+                  </option>
+                ))}
+              </select>
+
+              <button 
+                onClick={() => setShowForm(true)}
+                className="action-btn primary"
+                disabled={loading}
+              >
+                <Plus size={18} />
+                Agregar
+              </button>
+            </div>
 
               {/* Tabla de estudiantes */}
-              <div className="management-table-container">
-                {/* Barra de acciones masivas */}
+              <div className="students-table-wrapper">
+                {/* Barra de acciones masivas flotante */}
                 {selectedStudents.length > 0 && (
-                  <div className="bulk-actions-bar">
-                    <div className="selection-info">
-                      <Users size={20} />
-                      <span>{selectedStudents.length} estudiante(s) seleccionado(s)</span>
-                    </div>
-                    <div className="bulk-actions">
+                  <div className="bulk-actions-floating">
+                    <div className="bulk-actions-content">
+                      <span className="selection-count">
+                        <Users size={16} />
+                        {selectedStudents.length} seleccionado(s)
+                      </span>
                       <select
-                        className="bulk-action-select"
+                        className="bulk-select"
+                        value=""
                         onChange={(e) => {
                           if (e.target.value) {
                             handleBulkChangeGroup(e.target.value);
-                            e.target.value = '';
                           }
                         }}
-                        defaultValue=""
                         disabled={loading}
                       >
-                        <option value="" disabled>Cambiar grupo a...</option>
+                        <option value="" disabled>Cambiar grupo...</option>
                         {groups.map(group => (
                           <option key={group.id} value={group.id}>
                             {group.nombre}
@@ -326,22 +320,23 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                         ))}
                       </select>
                       <button
-                        className="action-button clear-button"
+                        className="bulk-clear-btn"
                         onClick={() => setSelectedStudents([])}
                         title="Limpiar selección"
+                        type="button"
                       >
-                        Limpiar
+                        ✕
                       </button>
                     </div>
                   </div>
                 )}
 
                 {loading ? (
-                  <div className="table-loading">
-                    Cargando estudiantes...
+                  <div className="empty-state">
+                    <p>Cargando estudiantes...</p>
                   </div>
                 ) : (
-                  <table className="management-table">
+                  <table className="students-table">
                     <thead>
                       <tr>
                         <th className="checkbox-column">
@@ -370,42 +365,38 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                         filteredStudents.map(student => {
                           const isSelected = selectedStudents.includes(student.matricula);
                           return (
-                            <tr key={student.id} className={isSelected ? 'selected-row' : ''}>
-                              <td className="checkbox-column">
+                            <tr key={student.id} className={isSelected ? 'selected' : ''}>
+                              <td>
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
                                   onChange={() => handleSelectStudent(student.matricula)}
                                 />
                               </td>
-                              <td className="matricula-cell">{student.matricula}</td>
-                              <td className="student-name">
+                              <td>{student.matricula}</td>
+                              <td>
                                 {student.nombre} {student.apellido}
                               </td>
-                              <td className="student-email">{student.correo || 'Sin correo'}</td>
-                              <td className="student-group">
-                                <span className="group-badge">
-                                  <BookOpen size={14} />
-                                  {getGroupName(student.id_grupo)}
-                                </span>
+                              <td>{student.correo || 'Sin correo'}</td>
+                              <td>
+                                <BookOpen size={14} />
+                                {getGroupName(student.id_grupo)}
                               </td>
-                              <td className="student-cycle">
-                                <span className="cycle-badge">
-                                  <Calendar size={14} />
-                                  {getCycleName(student.id_ciclo)}
-                                </span>
+                              <td>
+                                <Calendar size={14} />
+                                {getCycleName(student.id_ciclo)}
                               </td>
                               <td className="table-actions">
                                 <button
                                   onClick={() => handleEdit(student)}
-                                  className="action-btn edit-btn"
+                                  className="icon-btn edit"
                                   title="Editar estudiante"
                                 >
                                   <Edit size={16} />
                                 </button>
                                 <button
                                   onClick={() => handleDeleteClick(student)}
-                                  className="action-btn delete-btn"
+                                  className="icon-btn delete"
                                   title="Eliminar estudiante"
                                 >
                                   <Trash2 size={16} />
@@ -416,7 +407,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                         })
                       ) : (
                         <tr>
-                          <td colSpan="7" className="table-no-data">
+                          <td colSpan="7" className="empty-state">
                             {searchTerm || selectedGroup || selectedCycle 
                               ? 'No se encontraron estudiantes con los filtros aplicados'
                               : 'No hay estudiantes registrados'
@@ -428,7 +419,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                   </table>
                 )}
               </div>
-          </div>
+          </>
         ) : (
           /* Formulario de agregar/editar */
           <form onSubmit={handleSubmit} className="modal-form">
@@ -551,7 +542,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
           isSaving={isDeleting}
         />
       </div>
-    </div>
+    </Modal>
   );
 };
 

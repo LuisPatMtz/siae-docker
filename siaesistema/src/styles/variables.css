@@ -1,0 +1,225 @@
+/* src/styles/variables.css */
+/* ====================================
+   VARIABLES GLOBALES Y RESET
+   ==================================== */
+
+/* Importar Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ====================================
+   PALETA DE COLORES SIAE
+   ==================================== */
+:root {
+  /* Colores primarios */
+  --siae-primary-blue: #4A90E2;
+  --siae-dark-blue: #2C5282;
+  --siae-light-blue: #E3F2FD;
+  
+  /* Colores de fondo */
+  --siae-bg-main: #FFFFFF;
+  --siae-bg-card: #FFFFFF;
+  --siae-bg-hover: #F3F4F6;
+  --siae-bg-white: #FFFFFF;
+  --siae-bg-light: #F9FAFB;
+  --siae-bg-blue-light: rgba(74, 144, 226, 0.1);
+  --siae-bg-red-light: #FEE2E2;
+  
+  /* Colores de texto */
+  --siae-text-primary: #1F2937;
+  --siae-text-secondary: #6B7280;
+  --siae-text-light: #9CA3AF;
+  --siae-text-tertiary: #9CA3AF;
+  --siae-dark: #1F2937;
+  
+  /* Colores de borde */
+  --siae-border-light: #E5E7EB;
+  --siae-border-medium: #D1D5DB;
+  --siae-border-dark: #9CA3AF;
+  --siae-border-blue: rgba(74, 144, 226, 0.2);
+  --siae-border-danger: #FECACA;
+  
+  /* Colores de estado */
+  --siae-success: #10B981;
+  --siae-success-light: #D1FAE5;
+  --siae-success-dark: #059669;
+  --siae-warning: #F59E0B;
+  --siae-warning-light: #FEF3C7;
+  --siae-error: #EF4444;
+  --siae-error-light: #FEE2E2;
+  --siae-info: #3B82F6;
+  --siae-info-light: #DBEAFE;
+  --siae-danger: #EF4444;
+  --siae-danger-dark: #991B1B;
+  
+  /* Estados de interacción */
+  --siae-state-hover: rgba(74, 144, 226, 0.03);
+  --siae-state-danger-hover: #FECACA;
+  --siae-state-disabled: #F87171;
+  --siae-overlay: rgba(0, 0, 0, 0.5);
+  
+  /* Gradientes */
+  --siae-gradient-primary: linear-gradient(135deg, #4A90E2 0%, #2C5282 100%);
+  --siae-gradient-blue: linear-gradient(135deg, #4A90E2, #2C5282);
+  --siae-gradient-blue-light: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%);
+  --siae-gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  --siae-gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  /* Sombras */
+  --siae-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --siae-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --siae-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --siae-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --siae-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  --siae-shadow-blue: 0 0 15px rgba(74, 144, 226, 0.3);
+  --siae-shadow-glow-blue: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-blue-glow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+  
+  /* Espaciado */
+  --siae-spacing-xs: 4px;
+  --siae-spacing-sm: 8px;
+  --siae-spacing-md: 16px;
+  --siae-spacing-lg: 24px;
+  --siae-spacing-xl: 32px;
+  --siae-spacing-2xl: 48px;
+  
+  /* Border radius */
+  --siae-radius-sm: 4px;
+  --siae-radius-md: 8px;
+  --siae-radius-lg: 12px;
+  --siae-radius-xl: 16px;
+  --siae-radius-full: 9999px;
+  
+  /* Transiciones */
+  --siae-transition-fast: 150ms ease;
+  --siae-transition-base: 200ms ease;
+  --siae-transition-slow: 300ms ease;
+}
+
+/* ====================================
+   RESET Y BASE
+   ==================================== */
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: var(--siae-bg-main);
+  color: var(--siae-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 100%;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ====================================
+   UTILITY CLASSES
+   ==================================== */
+
+.page-subtitle {
+  font-size: 0.9375rem;
+  color: var(--siae-text-secondary);
+  margin: 0;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.page-title-container.with-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;  
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+}
+
+.title-group .page-title {
+  margin-right: 12px;
+}
+
+.page-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 0.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--siae-shadow-sm);
+}
+
+.action-button svg {
+  margin-right: 4px;
+}
+
+.add-button {
+  background-color: var(--siae-primary-blue);
+  color: white;
+}
+
+.add-button:hover {
+  background-color: var(--siae-dark-blue);
+  box-shadow: var(--siae-shadow-glow-blue);
+}
+
+.delete-button {
+  background-color: var(--siae-bg-red-light);
+  color: var(--siae-danger-dark);
+  border: 1px solid var(--siae-border-danger);
+}
+
+.delete-button:hover {
+  background-color: var(--siae-state-danger-hover);
+  color: var(--siae-danger-dark);
+}
+
+/* Tag uppercase utility */
+.tag-uppercase {
+  text-transform: uppercase;
+}
+
+/* Card hoverable variation */
+.card-hoverable:hover {
+  box-shadow: var(--siae-shadow-lg);
+  transform: translateY(-2px);
+}

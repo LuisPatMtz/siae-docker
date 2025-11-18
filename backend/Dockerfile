@@ -1,0 +1,17 @@
+# /SIAE_DEV/Fast_API/Dockerfile
+
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copia solo los requerimientos primero para cache
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia TODO el resto del código (main.py, routers/, models.py, etc.)
+COPY . .
+
+EXPOSE 8000
+
+# Comando actualizado para la nueva estructura app/main.py
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

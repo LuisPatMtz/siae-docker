@@ -18,9 +18,6 @@ import GestionEstudiantesPage from './pages/GestionEstudiantesPage.jsx';
 import RegistroAccesoPage from './pages/RegistroAccesoPage.jsx';
 import HistorialAccesosPage from './pages/HistorialAccesosPage.jsx';
 
-// Importamos nuestro CSS
-import './Dashboard.css';
-
 function App() {
     const { isAuthenticated, hasPermission } = useAuth();
 
