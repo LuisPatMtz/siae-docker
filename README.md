@@ -1,4 +1,4 @@
-# SIAE - Sistema Integral de Asistencia Estudiantil
+# SIAE - Sistema de Identificacion de Asistencia Estudiantil
 
 ## Características Principales
 
