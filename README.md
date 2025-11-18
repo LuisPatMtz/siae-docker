@@ -44,4 +44,7 @@ docker-compose up --build
 ## Insertar admin
 
 Ejecuta el script [crear_admin.py]
+```bash
+docker-compose exec backend python crear_admin_docker.py
+```
 
