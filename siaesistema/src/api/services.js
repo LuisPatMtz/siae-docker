@@ -377,10 +377,139 @@ export const asistenciaService = {
         const response = await apiClient.get('/asistencia/hoy');
         return response.data;
     },
-
     getEstadisticasHoy: async () => {
         const response = await apiClient.get('/asistencia/estadisticas/hoy');
         return response.data;
+    }
+};
+
+// ============================================
+// SERVICIOS DE ALERTAS
+// ============================================
+export const alertasService = {
+    // Obtiene estudiantes con faltas injustificadas agrupadas
+    getEstudiantesConFaltas: async (modo = 'general', cicloId = null) => {
+        try {
+            // 1. Obtener ciclo activo si no se proporciona
+            if (!cicloId) {
+                const cicloActivo = await ciclosService.getActivo();
+                cicloId = cicloActivo.id;
+            }
+
+            // 2. Obtener todas las faltas del ciclo
+            const faltas = await faltasService.getAll({
+                id_ciclo: cicloId,
+                estado: 'injustificada' // Solo faltas injustificadas
+            });
+
+            // 3. Obtener todos los estudiantes
+            const estudiantes = await estudiantesService.getAll();
+
+            // 4. Obtener todos los grupos para filtrar por turno
+            const grupos = await gruposService.getAll();
+
+            // 5. Agrupar faltas por estudiante
+            const faltasPorEstudiante = {};
+            faltas.forEach(falta => {
+                const matricula = falta.matricula_estudiante;
+                if (!faltasPorEstudiante[matricula]) {
+                    faltasPorEstudiante[matricula] = [];
+                }
+                faltasPorEstudiante[matricula].push(falta);
+            });
+
+            // 6. Crear lista de alertas
+            const alertas = [];
+            Object.keys(faltasPorEstudiante).forEach(matricula => {
+                const estudiante = estudiantes.find(e => e.matricula === matricula);
+                if (!estudiante) return;
+
+                const grupo = grupos.find(g => g.id === estudiante.id_grupo);
+                if (!grupo) return;
+
+                // Filtrar por turno si no es 'general'
+                if (modo !== 'general') {
+                    const turnoGrupo = grupo.turno?.toLowerCase();
+                    if (turnoGrupo !== modo) return;
+                }
+
+                const faltasEstudiante = faltasPorEstudiante[matricula];
+                alertas.push({
+                    id: estudiante.id,
+                    matricula: estudiante.matricula,
+                    nombre: `${estudiante.nombre} ${estudiante.apellido}`,
+                    grupo: grupo.nombre,
+                    turno: grupo.turno,
+                    unjustifiedFaltas: faltasEstudiante.length,
+                    unjustifiedDates: faltasEstudiante.map(f => f.fecha),
+                    faltasIds: faltasEstudiante.map(f => f.id) // IDs para justificar
+                });
+            });
+
+            // 7. Ordenar por número de faltas (descendente)
+            alertas.sort((a, b) => b.unjustifiedFaltas - a.unjustifiedFaltas);
+
+            return alertas;
+        } catch (error) {
+            console.error('Error al obtener alertas:', error);
+            throw error;
+        }
+    },
+
+    // Justifica todas las faltas de un estudiante
+    justificarFaltas: async (faltasIds, justificacion) => {
+        try {
+            const promesas = faltasIds.map(faltaId =>
+                faltasService.justificar(faltaId, justificacion)
+            );
+            await Promise.all(promesas);
+            return { success: true };
+        } catch (error) {
+            console.error('Error al justificar faltas:', error);
+            throw error;
+        }
+    },
+
+    // Obtiene historial de justificaciones
+    getHistorialJustificaciones: async (cicloId = null) => {
+        try {
+            // 1. Obtener ciclo activo si no se proporciona
+            if (!cicloId) {
+                const cicloActivo = await ciclosService.getActivo();
+                cicloId = cicloActivo.id;
+            }
+
+            // 2. Obtener faltas justificadas
+            const faltasJustificadas = await faltasService.getAll({
+                id_ciclo: cicloId,
+                estado: 'justificada'
+            });
+
+            // 3. Obtener estudiantes
+            const estudiantes = await estudiantesService.getAll();
+
+            // 4. Crear historial
+            const historial = faltasJustificadas.map(falta => {
+                const estudiante = estudiantes.find(e => e.matricula === falta.matricula_estudiante);
+                return {
+                    id: falta.id,
+                    studentId: estudiante?.id,
+                    studentName: estudiante ? `${estudiante.nombre} ${estudiante.apellido}` : 'Desconocido',
+                    matricula: falta.matricula_estudiante,
+                    reason: falta.justificacion || 'Sin motivo especificado',
+                    fecha: falta.fecha,
+                    justifiedAt: falta.fecha_justificacion || falta.updated_at
+                };
+            });
+
+            // 5. Ordenar por fecha de justificación (más reciente primero)
+            historial.sort((a, b) => new Date(b.justifiedAt) - new Date(a.justifiedAt));
+
+            return historial;
+        } catch (error) {
+            console.error('Error al obtener historial:', error);
+            throw error;
+        }
     }
 };
 
@@ -395,5 +524,6 @@ export default {
     accesos: accesosService,
     faltas: faltasService,
     dashboard: dashboardService,
-    asistencia: asistenciaService
+    asistencia: asistenciaService,
+    alertas: alertasService
 };

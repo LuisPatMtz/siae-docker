@@ -1,34 +1,12 @@
 // src/pages/AlertasPage.jsx
 import React, { useState, useEffect } from 'react';
-
+import { Search, History, AlertTriangle, CheckCircle } from 'lucide-react';
+import { alertasService } from '../api/services';
 import DashboardControls from '../components/Dashboard/DashboardControls.jsx';
 import AlertsTable from '../components/Alerts/AlertsTable.jsx';
 import JustifyModal from '../components/Alerts/JustifyModal.jsx';
-// 1. Importa el nuevo modal de historial
 import JustificationHistoryModal from '../components/Alerts/JustificationHistoryModal.jsx';
-
-// --- NUEVA ESTRUCTURA DE DATOS DEFAULT (MOCK DATA) ---
-// Asegúrate que Carlos y Ana estén incluidos aquí
-const MOCK_ALERTS_DATA = {
-    general: [
-        { id: 3, nombre: 'Valentina Soto', grupo: '9A', unjustifiedFaltas: 5, unjustifiedDates: ['2025-10-15', '2025-10-16', '2025-10-18', '2025-10-19', '2025-10-21'] },
-        { id: 6, nombre: 'Javier Gómez', grupo: '11C', unjustifiedFaltas: 4, unjustifiedDates: ['2025-10-10', '2025-10-11', '2025-10-17', '2025-10-20'] },
-        { id: 1, nombre: 'Sofía Martínez', grupo: '9A', unjustifiedFaltas: 3, unjustifiedDates: ['2025-10-05', '2025-10-06', '2025-10-22'] },
-        { id: 7, nombre: 'Carlos Ruiz', grupo: '10A', unjustifiedFaltas: 2, unjustifiedDates: ['2025-10-20', '2025-10-23'] },
-        { id: 8, nombre: 'Ana Torres', grupo: '11B', unjustifiedFaltas: 1, unjustifiedDates: ['2025-10-24'] },
-    ],
-    matutino: [
-        { id: 3, nombre: 'Valentina Soto', grupo: '9A', unjustifiedFaltas: 5, unjustifiedDates: ['2025-10-15', '2025-10-16', '2025-10-18', '2025-10-19', '2025-10-21'] },
-        { id: 1, nombre: 'Sofía Martínez', grupo: '9A', unjustifiedFaltas: 3, unjustifiedDates: ['2025-10-05', '2025-10-06', '2025-10-22'] },
-        { id: 7, nombre: 'Carlos Ruiz', grupo: '10A', unjustifiedFaltas: 2, unjustifiedDates: ['2025-10-20', '2025-10-23'] },
-    ],
-    vespertino: [
-        { id: 6, nombre: 'Javier Gómez', grupo: '11C', unjustifiedFaltas: 4, unjustifiedDates: ['2025-10-10', '2025-10-11', '2025-10-17', '2025-10-20'] },
-        { id: 8, nombre: 'Ana Torres', grupo: '11B', unjustifiedFaltas: 1, unjustifiedDates: ['2025-10-24'] },
-    ],
-};
-// --- FIN DE DATOS DEFAULT ---
-
+import '../styles/alertas.css';
 
 const AlertasPage = () => {
     const [activeMode, setActiveMode] = useState('general');
@@ -37,35 +15,37 @@ const AlertasPage = () => {
     const [allAlertsList, setAllAlertsList] = useState([]);
     const [filteredAlertsList, setFilteredAlertsList] = useState([]);
     const [expandedHistoryId, setExpandedHistoryId] = useState(null);
-    const [modalState, setModalState] = useState({ isOpen: false, studentId: null, studentName: '' });
+    const [modalState, setModalState] = useState({ isOpen: false, studentId: null, studentName: '', faltasIds: [] });
+    const [justificationHistory, setJustificationHistory] = useState([]);
+    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
-    // --- NUEVOS ESTADOS PARA HISTORIAL ---
-    const [justificationHistory, setJustificationHistory] = useState([]); // Guarda el historial
-    const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // Controla visibilidad del modal historial
-    // ------------------------------------
-
-    // *** INTERRUPTOR #1: Cargar datos del TURNO ***
+    // Cargar datos del backend según el turno
     useEffect(() => {
-        setIsLoading(true);
         const fetchData = async () => {
-            console.log(`Buscando alertas para: ${activeMode}`);
+            setIsLoading(true);
             try {
-                // --- TODO: API GET /alertas?modo=... ---
-                const data = MOCK_ALERTS_DATA[activeMode] || [];
-                // --- TODO: API GET /historial_justificaciones?modo=... ---
-                // Simulación: Reseteamos el historial local al cambiar de modo
-                setJustificationHistory([]); 
-                // ----------------------------------------
+                console.log(`Cargando alertas para: ${activeMode}`);
 
-                setAllAlertsList(data);
-                setFilteredAlertsList(data);
+                // Obtener alertas del backend
+                const alertas = await alertasService.getEstudiantesConFaltas(activeMode);
+
+                // Obtener historial de justificaciones
+                const historial = await alertasService.getHistorialJustificaciones();
+
+                setAllAlertsList(alertas);
+                setFilteredAlertsList(alertas);
+                setJustificationHistory(historial);
                 setSearchQuery('');
                 setExpandedHistoryId(null);
-                setModalState({ isOpen: false, studentId: null, studentName: '' });
-                setIsHistoryModalOpen(false); // Cierra modal historial al cambiar modo
+                setModalState({ isOpen: false, studentId: null, studentName: '', faltasIds: [] });
+                setIsHistoryModalOpen(false);
 
             } catch (error) {
                 console.error("Error al obtener alertas:", error);
+                // En caso de error, mostrar lista vacía
+                setAllAlertsList([]);
+                setFilteredAlertsList([]);
+                setJustificationHistory([]);
             } finally {
                 setIsLoading(false);
             }
@@ -73,75 +53,125 @@ const AlertasPage = () => {
 
         const timer = setTimeout(() => fetchData(), 300);
         return () => clearTimeout(timer);
-
     }, [activeMode]);
 
-    // *** INTERRUPTOR #2: Filtrar localmente por búsqueda ***
+    // Filtrar localmente por búsqueda
     useEffect(() => {
         const filtered = allAlertsList.filter(alert =>
-            alert.nombre.toLowerCase().includes(searchQuery.toLowerCase())
+            alert.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            alert.matricula.includes(searchQuery)
         );
         setFilteredAlertsList(filtered);
-        // --- TODO: API ---
     }, [searchQuery, allAlertsList]);
 
-    // --- FUNCIONES PARA MODALES Y HISTORIAL ---
+    // Funciones para modales y historial
     const toggleHistory = (studentId) => {
         setExpandedHistoryId(prevId => (prevId === studentId ? null : studentId));
     };
+
     const openJustifyModal = (studentId, studentName) => {
-        setModalState({ isOpen: true, studentId, studentName });
-    };
-    const closeJustifyModal = () => {
-        setModalState({ isOpen: false, studentId: null, studentName: '' });
+        const alert = allAlertsList.find(a => a.id === studentId);
+        setModalState({
+            isOpen: true,
+            studentId,
+            studentName,
+            faltasIds: alert?.faltasIds || []
+        });
     };
 
-    // -- NUEVAS FUNCIONES PARA MODAL HISTORIAL --
+    const closeJustifyModal = () => {
+        setModalState({ isOpen: false, studentId: null, studentName: '', faltasIds: [] });
+    };
+
     const openHistoryModal = () => setIsHistoryModalOpen(true);
     const closeHistoryModal = () => setIsHistoryModalOpen(false);
-    // ------------------------------------------
 
-    // *** INTERRUPTOR #3: Enviar justificación a la API ***
+    // Enviar justificación al backend
     const submitJustification = async (reason) => {
-        const studentId = modalState.studentId;
-        // Busca el nombre del estudiante en la lista original (antes de filtrarla)
-        const studentName = allAlertsList.find(alert => alert.id === studentId)?.nombre || 'Desconocido'; 
-        console.log(`API Call: Justificar faltas de ${studentId} (${studentName}) con motivo: "${reason}"`);
+        const { studentId, faltasIds } = modalState;
+        const studentName = allAlertsList.find(alert => alert.id === studentId)?.nombre || 'Desconocido';
 
-        // --- TODO: AQUÍ VA TU CÓDIGO DE API (POST/PATCH /justificar) ---
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simula éxito
-        // --------------------------------------------------
+        try {
+            console.log(`Justificando ${faltasIds.length} faltas de ${studentName} con motivo: "${reason}"`);
 
-        // Si la API tiene éxito:
-        // 1. Añadimos al historial local
-        const newHistoryEntry = {
-            id: `hist-${Date.now()}`, // ID simple para el mock
-            studentId: studentId,
-            studentName: studentName,
-            reason: reason,
-            justifiedAt: new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) // Fecha y hora actual formateada
-        };
-        setJustificationHistory(prevHistory => [newHistoryEntry, ...prevHistory]); // Añade al principio
+            // Llamar al backend para justificar
+            await alertasService.justificarFaltas(faltasIds, reason);
 
-        // 2. Eliminamos al alumno de las listas activas
-        setAllAlertsList(prevList => prevList.filter(alert => alert.id !== studentId));
-        // filteredAlertsList se actualizará automáticamente por el useEffect #2
+            // Actualizar historial local
+            const newHistoryEntry = {
+                id: `hist-${Date.now()}`,
+                studentId: studentId,
+                studentName: studentName,
+                reason: reason,
+                justifiedAt: new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })
+            };
+            setJustificationHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
 
-        closeJustifyModal(); // Cierra el modal de justificación
+            // Eliminar al alumno de las listas activas
+            setAllAlertsList(prevList => prevList.filter(alert => alert.id !== studentId));
+
+            closeJustifyModal();
+        } catch (error) {
+            console.error('Error al justificar faltas:', error);
+            alert('Error al justificar las faltas. Por favor intenta de nuevo.');
+        }
     };
 
-
     return (
-        <main className="dashboard-main">
-            {/* Pasamos el nuevo handler openHistoryModal a DashboardControls */}
+        <div className="alertas-container">
+            {/* Header */}
+            <div className="alertas-page-header">
+                <h1 className="alertas-page-title">Gestión de Alertas</h1>
+                <p className="alertas-page-subtitle">Monitorea y justifica las faltas de los estudiantes</p>
+            </div>
+
+            {/* Controls */}
+            <div className="alertas-controls">
+                <div className="search-container">
+                    <div className="search-input-wrapper">
+                        <Search size={20} />
+                        <input
+                            type="text"
+                            className="search-input"
+                            placeholder="Buscar por nombre o matrícula..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <button onClick={openHistoryModal} className="btn-history">
+                    <History size={18} />
+                    Ver Historial
+                </button>
+            </div>
+
+            {/* Dashboard Controls (Turnos) */}
             <DashboardControls
                 activeMode={activeMode}
                 onModeChange={setActiveMode}
-                onOpenHistory={openHistoryModal} // <--- PROP PARA ABRIR HISTORIAL
+                onOpenHistory={openHistoryModal}
             />
 
+            {/* Alerts Table */}
             {isLoading ? (
-                 <div className="loading-message">Cargando alertas...</div>
+                <div className="alertas-table-card">
+                    <div className="empty-alerts">
+                        <div className="empty-alerts-title">Cargando alertas...</div>
+                    </div>
+                </div>
+            ) : filteredAlertsList.length === 0 ? (
+                <div className="alertas-table-card">
+                    <div className="empty-alerts">
+                        <CheckCircle className="empty-alerts-icon" />
+                        <h3 className="empty-alerts-title">¡Todo en orden!</h3>
+                        <p className="empty-alerts-text">
+                            {searchQuery
+                                ? 'No se encontraron estudiantes con ese criterio de búsqueda'
+                                : 'No hay estudiantes con faltas injustificadas en este momento'}
+                        </p>
+                    </div>
+                </div>
             ) : (
                 <AlertsTable
                     alerts={filteredAlertsList}
@@ -161,13 +191,13 @@ const AlertasPage = () => {
                 onSubmit={submitJustification}
             />
 
-            {/* Renderizamos el Modal de Historial */}
+            {/* Modal de Historial */}
             <JustificationHistoryModal
                 isOpen={isHistoryModalOpen}
                 onClose={closeHistoryModal}
-                history={justificationHistory} // <--- Pasamos el historial
+                history={justificationHistory}
             />
-        </main>
+        </div>
     );
 };
 

@@ -574,3 +574,194 @@ main {
     padding: 6px;
   }
 }
+/* Desktop: Adaptaciones para sidebar colapsable */
+@media (min-width: 1024px) {
+  .main-content {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .main-content.sidebar-expanded {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+  }
+  
+  .main-content.sidebar-collapsed {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+  }
+  
+  .header {
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .app-layout:has(.sidebar:not(.collapsed)) .header {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+  }
+  
+  .app-layout:has(.sidebar.collapsed) .header {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+  }
+
+  .sidebar {
+    transform: translateX(0);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .sidebar.collapsed {
+    width: 70px;
+  }
+}
+
+/* Estilos adicionales para sidebar colapsable */
+.sidebar-header-buttons {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.sidebar-title {
+  white-space: nowrap;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar.collapsed .sidebar-title {
+  opacity: 0;
+  width: 0;
+}
+
+.sidebar-toggle,
+.sidebar-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-md);
+  color: var(--text-secondary);
+  transition: all 0.2s ease-in-out;
+  width: 36px;
+  height: 36px;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(74, 144, 226, 0.1);
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+.sidebar-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  transform: scale(1.1);
+}
+
+/* Mostrar/ocultar botones según el contexto */
+.desktop-only {
+  display: none;
+}
+
+.mobile-only {
+  display: flex;
+}
+
+@media (min-width: 1024px) {
+  .desktop-only {
+    display: flex;
+  }
+  
+  .mobile-only {
+    display: none;
+  }
+}
+
+/* Estilos para links del sidebar */
+.sidebar-link {
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-link svg {
+  flex-shrink: 0;
+  min-width: 20px;
+}
+
+.sidebar-link span {
+  transition: opacity 0.2s ease, width 0.2s ease;
+  overflow: hidden;
+}
+
+.sidebar.collapsed .sidebar-link span {
+  opacity: 0;
+  width: 0;
+}
+
+.sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: var(--spacing-sm);
+}
+
+/* Móvil: Sidebar como overlay */
+@media (max-width: 1023px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* Reposicionar sidebar debajo del header */
+@media (min-width: 1024px) {
+  .sidebar {
+    top: 70px;
+    height: calc(100vh - 70px);
+  }
+  
+  /* Eliminar adaptación del header al sidebar */
+  .app-layout .header {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* Ocultar botón de menú en desktop */
+@media (min-width: 1024px) {
+  .menu-button {
+    display: none;
+  }
+}
+
+/* Integrar sidebar con header - eliminar separación visual */
+@media (min-width: 1024px) {
+  .header {
+    border-bottom: none !important;
+    box-shadow: none !important;
+  }
+  
+  .sidebar {
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+    border-right: 1px solid var(--border-light);
+  }
+  
+  /* Agregar sombra sutil al conjunto header + sidebar */
+  .app-layout::after {
+    content: '';
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border-light) 280px, var(--border-light));
+    z-index: 99;
+    pointer-events: none;
+  }
+  
+  .app-layout:has(.sidebar.collapsed)::after {
+    background: linear-gradient(to right, transparent, var(--border-light) 70px, var(--border-light));
+  }
+}

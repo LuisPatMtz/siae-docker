@@ -137,42 +137,36 @@ const HistorialAccesosPage = () => {
     const accesosFiltrados = filtrarAccesos();
 
     return (
-        <div className="page-container">
-            <div className="page-header">
-                <h1>Historial de Accesos</h1>
-                <button onClick={exportarCSV} className="btn-export">
-                    <Download size={20} />
-                    Exportar CSV
-                </button>
+        <div className="historial-accesos-container">
+            <div className="historial-page-header">
+                <h1 className="historial-page-title">Historial de Accesos</h1>
+                <p className="historial-page-subtitle">Consulta y exporta el registro completo de accesos</p>
             </div>
 
             {/* Filtros */}
-            <div className="filtros-card">
-                <div className="filtros-header">
-                    <Filter size={20} />
-                    <span>Filtros</span>
-                </div>
-
-                <div className="filtros-grid">
-                    <div className="form-group">
-                        <label>
+            <div className="historial-filters-card">
+                <div className="filters-grid">
+                    <div className="filter-group">
+                        <label className="filter-label">
                             <Search size={16} />
                             Buscar Estudiante
                         </label>
                         <input
                             type="text"
+                            className="filter-input"
                             placeholder="Matrícula o nombre..."
                             value={filtros.matricula}
                             onChange={(e) => setFiltros({ ...filtros, matricula: e.target.value })}
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>
+                    <div className="filter-group">
+                        <label className="filter-label">
                             <User size={16} />
                             Grupo
                         </label>
                         <select
+                            className="filter-select"
                             value={filtros.grupoId}
                             onChange={(e) => setFiltros({ ...filtros, grupoId: e.target.value })}
                         >
@@ -185,51 +179,59 @@ const HistorialAccesosPage = () => {
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label>
+                    <div className="filter-group">
+                        <label className="filter-label">
                             <Calendar size={16} />
                             Fecha Inicio
                         </label>
                         <input
                             type="date"
+                            className="filter-input"
                             value={filtros.fechaInicio}
                             onChange={(e) => setFiltros({ ...filtros, fechaInicio: e.target.value })}
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>
+                    <div className="filter-group">
+                        <label className="filter-label">
                             <Calendar size={16} />
                             Fecha Fin
                         </label>
                         <input
                             type="date"
+                            className="filter-input"
                             value={filtros.fechaFin}
                             onChange={(e) => setFiltros({ ...filtros, fechaFin: e.target.value })}
                         />
                     </div>
                 </div>
 
-                <button onClick={limpiarFiltros} className="btn-limpiar">
-                    Limpiar Filtros
-                </button>
+                <div className="filters-actions">
+                    <button onClick={limpiarFiltros} className="btn-filter-action btn-clear-filters">
+                        Limpiar Filtros
+                    </button>
+                    <button onClick={exportarCSV} className="btn-filter-action btn-export">
+                        <Download size={18} />
+                        Exportar CSV
+                    </button>
+                </div>
             </div>
 
             {/* Estadísticas */}
-            <div className="stats-grid">
-                <div className="stat-card">
+            <div className="historial-stats-grid">
+                <div className="historial-stat-card stat-total">
                     <div className="stat-value">{accesosFiltrados.length}</div>
                     <div className="stat-label">Accesos Totales</div>
                 </div>
 
-                <div className="stat-card">
+                <div className="historial-stat-card stat-entradas">
                     <div className="stat-value">
                         {new Set(accesosFiltrados.map(a => a.nfc_uid)).size}
                     </div>
                     <div className="stat-label">Estudiantes Únicos</div>
                 </div>
 
-                <div className="stat-card">
+                <div className="historial-stat-card stat-salidas">
                     <div className="stat-value">
                         {new Set(accesosFiltrados.map(a =>
                             new Date(a.hora_registro).toISOString().split('T')[0]
@@ -240,66 +242,69 @@ const HistorialAccesosPage = () => {
             </div>
 
             {/* Tabla de Accesos */}
-            <div className="table-card">
-                {loading ? (
-                    <div className="loading-spinner">Cargando accesos...</div>
-                ) : (
-                    <table className="data-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Hora</th>
-                                <th>Matrícula</th>
-                                <th>Nombre</th>
-                                <th>Grupo</th>
-                                <th>NFC UID</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {accesosFiltrados.length === 0 ? (
+            <div className="historial-table-card">
+                <div className="table-container">
+                    {loading ? (
+                        <div className="loading-spinner">Cargando accesos...</div>
+                    ) : (
+                        <table className="historial-table">
+                            <thead>
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
-                                        No se encontraron accesos con los filtros aplicados
-                                    </td>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Matrícula</th>
+                                    <th>Nombre</th>
+                                    <th>Grupo</th>
+                                    <th>NFC UID</th>
                                 </tr>
-                            ) : (
-                                accesosFiltrados
-                                    .sort((a, b) => new Date(b.hora_registro) - new Date(a.hora_registro))
-                                    .map((acceso) => {
-                                        const estudiante = getEstudianteByNFC(acceso.nfc_uid);
-                                        const fecha = new Date(acceso.hora_registro);
+                            </thead>
+                            <tbody>
+                                {accesosFiltrados.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6">
+                                            <div className="empty-state">
+                                                <p className="empty-state-title">No se encontraron accesos</p>
+                                                <p className="empty-state-text">Intenta ajustar los filtros</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    accesosFiltrados
+                                        .sort((a, b) => new Date(b.hora_registro) - new Date(a.hora_registro))
+                                        .map((acceso) => {
+                                            const estudiante = getEstudianteByNFC(acceso.nfc_uid);
+                                            const fecha = new Date(acceso.hora_registro);
 
-                                        return (
-                                            <tr key={acceso.id}>
-                                                <td>{fecha.toLocaleDateString('es-MX')}</td>
-                                                <td>
-                                                    <Clock size={14} style={{ display: 'inline', marginRight: '5px' }} />
-                                                    {fecha.toLocaleTimeString('es-MX')}
-                                                </td>
-                                                <td>{estudiante?.matricula || 'N/A'}</td>
-                                                <td>
-                                                    {estudiante
-                                                        ? `${estudiante.nombre} ${estudiante.apellido}`
-                                                        : 'Desconocido'
-                                                    }
-                                                </td>
-                                                <td>
-                                                    {estudiante?.grupo && (
-                                                        <span className="badge-grupo">
-                                                            {estudiante.grupo.nombre}
-                                                        </span>
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <code className="nfc-code">{acceso.nfc_uid}</code>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                            )}
-                        </tbody>
-                    </table>
-                )}
+                                            return (
+                                                <tr key={acceso.id}>
+                                                    <td className="td-fecha">{fecha.toLocaleDateString('es-MX')}</td>
+                                                    <td className="td-hora">
+                                                        <Clock size={14} style={{ display: 'inline', marginRight: '5px' }} />
+                                                        {fecha.toLocaleTimeString('es-MX')}
+                                                    </td>
+                                                    <td>{estudiante?.matricula || 'N/A'}</td>
+                                                    <td className="td-estudiante">
+                                                        {estudiante
+                                                            ? `${estudiante.nombre} ${estudiante.apellido}`
+                                                            : 'Desconocido'
+                                                        }
+                                                    </td>
+                                                    <td className="td-grupo">
+                                                        {estudiante?.grupo?.nombre || '-'}
+                                                    </td>
+                                                    <td>
+                                                        <code style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
+                                                            {acceso.nfc_uid}
+                                                        </code>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                )}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
             </div>
         </div>
     );

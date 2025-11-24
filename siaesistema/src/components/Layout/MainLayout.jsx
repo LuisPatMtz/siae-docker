@@ -6,6 +6,7 @@ import Sidebar from './Sidebar.jsx';
 
 const MainLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -15,11 +16,20 @@ const MainLayout = () => {
     setIsSidebarOpen(false);
   };
 
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
     <div className="app-layout">
       <Header onMenuClick={toggleSidebar} />
-      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
-      <main className="main-content">
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={closeSidebar}
+        isCollapsed={isCollapsed}
+        toggleCollapse={toggleCollapse}
+      />
+      <main className={`main-content ${isCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
         <Outlet />
       </main>
     </div>
