@@ -1,5 +1,5 @@
 /* ========================================
-   LOGIN & LOADING STYLES - ACADEMIC DESIGN
+   LOGIN & LOADING STYLES - PREMIUM DESIGN
    ======================================== */
 
 /* ========================================
@@ -13,14 +13,15 @@
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background: var(--gradient-primary-dark);
-  background-size: 200% 200%;
-  animation: gradientShift 15s ease infinite;
+  background-image: url('/fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   padding: 1.5rem;
   position: relative;
 }
 
-/* Animated Background Pattern */
+/* Overlay with subtle gradient */
 .login-container::before {
   content: '';
   position: absolute;
@@ -28,48 +29,49 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image:
-    radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
-  animation: float 20s ease-in-out infinite;
+  background: linear-gradient(135deg,
+      rgba(30, 64, 175, 0.85) 0%,
+      rgba(59, 130, 246, 0.75) 50%,
+      rgba(99, 102, 241, 0.85) 100%);
+  animation: gradientPulse 8s ease-in-out infinite;
 }
 
-@keyframes gradientShift {
+@keyframes gradientPulse {
 
   0%,
   100% {
-    background-position: 0% 50%;
+    opacity: 0.85;
   }
 
   50% {
-    background-position: 100% 50%;
+    opacity: 0.75;
   }
 }
 
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
 
-  50% {
-    transform: translateY(-20px);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 .login-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
-  padding: 2.5rem 2.75rem;
+  padding: 2.5rem 3rem;
   border-radius: var(--radius-2xl);
   box-shadow:
     var(--shadow-2xl),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
   width: 100%;
-  max-width: 460px;
+  max-width: 450px;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: 1;
   animation: slideUp 0.6s var(--ease-out);
@@ -88,28 +90,25 @@
 
 .login-logo {
   font-size: 3rem;
-  font-weight: 900;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
   text-shadow: 0 2px 10px rgba(30, 64, 175, 0.2);
 }
 
 .login-title {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin: 0 auto 0.5rem;
+  margin: auto;
   line-height: 1.4;
   letter-spacing: -0.01em;
 }
 
 .login-subtitle {
-  font-size: 0.9375rem;
-  color: var(--text-secondary);
+  font-size: 0.875rem;
+  color: #6b7280;
   margin-top: 0.25rem;
   margin-bottom: 2rem;
   font-weight: 500;
@@ -126,24 +125,23 @@
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
 .input-group label {
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
 }
 
 .input-group input {
   font-family: var(--font-family-sans);
   font-size: 1rem;
-  padding: 0.875rem 1.125rem;
-  border: var(--input-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition-base);
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
   background-color: var(--surface);
   color: var(--text-primary);
 }
@@ -156,8 +154,7 @@
   outline: none;
   border-color: var(--primary);
   background-color: var(--white);
-  box-shadow: var(--shadow-glow-blue);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
 }
 
 .input-group input:hover:not(:focus) {
@@ -167,70 +164,43 @@
 .login-button {
   font-family: var(--font-family-sans);
   font-size: 1rem;
-  font-weight: 700;
-  color: var(--white);
-  background: var(--gradient-primary);
+  font-weight: 600;
+  color: white;
+  background-color: var(--primary);
   border: none;
-  padding: 1rem 1.5rem;
-  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-base);
-  box-shadow: var(--shadow-blue);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.75rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.login-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s ease;
-}
-
-.login-button:hover::before {
-  left: 100%;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-md);
+  margin-top: 0.5rem;
 }
 
 .login-button:hover {
-  background: var(--gradient-primary-dark);
+  background-color: var(--primary-dark);
   box-shadow: var(--shadow-blue-lg);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .login-button:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-blue);
 }
 
 .login-button:disabled {
-  background: var(--text-tertiary);
+  background-color: #9ca3af;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
-  opacity: 0.6;
-}
-
-.login-button:disabled::before {
-  display: none;
 }
 
 .login-error {
-  background: var(--bg-danger-light);
-  color: var(--danger-dark);
-  padding: 0.875rem 1.125rem;
-  border-radius: var(--radius-lg);
-  font-size: 0.9375rem;
-  font-weight: 600;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
   text-align: center;
-  border-left: 4px solid var(--danger);
-  box-shadow: var(--shadow-sm);
   animation: shake 0.4s ease;
 }
 
@@ -260,9 +230,10 @@
   justify-content: center;
   width: 100%;
   min-height: 100vh;
-  background: var(--gradient-primary-dark);
-  background-size: 200% 200%;
-  animation: gradientShift 15s ease infinite;
+  background-image: url('/fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   position: relative;
   overflow: hidden;
 }
@@ -274,15 +245,17 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image:
-    radial-gradient(circle at 30% 40%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 70% 70%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
-  animation: float 20s ease-in-out infinite;
+  background: linear-gradient(135deg,
+      rgba(30, 64, 175, 0.85) 0%,
+      rgba(59, 130, 246, 0.75) 50%,
+      rgba(99, 102, 241, 0.85) 100%);
+  animation: gradientPulse 8s ease-in-out infinite;
 }
 
 .loading-logo {
   font-size: 6rem;
   font-weight: 900;
+  color: var(--primary);
   letter-spacing: 0.05em;
   position: relative;
   z-index: 1;
@@ -290,13 +263,11 @@
 }
 
 .shimmer-animation {
-  animation: shimmer 2s infinite linear;
+  animation: shimmer 1.5s infinite linear;
   background: linear-gradient(90deg,
-      var(--primary-dark) 0%,
-      var(--primary-light) 25%,
-      var(--primary-lighter) 50%,
-      var(--primary-light) 75%,
-      var(--primary-dark) 100%);
+      var(--primary-dark) 25%,
+      var(--primary) 50%,
+      var(--primary-dark) 75%);
   background-size: 400% 100%;
   -webkit-background-clip: text;
   background-clip: text;
