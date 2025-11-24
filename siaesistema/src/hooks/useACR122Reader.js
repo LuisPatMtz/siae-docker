@@ -9,7 +9,7 @@ export function useACR122Reader(isActive = true) {
   const [isReaderConnected, setIsReaderConnected] = useState(false);
   const [error, setError] = useState(null);
   const [isReading, setIsReading] = useState(false);
-  
+
   const deviceRef = useRef(null);
   const pollingIntervalRef = useRef(null);
   const inputBufferRef = useRef('');
@@ -35,7 +35,7 @@ export function useACR122Reader(isActive = true) {
       }
 
       const device = devices[0];
-      
+
       if (!device.opened) {
         await device.open();
       }
@@ -48,10 +48,10 @@ export function useACR122Reader(isActive = true) {
       device.addEventListener('inputreport', handleInputReport);
 
       console.log('✅ ACR122 conectado exitosamente (HID)');
-      
+
       // Iniciar polling
       startPolling();
-      
+
       return true;
     } catch (err) {
       console.error('❌ Error conectando ACR122:', err);
@@ -65,7 +65,7 @@ export function useACR122Reader(isActive = true) {
   const handleInputReport = (event) => {
     const { data, reportId } = event;
     console.log('HID Input Report:', reportId, new Uint8Array(data.buffer));
-    
+
     // Procesar datos del reporte
     processHIDData(new Uint8Array(data.buffer));
   };
@@ -95,8 +95,9 @@ export function useACR122Reader(isActive = true) {
   // Procesar UID completo
   const processCompleteUID = () => {
     const uid = inputBufferRef.current.trim();
-    
-    if (uid.length >= 8 && /^[0-9A-F]+$/i.test(uid)) {
+
+    // Soporta tarjetas NFC (8 chars) y stickers NFC (14+ chars)
+    if (uid.length >= 8 && uid.length <= 20 && /^[0-9A-F]+$/i.test(uid)) {
       console.log('✅ UID detectado:', uid);
       setNfcData({
         uid: uid.toUpperCase(),
@@ -104,7 +105,7 @@ export function useACR122Reader(isActive = true) {
         readerType: 'ACR122 (HID)'
       });
     }
-    
+
     inputBufferRef.current = '';
   };
 
@@ -148,7 +149,7 @@ export function useACR122Reader(isActive = true) {
   const disconnectReader = async () => {
     try {
       stopPolling();
-      
+
       if (deviceRef.current) {
         deviceRef.current.removeEventListener('inputreport', handleInputReport);
         await deviceRef.current.close();
@@ -174,7 +175,7 @@ export function useACR122Reader(isActive = true) {
       if ('hid' in navigator) {
         const devices = await navigator.hid.getDevices();
         const acr122 = devices.find(d => d.vendorId === 0x072f);
-        
+
         if (acr122 && !acr122.opened) {
           try {
             await acr122.open();

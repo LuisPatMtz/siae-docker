@@ -130,7 +130,7 @@ const useStudents = (isLinkListViewVisible) => {
         };
 
         try {
-            const response = await apiClient.post('/nfc/vincular', linkData);
+            const response = await apiClient.post('/nfc', linkData);
             const linkedCard = response.data;
 
             showSuccess(`¡NFC vinculado a ${studentToLink.nombre} ${studentToLink.apellido} correctamente!`);

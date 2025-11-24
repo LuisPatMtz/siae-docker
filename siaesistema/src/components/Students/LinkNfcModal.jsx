@@ -66,9 +66,9 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
         return () => clearInterval(intervalId);
     }, [isOpen, readingsCount, isSaving]);
 
-    // Función para validar formato UID (8 caracteres hexadecimales)
+    // Función para validar formato UID (8-14 caracteres hexadecimales)
     const isValidUID = (uid) => {
-        return /^[0-9A-F]{8}$/.test(uid);
+        return /^[0-9A-F]{8,14}$/.test(uid);
     };
 
     // Función para procesar una nueva lectura
@@ -76,7 +76,7 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
         const cleanUID = newUID.trim().toUpperCase();
 
         if (!isValidUID(cleanUID)) {
-            setError('Formato inválido. Debe ser 8 caracteres hexadecimales (ej: 29115803)');
+            setError('Formato inválido. Debe ser 8-14 caracteres hexadecimales (ej: FE435603 o FF0FB4FCB20000)');
             return;
         }
 
@@ -157,8 +157,8 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
             }
 
             if (value.length >= 8) {
-                // Tomar los primeros 8 caracteres válidos
-                const uid = value.substring(0, 8);
+                // Tomar los primeros 8-14 caracteres válidos
+                const uid = value.substring(0, Math.min(value.length, 14));
 
                 if (isValidUID(uid)) {
                     processReading(uid);
@@ -215,7 +215,7 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
                             autoFocus
                             autoComplete="off"
                             disabled={isSaving || readingsCount >= 3}
-                            maxLength={8}
+                            maxLength={14}
                             className="nfc-hidden-input"
                             placeholder="Lector NFC activo..."
                         />

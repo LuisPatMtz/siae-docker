@@ -210,7 +210,7 @@ export const nfcService = {
 
     vincular: async (nfcData) => {
         // Endpoint alternativo para vincular NFC
-        const response = await apiClient.post('/nfc/vincular', nfcData);
+        const response = await apiClient.post('/nfc', nfcData);
         return response.data;
     },
 
@@ -239,7 +239,7 @@ export const accesosService = {
         if (fechaRegistro) {
             payload.fecha_registro = fechaRegistro;
         }
-        const response = await apiClient.post('/acceso/registrar', payload);
+        const response = await apiClient.post('/asistencia/registrar-nfc', payload);
         return response.data;
     },
 

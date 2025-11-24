@@ -64,16 +64,13 @@ const RegistroAccesoPage = () => {
             const fechaParaRegistro = modoManual ? fechaSeleccionada : null;
             const acceso = await accesosService.registrar(nfcUid, fechaParaRegistro);
 
-            // Obtener información del estudiante asociado
-            const estudiantes = await estudiantesService.getAll();
-            const estudiante = estudiantes.find(est => est.nfc?.nfc_uid === nfcUid);
-
+            // Usar la información del estudiante que viene en la respuesta
             setEstado('exito');
             setUltimoAcceso({
-                estudiante: estudiante || { nombre: 'Desconocido', apellido: '', grupo: null },
-                hora: new Date(acceso.hora_registro).toLocaleTimeString('es-MX'),
-                fecha: new Date(acceso.hora_registro).toLocaleDateString('es-MX'),
-                tipo: 'NFC'
+                estudiante: acceso.estudiante,
+                hora: new Date(acceso.timestamp).toLocaleTimeString('es-MX'),
+                fecha: new Date(acceso.timestamp).toLocaleDateString('es-MX'),
+                tipo: acceso.tipo
             });
             setMensaje('¡Acceso registrado exitosamente!');
 
@@ -196,9 +193,11 @@ const RegistroAccesoPage = () => {
         }
 
         timeoutRef.current = setTimeout(() => {
+            // Soporta tarjetas (8) y stickers (14)
             if (value.length >= 8) {
-                const uid = value.substring(0, 8);
-                if (/^[0-9A-F]{8}$/.test(uid)) {
+                const uid = value.substring(0, Math.min(value.length, 14));
+                // Validar formato hexadecimal de 8 a 14 caracteres
+                if (/^[0-9A-F]{8,14}$/.test(uid)) {
                     registrarAcceso(uid);
                     if (inputRef.current) {
                         inputRef.current.value = '';
@@ -284,7 +283,7 @@ const RegistroAccesoPage = () => {
                     onChange={handleInputChange}
                     autoFocus
                     autoComplete="off"
-                    maxLength={8}
+                    maxLength={14}
                     className="nfc-capture-input"
                     placeholder="Lector NFC activo..."
                 />
@@ -331,7 +330,9 @@ const RegistroAccesoPage = () => {
                             {ultimoAcceso.estudiante.grupo && (
                                 <div className="detalle-item">
                                     <span className="badge-grupo">
-                                        {ultimoAcceso.estudiante.grupo}
+                                        {typeof ultimoAcceso.estudiante.grupo === 'object'
+                                            ? ultimoAcceso.estudiante.grupo?.nombre
+                                            : ultimoAcceso.estudiante.grupo}
                                     </span>
                                 </div>
                             )}
@@ -343,7 +344,7 @@ const RegistroAccesoPage = () => {
                 <div className="historial-hoy">
                     <h3>Asistencias de Hoy ({historialHoy.length})</h3>
                     <div className="historial-lista">
-                        {historialHoy.slice(0, 15).map((asistencia, index) => (
+                        {Array.isArray(historialHoy) && historialHoy.slice(0, 15).map((asistencia, index) => (
                             <div key={asistencia.id} className="historial-item">
                                 <span className="historial-hora">
                                     {new Date(asistencia.timestamp).toLocaleTimeString('es-MX', {
@@ -358,7 +359,9 @@ const RegistroAccesoPage = () => {
                                     {asistencia.estudiante.nombre} {asistencia.estudiante.apellido}
                                 </span>
                                 <span className="historial-grupo">
-                                    {asistencia.estudiante.grupo || 'Sin grupo'}
+                                    {typeof asistencia.estudiante.grupo === 'object'
+                                        ? asistencia.estudiante.grupo?.nombre || 'Sin grupo'
+                                        : asistencia.estudiante.grupo || 'Sin grupo'}
                                 </span>
                             </div>
                         ))}
