@@ -7,7 +7,8 @@ from app.models.grupo import Grupo, GrupoCreate, GrupoRead, GrupoUpdate
 from app.models.usuario import Usuario
 from app.models.estudiante import Estudiante, EstudianteCreate, EstudianteRead, EstudianteUpdate, EstudianteBulkMoveGrupo
 from app.models.nfc import NFC, NFCCreate, NFCRead, NfcPayload
-from app.models.acceso import Acceso, AccesoCreate, AccesoRead
+from app.models.asistencia import Asistencia, AsistenciaCreate, AsistenciaRead
+from app.models.alerta import Alerta, AlertaCreate, AlertaRead
 from app.models.falta import Falta, FaltaCreate, FaltaRead, FaltaUpdate
 from app.models.auth import Token, TokenData, UserRead, UserReadWithPermissions, AdminUserCreate, UserPermissionsUpdate, UserUpdate, UserPermissionData
 from app.models.dashboard import StatsData, TurnoDataResponse, GrupoAsistenciaResponse
@@ -21,7 +22,8 @@ __all__ = [
     "Usuario",
     "Estudiante",
     "NFC",
-    "Acceso",
+    "Asistencia",
+    "Alerta",
     "Falta",
     # DTOs Ciclo
     "CicloEscolarCreate",
@@ -41,9 +43,12 @@ __all__ = [
     "NFCCreate",
     "NFCRead",
     "NfcPayload",
-    # DTOs Acceso
-    "AccesoCreate",
-    "AccesoRead",
+    # DTOs Asistencia
+    "AsistenciaCreate",
+    "AsistenciaRead",
+    # DTOs Alerta
+    "AlertaCreate",
+    "AlertaRead",
     # DTOs Falta
     "FaltaCreate",
     "FaltaRead",

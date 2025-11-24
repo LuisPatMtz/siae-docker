@@ -1,170 +1,73 @@
 import React, { useState, useEffect } from 'react';
-import apiClient from '../api/axios'; // Importa tu cliente Axios
-
-// --- 1. Importa los componentes ---
+import { PlusCircle, Trash2, Search } from 'lucide-react';
 import UserPermissionCard from '../components/Users/UserPermissionCard.jsx';
 import AddUserModal from '../components/Users/AddUserModal.jsx';
 import EditUserModal from '../components/Users/EditUserModal.jsx';
 import DeleteUserSelectModal from '../components/Users/DeleteUserSelectModal.jsx';
 import DeleteConfirmModal from '../components/Users/DeleteConfirmModal.jsx';
 import { useToast } from '../components/UI/ToastContainer.jsx';
+import useUsers from '../hooks/useUsers';
 
-    // --- 2. Importa los iconos que usa esta página ---
-import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = () => {
-    const [users, setUsers] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+const GestionUsuariosPage = () => {
+    // Hook de lógica de usuarios
+    const {
+        users, isLoading, searchTerm, setSearchTerm, filteredUsers,
+        createUser, updateUser, deleteUser, updatePermission
+    } = useUsers();
+
+    // Estados UI para Modales
     const [isDeleteSelectOpen, setIsDeleteSelectOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [userToDelete, setUserToDelete] = useState({ id: null, name: '' });
     const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
     const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
     const [userToEdit, setUserToEdit] = useState(null);
-    
-    // Estado para feedback general (ej. 'Permisos actualizados')
-    const [feedback, setFeedback] = useState({ message: '', type: '' });
-    const [isSaving, setIsSaving] = useState(false); // Estado de carga genérico para modals
-    
-    // Hook para notificaciones toast
-    const { showSuccess, showError, showWarning, ToastContainer } = useToast();
-    
-    // Temporizador para limpiar el feedback
-    useEffect(() => {
-        if (feedback.message) {
-            const timer = setTimeout(() => {
-                setFeedback({ message: '', type: '' });
-            }, 3000); // Oculta después de 3 segundos
-            return () => clearTimeout(timer);
-        }
-    }, [feedback]);
 
+    // Estado para feedback general (ej. 'Permisos actualizados') - Aunque useUsers maneja toasts, 
+    // el componente original tenía un estado local 'feedback' que se mostraba (aunque no lo veo renderizado en el código original, 
+    // solo se seteaba y limpiaba con timeout, pero no se usaba en el JSX visible en el snippet anterior. 
+    // Revisando el snippet anterior: lines 30-44 setFeedback, pero no veo {feedback.message} en el JSX.
+    // Asumiré que se usaba para algo o era código muerto. Lo quitaré si no se usa, o lo dejaré si es crítico.
+    // El snippet original usaba useToast también. useUsers usa useToast.
+    // Voy a confiar en useToast del hook.
 
-    // *** INTERRUPTOR #1: Cargar la lista de usuarios ***
-    const fetchUsers = async () => {
-        setIsLoading(true);
-        try {
-            // --- CONEXIÓN API ---
-            const response = await apiClient.get('/users');
-            setUsers(response.data);
-            // --------------------
-        } catch (error) {
-            console.error("Error al obtener usuarios:", error);
-            showError('Error al cargar la lista de usuarios');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    // Carga los usuarios al montar el componente
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    const [isSaving, setIsSaving] = useState(false); // Estado de carga genérico para modals (UI state)
 
-    // *** INTERRUPTOR #2: Actualizar un permiso ***
-    const handlePermissionChange = async (userId, permissionKey, newValue) => {
-        // Optimistic UI: Actualiza el estado local primero
-        const originalUsers = [...users]; // Crear una copia para evitar referencias
-        
-        // Encuentra el usuario específico
-        const targetUser = originalUsers.find(u => u.id === userId);
-        if (!targetUser) {
-            showError('Usuario no encontrado');
-            return;
-        }
-        
-        setUsers(currentUsers => {
-            const updatedUsers = currentUsers.map(user => {
-                if (user.id === userId) {
-                    return { 
-                        ...user, 
-                        permissions: { 
-                            ...user.permissions, 
-                            [permissionKey]: newValue 
-                        } 
-                    };
-                }
-                return { ...user }; // Crear nueva referencia para todos los usuarios
-            });
-            return updatedUsers;
-        });
+    const { ToastContainer } = useToast(); // Solo necesitamos el container, las funciones las usa el hook
 
-        const currentUser = originalUsers.find(u => u.id === userId);
-        if (!currentUser) return;
-        
-        const updatedPermissions = {
-             ...currentUser.permissions, 
-             [permissionKey]: newValue 
-        };
+    // Handlers UI -> Hook Calls
 
-        try {
-            // --- CONEXIÓN API ---
-            // Llama a la API en segundo plano
-            await apiClient.patch(`/users/${userId}/permissions`, {
-                permissions: updatedPermissions 
-            });
-            // --------------------
-            showSuccess('Permisos actualizados correctamente');
-            
-        } catch (error) {
-            console.error("Error al actualizar permiso:", error);
-            showError('Error al guardar el permiso. Cambios revertidos.');
-            // Rollback: Si la API falla, revierte el cambio en el estado local
-            setUsers(originalUsers);
-        }
-    };
-
-    // --- Funciones para Modal Agregar Usuario ---
+    // Agregar Usuario
     const openAddUserModal = () => setIsAddUserModalOpen(true);
     const closeAddUserModal = () => setIsAddUserModalOpen(false);
 
-    // *** INTERRUPTOR #3: Agregar Nuevo Usuario ***
     const handleAddUser = async (newUserData) => {
-        // Esta función 'lanza' un error si la API falla, que el modal (AddUserModal) atrapa
-        // --- CONEXIÓN API ---
-        const response = await apiClient.post('/users', newUserData);
-        const createdUser = response.data; // El usuario creado con su ID real
-        // --------------------
-
-        // Si la API tiene éxito, actualiza el estado local
-        setUsers(currentUsers => [...currentUsers, createdUser]);
-        showSuccess(`Usuario "${createdUser.full_name || createdUser.username}" creado exitosamente`);
-        // El modal se cierra solo desde su propio 'handleSubmit'
+        // El hook lanza error si falla, el modal lo atrapa si es necesario, o aquí.
+        // El modal original atrapaba errores?
+        // El código original de handleAddUser no tenía try/catch, decía "Esta función 'lanza' un error si la API falla, que el modal (AddUserModal) atrapa".
+        // Así que createUser debe lanzar error. (Lo hace).
+        await createUser(newUserData);
+        // Si no lanza error, éxito.
+        // El modal se cierra solo desde su propio 'handleSubmit' en el código original?
+        // "El modal se cierra solo desde su propio 'handleSubmit'" -> comment in original.
     };
 
-    // --- Funciones para Modal Editar Usuario ---
+    // Editar Usuario
     const openEditUserModal = (user) => {
         setUserToEdit(user);
         setIsEditUserModalOpen(true);
     };
-    
+
     const closeEditUserModal = () => {
         setIsEditUserModalOpen(false);
         setUserToEdit(null);
     };
 
-    // *** INTERRUPTOR #3B: Actualizar Usuario Existente ***
     const handleEditUser = async (userId, updatedUserData) => {
-        try {
-            // --- CONEXIÓN API ---
-            const response = await apiClient.put(`/users/${userId}`, updatedUserData);
-            const updatedUser = response.data;
-            // --------------------
-
-            // Actualizar el estado local con los nuevos datos
-            setUsers(currentUsers => 
-                currentUsers.map(user => 
-                    user.id === userId ? updatedUser : user
-                )
-            );
-            showSuccess(`Usuario "${updatedUser.full_name || updatedUser.username}" actualizado exitosamente`);
-        } catch (error) {
-            console.error("Error al actualizar usuario:", error);
-            const apiErrorMessage = error.response?.data?.detail || 'Error al actualizar el usuario';
-            showError(apiErrorMessage);
-            throw error;
-        }
+        await updateUser(userId, updatedUserData);
     };
 
-    // --- Funciones para Eliminar Usuario ---
+    // Eliminar Usuario
     const openDeleteUserModal = () => setIsDeleteSelectOpen(true);
     const closeDeleteUserModal = () => {
         setIsDeleteSelectOpen(false);
@@ -179,57 +82,44 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
         setIsDeleteConfirmOpen(false);
         setUserToDelete({ id: null, name: '' });
     };
-    
-    // *** INTERRUPTOR #4: Confirmar Eliminación ***
+
     const confirmDeleteUser = async () => {
         if (!userToDelete.id) return;
-        
+
         setIsSaving(true);
         try {
-            // --- CONEXIÓN API ---
-            await apiClient.delete(`/users/${userToDelete.id}`);
-            // --------------------
-            
-            setUsers(currentUsers => currentUsers.filter(user => user.id !== userToDelete.id));
-            showSuccess(`Usuario "${userToDelete.name}" eliminado correctamente`);
+            await deleteUser(userToDelete.id, userToDelete.name);
             closeDeleteConfirm();
-            
         } catch (error) {
-             console.error(`Error al eliminar usuario ${userToDelete.id}:`, error);
-             // Muestra el error de la API si existe (ej. "No se puede eliminar al admin")
-             const apiErrorMessage = error.response?.data?.detail || 'Error al eliminar el usuario.';
-             showError(apiErrorMessage);
+            // Error handled in hook (toast), but we catch here to stop loading state
         } finally {
             setIsSaving(false);
         }
     };
 
-    // Handler para eliminar un usuario individual desde su tarjeta
     const handleIndividualDelete = async (userId, userName) => {
-        try {
-            // --- CONEXIÓN API ---
-            await apiClient.delete(`/users/${userId}`);
-            // --------------------
-            
-            setUsers(currentUsers => currentUsers.filter(user => user.id !== userId));
-            showSuccess(`Usuario "${userName}" eliminado exitosamente`);
-            
-        } catch (error) {
-            console.error('Error eliminando usuario:', error);
-            // Muestra el error de la API si existe
-            const apiErrorMessage = error.response?.data?.detail || 'Error al eliminar el usuario.';
-            showError(apiErrorMessage);
-            throw error; // Re-lanza el error para que el componente pueda manejarlo
-        }
+        await deleteUser(userId, userName);
+    };
+
+    const handlePermissionChange = (userId, permissionKey, newValue) => {
+        updatePermission(userId, permissionKey, newValue);
     };
 
     return (
         <main className="dashboard-main">
-            <div className="page-actions-bar">
-                <p className="page-subtitle">
-                    Asigna o revoca permisos a los perfiles de usuario que acceden al sistema.
-                </p>
-                <button className="action-button add-button" onClick={openAddUserModal}>
+            {/* Premium Toolbar */}
+            <div className="users-toolbar">
+                <div className="search-container">
+                    <Search className="search-icon" size={20} />
+                    <input
+                        type="text"
+                        className="search-input-premium"
+                        placeholder="Buscar usuarios por nombre, rol o usuario..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+                <button className="users-btn users-btn-primary" onClick={openAddUserModal}>
                     <PlusCircle size={18} />
                     Agregar Usuario
                 </button>
@@ -237,20 +127,31 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
 
             {isLoading ? (
                 <div className="loading-message">Cargando usuarios...</div>
+            ) : filteredUsers.length > 0 ? (
+                <div className="users-grid-container">
+                    {filteredUsers.map(user => (
+                        <UserPermissionCard
+                            key={`user-${user.id}-${user.username}`}
+                            user={user}
+                            onPermissionChange={handlePermissionChange}
+                            onDelete={handleIndividualDelete}
+                            onEdit={openEditUserModal}
+                        />
+                    ))}
+                </div>
             ) : (
-                <div className="user-cards-grid">
-                    {users.length > 0 ? (
-                        users.map(user => (
-                            <UserPermissionCard
-                                key={`user-${user.id}-${user.username}`}
-                                user={user}
-                                onPermissionChange={handlePermissionChange}
-                                onDelete={handleIndividualDelete}
-                                onEdit={openEditUserModal}
-                            />
-                        ))
-                    ) : (
-                        <p>No se encontraron usuarios. Puedes agregar uno para comenzar.</p>
+                <div className="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <h3>{searchTerm ? 'No se encontraron resultados' : 'No hay usuarios registrados'}</h3>
+                    <p>{searchTerm ? `No hay usuarios que coincidan con "${searchTerm}"` : 'Comienza agregando tu primer usuario al sistema'}</p>
+                    {!searchTerm && (
+                        <button className="users-btn users-btn-primary" onClick={openAddUserModal}>
+                            <PlusCircle size={18} />
+                            Agregar Primer Usuario
+                        </button>
                     )}
                 </div>
             )}
@@ -276,16 +177,11 @@ import { PlusCircle, Trash2 } from 'lucide-react';const GestionUsuariosPage = ()
                 onConfirmSelection={handleConfirmSelection}
             />
 
-            {/* Tu DeleteConfirmModal (código 2) no acepta 'isSaving'. 
-                Recomiendo actualizarlo para que los botones se deshabiliten, 
-                pero este código funcionará de todos modos.
-            */}
             <DeleteConfirmModal
                 isOpen={isDeleteConfirmOpen}
                 onClose={closeDeleteConfirm}
                 onConfirm={confirmDeleteUser}
                 userName={userToDelete.name}
-                // isSaving={isSaving} // Descomenta si actualizas DeleteConfirmModal
             />
 
             {/* Contenedor de notificaciones toast */}

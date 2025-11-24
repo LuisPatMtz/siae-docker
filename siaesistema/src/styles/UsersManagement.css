@@ -1,0 +1,439 @@
+/* ===================================
+   GESTIÓN DE USUARIOS - ESTILOS PREMIUM
+   =================================== */
+
+/* Variables locales para aislamiento */
+:root {
+    --users-primary: #3b82f6;
+    --users-primary-dark: #2563eb;
+    --users-success: #10b981;
+    --users-danger: #ef4444;
+    --users-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --users-glass-bg: rgba(255, 255, 255, 0.9);
+    --users-glass-border: rgba(255, 255, 255, 0.2);
+    --users-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --users-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --users-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* ===================================
+   TOOLBAR & SEARCH
+   =================================== */
+
+.users-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f3f4f6;
+    width: 100%;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    flex: 1;
+    min-width: 280px;
+    max-width: 500px;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.search-input-premium {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1f2937;
+    background: #f9fafb;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.search-input-premium::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.search-input-premium:focus {
+    background: white;
+    border-color: var(--users-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ===================================
+   USERS GRID CONTAINER
+   =================================== */
+
+.users-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0.5rem;
+}
+
+/* ===================================
+   ACTION BUTTONS
+   =================================== */
+
+.users-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--users-shadow-sm);
+}
+
+.users-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--users-shadow-md);
+}
+
+.users-btn:active {
+    transform: translateY(0);
+}
+
+.users-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+}
+
+.users-btn-primary:hover {
+    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* ===================================
+   USER PERMISSION CARDS
+   =================================== */
+
+.user-permission-card {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: var(--users-shadow-sm);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-permission-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--users-shadow-lg);
+    border-color: var(--users-primary);
+}
+
+/* User Info Header */
+.user-info-header {
+    padding: 1rem;
+    background: linear-gradient(to right, #f8fafc, #ffffff);
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+}
+
+.user-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 0.25rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-role-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: #eff6ff;
+    color: var(--users-primary);
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #dbeafe;
+}
+
+.user-username {
+    display: block;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+/* ===================================
+   PERMISSIONS LIST
+   =================================== */
+
+.permissions-list {
+    padding: 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    flex: 1;
+    background: #ffffff;
+}
+
+.permission-toggle-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.permission-toggle-item:hover {
+    background: white;
+    border-color: #e5e7eb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.permission-toggle-label label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4b5563;
+    cursor: pointer;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ===================================
+   TOGGLE SWITCH
+   =================================== */
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+.toggle-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked+.slider {
+    background: var(--users-success);
+}
+
+.toggle-switch input:checked+.slider:before {
+    transform: translateX(16px);
+}
+
+/* ===================================
+   CARD ACTIONS
+   =================================== */
+
+.card-actions-group {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.edit-user-btn,
+.delete-user-btn-full {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid transparent;
+}
+
+.edit-user-btn {
+    background: white;
+    color: var(--users-primary);
+    border-color: #dbeafe;
+}
+
+.edit-user-btn:hover {
+    border-color: var(--users-primary);
+    background: #eff6ff;
+}
+
+.delete-user-btn-full {
+    background: white;
+    color: #6b7280;
+    border-color: #e5e7eb;
+}
+
+.delete-user-btn-full:hover {
+    border-color: var(--users-danger);
+    color: var(--users-danger);
+    background: #fef2f2;
+}
+
+/* ===================================
+   LOADING & EMPTY STATES
+   =================================== */
+
+.loading-message {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 16px;
+    border: 2px dashed #e5e7eb;
+    margin-top: 2rem;
+}
+
+.empty-state svg {
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+
+@media (max-width: 1200px) {
+    .users-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .users-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .search-container {
+        min-width: auto;
+        max-width: 100%;
+    }
+
+    .users-grid-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        padding: 0;
+    }
+
+    .users-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .search-input-premium {
+        font-size: 0.875rem;
+        padding: 0.625rem 1rem 0.625rem 2.5rem;
+    }
+
+    .search-icon {
+        left: 12px;
+    }
+}

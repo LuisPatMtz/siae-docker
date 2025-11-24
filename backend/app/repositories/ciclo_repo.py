@@ -27,6 +27,11 @@ class CicloRepository(ICicloRepository):
         statement = select(CicloEscolar).where(CicloEscolar.activo == True)
         return self.session.exec(statement).first()
     
+    def get_by_nombre(self, nombre: str) -> Optional[CicloEscolar]:
+        """Obtiene un ciclo por su nombre"""
+        statement = select(CicloEscolar).where(CicloEscolar.nombre == nombre)
+        return self.session.exec(statement).first()
+    
     def create(self, ciclo_data: CicloEscolarCreate) -> CicloEscolar:
         """Crea un nuevo ciclo"""
         db_ciclo = CicloEscolar.model_validate(ciclo_data)

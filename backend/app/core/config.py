@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings
 import pytz
 
 
+from pydantic import Field
+
 class Settings(BaseSettings):
     """Configuración de la aplicación usando variables de entorno"""
     
@@ -15,18 +17,24 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "siae_admin"
     POSTGRES_PASSWORD: str = "admin123"
     POSTGRES_DB: str = "siae_db"
-    POSTGRES_HOST: str = "siae-postgres"
+    POSTGRES_HOST: str = "localhost" # Changed default to localhost based on user input
     POSTGRES_PORT: int = 5432
     
-    # Database URL construida
+    # Database URL
+    # Prioridad: 1. Variable de entorno (Docker) 2. Construida desde variables (Local Postgres)
+    # Usamos un alias para capturar la variable de entorno DATABASE_URL si existe
+    DB_CONNECTION_STR: Optional[str] = Field(None, alias="DATABASE_URL")
+
     @property
     def DATABASE_URL(self) -> str:
+        if self.DB_CONNECTION_STR:
+            return self.DB_CONNECTION_STR
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
     
     # Security
     SECRET_KEY: str = "your-secret-key-here-change-in-production"
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 horas
     
     # Application
     APP_NAME: str = "SIAE"

@@ -1,7 +1,8 @@
 // src/pages/RegistroAccesoPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { CheckCircle, XCircle, Clock, User, Calendar } from 'lucide-react';
-import { accesosService, ciclosService, estudiantesService } from '../api/services';
+import { CheckCircle, XCircle, Clock, User, Calendar, Hash } from 'lucide-react';
+import { accesosService, ciclosService, estudiantesService, asistenciaService } from '../api/services';
+import '../styles/registro-acceso.css';
 
 const RegistroAccesoPage = () => {
     const [nfcInput, setNfcInput] = useState('');
@@ -13,13 +14,25 @@ const RegistroAccesoPage = () => {
     const [fechaSeleccionada, setFechaSeleccionada] = useState(
         new Date().toISOString().split('T')[0]
     );
+
+    // Estados para registro por matrícula
+    const [matriculaInput, setMatriculaInput] = useState('');
+    const [isRegistrandoMatricula, setIsRegistrandoMatricula] = useState(false);
+
     const inputRef = useRef(null);
+    const matriculaInputRef = useRef(null);
     const timeoutRef = useRef(null);
 
-    // Mantener el foco en el input
+    // Mantener el foco en el input NFC solo cuando no se está usando el input de matrícula
     useEffect(() => {
         const intervalId = setInterval(() => {
-            if (inputRef.current && document.activeElement !== inputRef.current) {
+            // No forzar foco si el usuario está en el input de matrícula o en un botón
+            const activeElement = document.activeElement;
+            const isMatriculaInput = activeElement === matriculaInputRef.current;
+            const isButton = activeElement?.tagName === 'BUTTON';
+            const isInput = activeElement?.tagName === 'INPUT' && activeElement !== inputRef.current;
+
+            if (inputRef.current && !isMatriculaInput && !isButton && !isInput) {
                 inputRef.current.focus();
             }
         }, 100);
@@ -34,19 +47,9 @@ const RegistroAccesoPage = () => {
 
     const cargarHistorialHoy = async () => {
         try {
-            const hoy = new Date().toISOString().split('T')[0];
-            // Obtener ciclo activo primero
-            const cicloActivo = await ciclosService.getActivo();
-            
-            if (cicloActivo) {
-                const accesos = await accesosService.getByCiclo(cicloActivo.id);
-                // Filtrar solo los accesos de hoy
-                const accesosHoy = accesos.filter(acceso => {
-                    const fechaAcceso = new Date(acceso.hora_registro).toISOString().split('T')[0];
-                    return fechaAcceso === hoy;
-                });
-                setHistorialHoy(accesosHoy);
-            }
+            // Cargar asistencias (entrada/salida por matrícula)
+            const asistencias = await asistenciaService.getAsistenciasHoy();
+            setHistorialHoy(asistencias);
         } catch (error) {
             console.error('Error al cargar historial:', error);
         }
@@ -69,7 +72,8 @@ const RegistroAccesoPage = () => {
             setUltimoAcceso({
                 estudiante: estudiante || { nombre: 'Desconocido', apellido: '', grupo: null },
                 hora: new Date(acceso.hora_registro).toLocaleTimeString('es-MX'),
-                fecha: new Date(acceso.hora_registro).toLocaleDateString('es-MX')
+                fecha: new Date(acceso.hora_registro).toLocaleDateString('es-MX'),
+                tipo: 'NFC'
             });
             setMensaje('¡Acceso registrado exitosamente!');
 
@@ -88,11 +92,11 @@ const RegistroAccesoPage = () => {
             if (error.response?.status === 409) {
                 setEstado('duplicado');
                 setMensaje(error.response.data.detail || 'Ya se registró un acceso hoy para este estudiante.');
-                
+
                 // Intentar obtener el estudiante para mostrar su información
                 const estudiantes = await estudiantesService.getAll();
                 const estudiante = estudiantes.find(est => est.nfc?.nfc_uid === nfcUid);
-                
+
                 if (estudiante) {
                     setUltimoAcceso({
                         estudiante: estudiante,
@@ -100,7 +104,7 @@ const RegistroAccesoPage = () => {
                         fecha: new Date().toLocaleDateString('es-MX')
                     });
                 }
-                
+
                 setTimeout(() => {
                     setEstado('esperando');
                     setMensaje('Acerque la tarjeta NFC al lector...');
@@ -109,7 +113,7 @@ const RegistroAccesoPage = () => {
             } else {
                 // Otros errores
                 setEstado('error');
-                
+
                 if (error.response?.status === 404) {
                     setMensaje('Tarjeta NFC no reconocida. Por favor, vincule la tarjeta primero.');
                 } else if (error.response?.status === 400) {
@@ -123,6 +127,64 @@ const RegistroAccesoPage = () => {
                     setMensaje('Acerque la tarjeta NFC al lector...');
                 }, 4000);
             }
+        }
+    };
+
+    const registrarAsistenciaPorMatricula = async () => {
+        if (!matriculaInput.trim()) {
+            setEstado('error');
+            setMensaje('Por favor ingrese una matrícula válida.');
+            setTimeout(() => {
+                setEstado('esperando');
+                setMensaje('Acerque la tarjeta NFC al lector...');
+            }, 3000);
+            return;
+        }
+
+        setIsRegistrandoMatricula(true);
+        setEstado('procesando');
+        setMensaje('Registrando asistencia...');
+
+        try {
+            const resultado = await asistenciaService.registrarPorMatricula(matriculaInput.trim());
+
+            setEstado('exito');
+            setUltimoAcceso({
+                estudiante: resultado.estudiante,
+                hora: new Date(resultado.timestamp).toLocaleTimeString('es-MX'),
+                fecha: new Date(resultado.timestamp).toLocaleDateString('es-MX'),
+                tipo: resultado.tipo // 'entrada' o 'salida'
+            });
+            setMensaje(resultado.mensaje);
+
+            // Limpiar input
+            setMatriculaInput('');
+
+            // Recargar historial
+            cargarHistorialHoy();
+
+            // Resetear después de 3 segundos
+            setTimeout(() => {
+                setEstado('esperando');
+                setMensaje('Acerque la tarjeta NFC al lector...');
+                setUltimoAcceso(null);
+            }, 3000);
+
+        } catch (error) {
+            setEstado('error');
+
+            if (error.response?.status === 404) {
+                setMensaje('Estudiante no encontrado. Verifique la matrícula.');
+            } else {
+                setMensaje(error.response?.data?.detail || 'Error al registrar asistencia. Intente nuevamente.');
+            }
+
+            setTimeout(() => {
+                setEstado('esperando');
+                setMensaje('Acerque la tarjeta NFC al lector...');
+            }, 4000);
+        } finally {
+            setIsRegistrandoMatricula(false);
         }
     };
 
@@ -146,6 +208,12 @@ const RegistroAccesoPage = () => {
         }, 100);
     };
 
+    const handleMatriculaKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            registrarAsistenciaPorMatricula();
+        }
+    };
+
     return (
         <div className="registro-acceso-container">
             <div className="registro-acceso-main">
@@ -165,7 +233,7 @@ const RegistroAccesoPage = () => {
                             </span>
                         </label>
                     </div>
-                    
+
                     {modoManual && (
                         <div className="fecha-selector">
                             <label htmlFor="fecha-registro">
@@ -180,6 +248,33 @@ const RegistroAccesoPage = () => {
                             />
                         </div>
                     )}
+                </div>
+
+                {/* Sección de registro por matrícula */}
+                <div className="matricula-registro-section">
+                    <h3 className="section-subtitle">
+                        <Hash size={20} />
+                        Registro por Matrícula
+                    </h3>
+                    <div className="matricula-input-group">
+                        <input
+                            ref={matriculaInputRef}
+                            type="text"
+                            value={matriculaInput}
+                            onChange={(e) => setMatriculaInput(e.target.value)}
+                            onKeyPress={handleMatriculaKeyPress}
+                            placeholder="Ingrese matrícula del estudiante"
+                            className="matricula-input"
+                            disabled={isRegistrandoMatricula}
+                        />
+                        <button
+                            onClick={registrarAsistenciaPorMatricula}
+                            disabled={isRegistrandoMatricula || !matriculaInput.trim()}
+                            className="btn-registrar-matricula"
+                        >
+                            {isRegistrandoMatricula ? 'Registrando...' : 'Registrar Asistencia'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Input oculto para captura NFC */}
@@ -218,6 +313,15 @@ const RegistroAccesoPage = () => {
                                     {ultimoAcceso.estudiante.nombre} {ultimoAcceso.estudiante.apellido}
                                 </span>
                             </div>
+                            {ultimoAcceso.tipo && (
+                                <div className="detalle-item">
+                                    <span className={`badge-tipo ${ultimoAcceso.tipo.toLowerCase()}`}>
+                                        {ultimoAcceso.tipo === 'entrada' ? '🟢 ENTRADA' :
+                                            ultimoAcceso.tipo === 'salida' ? '🔴 SALIDA' :
+                                                '📱 NFC'}
+                                    </span>
+                                </div>
+                            )}
                             {ultimoAcceso.hora && (
                                 <div className="detalle-item">
                                     <Calendar size={20} />
@@ -227,7 +331,7 @@ const RegistroAccesoPage = () => {
                             {ultimoAcceso.estudiante.grupo && (
                                 <div className="detalle-item">
                                     <span className="badge-grupo">
-                                        {ultimoAcceso.estudiante.grupo.nombre}
+                                        {ultimoAcceso.estudiante.grupo}
                                     </span>
                                 </div>
                             )}
@@ -237,17 +341,25 @@ const RegistroAccesoPage = () => {
 
                 {/* Historial del día */}
                 <div className="historial-hoy">
-                    <h3>Accesos de Hoy ({historialHoy.length})</h3>
+                    <h3>Asistencias de Hoy ({historialHoy.length})</h3>
                     <div className="historial-lista">
-                        {historialHoy.slice(0, 10).map((acceso, index) => (
-                            <div key={acceso.id} className="historial-item">
+                        {historialHoy.slice(0, 15).map((asistencia, index) => (
+                            <div key={asistencia.id} className="historial-item">
                                 <span className="historial-hora">
-                                    {new Date(acceso.hora_registro).toLocaleTimeString('es-MX', {
+                                    {new Date(asistencia.timestamp).toLocaleTimeString('es-MX', {
                                         hour: '2-digit',
                                         minute: '2-digit'
                                     })}
                                 </span>
-                                <span className="historial-nfc">{acceso.nfc_uid}</span>
+                                <span className={`historial-tipo ${asistencia.tipo}`}>
+                                    {asistencia.tipo === 'entrada' ? '🟢' : '🔴'}
+                                </span>
+                                <span className="historial-estudiante">
+                                    {asistencia.estudiante.nombre} {asistencia.estudiante.apellido}
+                                </span>
+                                <span className="historial-grupo">
+                                    {asistencia.estudiante.grupo || 'Sin grupo'}
+                                </span>
                             </div>
                         ))}
                     </div>

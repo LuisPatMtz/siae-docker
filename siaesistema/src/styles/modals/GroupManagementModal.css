@@ -1,0 +1,200 @@
+/* Group Management Modal Styles */
+
+.student-management-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--siae-spacing-md);
+}
+
+/* Management Controls - Search and Filters */
+.management-controls {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: var(--siae-spacing-md);
+    margin-bottom: var(--siae-spacing-lg);
+    align-items: center;
+}
+
+.search-input-group {
+    position: relative;
+    display: block;
+    background: var(--siae-bg-light);
+    border: 2px solid var(--siae-border-light);
+    border-radius: var(--siae-radius-md);
+    padding: var(--siae-spacing-xs) var(--siae-spacing-md);
+    transition: all var(--siae-transition-fast);
+}
+
+.search-input-group:focus-within {
+    border-color: var(--siae-primary-blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.search-input-group svg {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--siae-text-tertiary);
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.search-input-group input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 0;
+    padding-left: 30px;
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--siae-text-primary);
+}
+
+.search-input-group input:focus {
+    outline: none;
+}
+
+.search-input-group input::placeholder {
+    color: var(--siae-text-tertiary);
+}
+
+.filter-select {
+    min-width: 160px;
+    padding: var(--siae-spacing-xs) var(--siae-spacing-md);
+    border: 2px solid var(--siae-border-light);
+    border-radius: var(--siae-radius-md);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    background: var(--siae-bg-light);
+    color: var(--siae-text-primary);
+    cursor: pointer;
+    transition: all var(--siae-transition-fast);
+}
+
+.filter-select:hover {
+    border-color: var(--siae-border-medium);
+    background: white;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--siae-primary-blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Table Styles */
+.students-table-wrapper {
+    overflow: auto;
+    border-radius: var(--siae-radius-lg);
+    border: 2px solid rgba(74, 144, 226, 0.15);
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    position: relative;
+    min-height: 300px;
+}
+
+.students-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.students-table thead {
+    background: linear-gradient(135deg, var(--siae-primary-blue), #60a5fa);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.students-table th {
+    padding: var(--siae-spacing-sm) var(--siae-spacing-md);
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: white;
+    border-bottom: none;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.students-table th:first-child {
+    border-radius: var(--siae-radius-md) 0 0 0;
+}
+
+.students-table th:last-child {
+    border-radius: 0 var(--siae-radius-md) 0 0;
+}
+
+.students-table td {
+    padding: var(--siae-spacing-sm) var(--siae-spacing-md);
+    font-size: 0.875rem;
+    color: var(--siae-text-secondary);
+    border-bottom: 1px solid rgba(74, 144, 226, 0.08);
+}
+
+.students-table tbody tr {
+    transition: all var(--siae-transition-fast);
+}
+
+.students-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(74, 144, 226, 0.05), rgba(96, 165, 250, 0.03));
+    transform: scale(1.001);
+}
+
+.students-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-actions {
+    display: flex;
+    gap: var(--siae-spacing-xs);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: var(--siae-radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.matutino {
+    background: rgba(251, 191, 36, 0.15);
+    color: #d97706;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.status-badge.vespertino {
+    background: rgba(99, 102, 241, 0.15);
+    color: #4f46e5;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .management-controls {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+    }
+
+    .search-input-group {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 768px) {
+    .management-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .search-input-group {
+        grid-column: 1;
+    }
+}

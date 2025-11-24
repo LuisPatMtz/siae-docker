@@ -3,6 +3,143 @@
    DASHBOARD: Específico para páginas Dashboard, Alertas, Gestión
    ==================================== */
 
+/* Horizontal dashboard layout */
+.dashboard-horizontal-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  width: 100%;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 18px;
+}
+
+.dashboard-horizontal-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 340px;
+  max-width: 420px;
+  flex: 1;
+}
+
+/* Premium Card Style - Shared */
+.stats-card,
+.student-groups-nav,
+.attendance-bar-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card::before,
+.student-groups-nav::before,
+.attendance-bar-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
+}
+
+.stats-card:hover,
+.student-groups-nav:hover,
+.attendance-bar-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 8px 16px -4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+}
+
+@media (max-width: 1200px) {
+  .dashboard-horizontal-layout {
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .dashboard-horizontal-section {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Attendance Bar Chart Card */
+.attendance-bar-card {
+  padding: 28px 24px 24px 24px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.attendance-bar-card .card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--siae-primary-blue);
+  margin: 0 0 20px 0;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.bar-period-selectors {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.bar-period-btn {
+  min-width: 90px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 2px solid var(--siae-primary-blue);
+  background: var(--siae-bg-white);
+  color: var(--siae-primary-blue);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.bar-period-btn:hover {
+  background: rgba(74, 144, 226, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bar-period-btn.active {
+  background: var(--siae-primary-blue);
+  color: var(--siae-bg-white);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+  transform: translateY(-2px);
+}
+
+.attendance-bar-chart {
+  width: 100%;
+  flex: 1;
+  min-height: 240px;
+}
+
+/* Student Groups Navigation */
+.dashboard-groups-nav-bar {
+  height: 100%;
+}
+
 /* Dashboard Controls */
 .controls-container {
   display: flex;
@@ -85,7 +222,7 @@
   border: 1px solid rgba(226, 232, 240, 0.6);
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 
+  box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -109,7 +246,7 @@
 
 .stats-card:hover {
   transform: translateY(-6px) scale(1.02);
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.15),
     0 8px 16px -4px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -248,7 +385,7 @@
   border: 1px solid rgba(226, 232, 240, 0.6);
   border-radius: 20px;
   padding: 24px;
-  box-shadow: 
+  box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -273,7 +410,7 @@
 
 .group-attendance-card:hover {
   transform: translateY(-4px) scale(1.01);
-  box-shadow: 
+  box-shadow:
     0 20px 40px -10px rgba(0, 0, 0, 0.15),
     0 6px 12px -3px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
@@ -571,14 +708,14 @@
   border-radius: 50%;
 }
 
-input:checked + .slider {
+input:checked+.slider {
   background-color: var(--siae-primary-blue);
 }
 
-input:focus + .slider {
+input:focus+.slider {
   box-shadow: 0 0 1px var(--siae-primary-blue);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
   transform: translateX(22px);
 }

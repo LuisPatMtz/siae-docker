@@ -1,225 +1,317 @@
-/* src/styles/variables.css */
-/* ====================================
-   VARIABLES GLOBALES Y RESET
-   ==================================== */
-
-/* Importar Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* ====================================
-   PALETA DE COLORES SIAE
-   ==================================== */
 :root {
-  /* Colores primarios */
-  --siae-primary-blue: #4A90E2;
-  --siae-dark-blue: #2C5282;
-  --siae-light-blue: #E3F2FD;
-  
-  /* Colores de fondo */
-  --siae-bg-main: #FFFFFF;
-  --siae-bg-card: #FFFFFF;
-  --siae-bg-hover: #F3F4F6;
-  --siae-bg-white: #FFFFFF;
-  --siae-bg-light: #F9FAFB;
-  --siae-bg-blue-light: rgba(74, 144, 226, 0.1);
-  --siae-bg-red-light: #FEE2E2;
-  
-  /* Colores de texto */
-  --siae-text-primary: #1F2937;
-  --siae-text-secondary: #6B7280;
-  --siae-text-light: #9CA3AF;
-  --siae-text-tertiary: #9CA3AF;
-  --siae-dark: #1F2937;
-  
-  /* Colores de borde */
-  --siae-border-light: #E5E7EB;
-  --siae-border-medium: #D1D5DB;
-  --siae-border-dark: #9CA3AF;
-  --siae-border-blue: rgba(74, 144, 226, 0.2);
-  --siae-border-danger: #FECACA;
-  
-  /* Colores de estado */
-  --siae-success: #10B981;
-  --siae-success-light: #D1FAE5;
-  --siae-success-dark: #059669;
-  --siae-warning: #F59E0B;
-  --siae-warning-light: #FEF3C7;
-  --siae-error: #EF4444;
-  --siae-error-light: #FEE2E2;
-  --siae-info: #3B82F6;
-  --siae-info-light: #DBEAFE;
-  --siae-danger: #EF4444;
-  --siae-danger-dark: #991B1B;
-  
-  /* Estados de interacción */
-  --siae-state-hover: rgba(74, 144, 226, 0.03);
-  --siae-state-danger-hover: #FECACA;
-  --siae-state-disabled: #F87171;
-  --siae-overlay: rgba(0, 0, 0, 0.5);
-  
-  /* Gradientes */
-  --siae-gradient-primary: linear-gradient(135deg, #4A90E2 0%, #2C5282 100%);
-  --siae-gradient-blue: linear-gradient(135deg, #4A90E2, #2C5282);
-  --siae-gradient-blue-light: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(96, 165, 250, 0.05) 100%);
-  --siae-gradient-success: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  --siae-gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  
-  /* Sombras */
-  --siae-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --siae-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --siae-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --siae-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --siae-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  --siae-shadow-blue: 0 0 15px rgba(74, 144, 226, 0.3);
-  --siae-shadow-glow-blue: 0 0 0 3px rgba(74, 144, 226, 0.1);
-  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-blue-glow: 0 0 0 3px rgba(74, 144, 226, 0.3);
-  
-  /* Espaciado */
-  --siae-spacing-xs: 4px;
-  --siae-spacing-sm: 8px;
-  --siae-spacing-md: 16px;
-  --siae-spacing-lg: 24px;
-  --siae-spacing-xl: 32px;
-  --siae-spacing-2xl: 48px;
-  
-  /* Border radius */
-  --siae-radius-sm: 4px;
-  --siae-radius-md: 8px;
-  --siae-radius-lg: 12px;
-  --siae-radius-xl: 16px;
-  --siae-radius-full: 9999px;
-  
-  /* Transiciones */
-  --siae-transition-fast: 150ms ease;
-  --siae-transition-base: 200ms ease;
-  --siae-transition-slow: 300ms ease;
-}
+  /* ========================================
+     ACADEMIC & TECHNOLOGICAL COLOR PALETTE
+     ======================================== */
 
-/* ====================================
-   RESET Y BASE
-   ==================================== */
+  /* Primary Blues - Academic & Professional */
+  --primary: #1e40af;
+  --primary-light: #3b82f6;
+  --primary-lighter: #60a5fa;
+  --primary-dark: #1e3a8a;
+  --primary-darker: #1e293b;
 
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+  /* Secondary Colors - Technological Accents */
+  --secondary: #06b6d4;
+  --secondary-light: #22d3ee;
+  --secondary-dark: #0891b2;
 
-html {
-  margin: 0 !important;
-  padding: 0 !important;
-  height: 100%;
-  width: 100%;
-}
+  /* Accent Colors - Modern Tech */
+  --accent-indigo: #6366f1;
+  --accent-indigo-light: #818cf8;
+  --accent-purple: #8b5cf6;
+  --accent-cyan: #06b6d4;
 
-body {
-  margin: 0 !important;
-  padding: 0 !important;
-  height: 100%;
-  width: 100%;
-  overflow-x: hidden;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: var(--siae-bg-main);
-  color: var(--siae-text-primary);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  /* Neutral Colors - Academic Grays */
+  --background: #f8fafc;
+  --background-alt: #f1f5f9;
+  --surface: #ffffff;
+  --surface-hover: #f9fafb;
 
-#root {
-  margin: 0 !important;
-  padding: 0 !important;
-  height: 100%;
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+  /* Text Colors - Professional Hierarchy */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --text-muted: #cbd5e1;
 
-/* ====================================
-   UTILITY CLASSES
-   ==================================== */
+  /* Border Colors - Subtle Separation */
+  --border-light: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-dark: #94a3b8;
 
-.page-subtitle {
-  font-size: 0.9375rem;
-  color: var(--siae-text-secondary);
-  margin: 0;
-  flex: 1;
-  line-height: 1.5;
-}
+  /* Semantic Colors - Status & Feedback */
+  --success: #10b981;
+  --success-light: #34d399;
+  --success-dark: #059669;
+  --warning: #f59e0b;
+  --warning-light: #fbbf24;
+  --warning-dark: #d97706;
+  --danger: #ef4444;
+  --danger-light: #f87171;
+  --danger-dark: #dc2626;
+  --info: #3b82f6;
+  --info-light: #60a5fa;
+  --info-dark: #2563eb;
 
-.page-title-container.with-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;  
-}
+  /* Legacy Support - Backward Compatibility */
+  --white: #ffffff;
+  --black: #000000;
+  --siae-primary-blue: var(--primary);
+  --siae-dark-blue: var(--primary-dark);
+  --siae-bg-white: var(--surface);
+  --siae-bg-card: var(--surface);
+  --siae-bg-hover: var(--surface-hover);
+  --siae-bg-light: var(--background-alt);
+  --siae-text-primary: var(--text-primary);
+  --siae-text-secondary: var(--text-secondary);
+  --siae-border-light: var(--border-light);
+  --siae-border-medium: var(--border-medium);
+  --siae-danger: var(--danger);
+  --siae-success: var(--success);
+  --siae-warning: var(--warning);
+  --siae-dark: var(--text-primary);
 
-.title-group {
-  display: flex;
-  align-items: center;
-}
+  /* Background Tints - Subtle Color Washes */
+  --bg-blue-light: #dbeafe;
+  --bg-blue-lighter: #eff6ff;
+  --bg-cyan-light: #cffafe;
+  --bg-indigo-light: #e0e7ff;
+  --bg-purple-light: #ede9fe;
+  --bg-success-light: #d1fae5;
+  --bg-warning-light: #fef3c7;
+  --bg-danger-light: #fee2e2;
 
-.title-group .page-title {
-  margin-right: 12px;
-}
+  /* ========================================
+     GRADIENTS - ACADEMIC & TECH STYLES
+     ======================================== */
 
-.page-actions {
-  display: flex;
-  gap: 12px;
-}
+  /* Primary Gradients */
+  --gradient-primary: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  --gradient-primary-soft: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  --gradient-primary-dark: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
 
-.action-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 0.5rem;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--siae-shadow-sm);
-}
+  /* Accent Gradients */
+  --gradient-cyan: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+  --gradient-indigo: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 
-.action-button svg {
-  margin-right: 4px;
-}
+  /* Semantic Gradients */
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
 
-.add-button {
-  background-color: var(--siae-primary-blue);
-  color: white;
-}
+  /* Background Gradients */
+  --gradient-bg-subtle: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --gradient-bg-academic: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
 
-.add-button:hover {
-  background-color: var(--siae-dark-blue);
-  box-shadow: var(--siae-shadow-glow-blue);
-}
+  /* Legacy Support */
+  --siae-gradient-primary: var(--gradient-primary);
+  --siae-gradient-success: var(--gradient-success);
 
-.delete-button {
-  background-color: var(--siae-bg-red-light);
-  color: var(--siae-danger-dark);
-  border: 1px solid var(--siae-border-danger);
-}
+  /* ========================================
+     GLASSMORPHISM & PREMIUM EFFECTS
+     ======================================== */
 
-.delete-button:hover {
-  background-color: var(--siae-state-danger-hover);
-  color: var(--siae-danger-dark);
-}
+  /* Glass Effects */
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-bg-light: rgba(255, 255, 255, 0.7);
+  --glass-bg-dark: rgba(30, 64, 175, 0.1);
+  --glass-border: rgba(226, 232, 240, 0.6);
+  --glass-blur: blur(20px);
 
-/* Tag uppercase utility */
-.tag-uppercase {
-  text-transform: uppercase;
-}
+  /* Overlay Colors */
+  --overlay-dark: rgba(0, 0, 0, 0.5);
+  --overlay-darker: rgba(0, 0, 0, 0.7);
+  --overlay-light: rgba(255, 255, 255, 0.9);
+  --siae-overlay: var(--overlay-dark);
 
-/* Card hoverable variation */
-.card-hoverable:hover {
-  box-shadow: var(--siae-shadow-lg);
-  transform: translateY(-2px);
+  /* ========================================
+     SHADOWS - PREMIUM ELEVATION SYSTEM
+     ======================================== */
+
+  /* Standard Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Colored Shadows - For Emphasis */
+  --shadow-blue: 0 4px 12px rgba(30, 64, 175, 0.3);
+  --shadow-blue-lg: 0 8px 20px rgba(30, 64, 175, 0.4);
+  --shadow-cyan: 0 4px 12px rgba(6, 182, 212, 0.3);
+  --shadow-indigo: 0 4px 12px rgba(99, 102, 241, 0.3);
+  --shadow-success: 0 4px 12px rgba(16, 185, 129, 0.3);
+  --shadow-warning: 0 4px 12px rgba(245, 158, 11, 0.3);
+  --shadow-danger: 0 4px 12px rgba(239, 68, 68, 0.3);
+
+  /* Glow Effects */
+  --shadow-glow-blue: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  --shadow-glow-cyan: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  --shadow-glow-success: 0 0 0 3px rgba(16, 185, 129, 0.1);
+
+  /* Premium Card Shadows */
+  --shadow-card:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --shadow-card-hover:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    0 8px 16px -4px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  /* Legacy Support */
+  --siae-shadow-xs: var(--shadow-xs);
+  --siae-shadow-sm: var(--shadow-sm);
+  --siae-shadow-md: var(--shadow-md);
+  --siae-shadow-lg: var(--shadow-lg);
+  --siae-shadow-glow-blue: var(--shadow-glow-blue);
+
+  /* ========================================
+     TYPOGRAPHY
+     ======================================== */
+
+  /* Font Family */
+  --font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-family-mono: "Fira Code", "Courier New", monospace;
+
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* Line Heights */
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  /* ========================================
+     SPACING SYSTEM
+     ======================================== */
+
+  --spacing-0: 0;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 2.5rem;
+  --spacing-3xl: 3rem;
+  --spacing-4xl: 4rem;
+
+  /* Legacy Support */
+  --siae-spacing-xs: var(--spacing-xs);
+  --siae-spacing-sm: var(--spacing-sm);
+  --siae-spacing-md: var(--spacing-md);
+  --siae-spacing-lg: var(--spacing-lg);
+  --siae-spacing-xl: var(--spacing-xl);
+  --siae-spacing-xxl: var(--spacing-2xl);
+
+  /* ========================================
+     BORDER RADIUS
+     ======================================== */
+
+  --radius-none: 0;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
+
+  /* Legacy Support */
+  --border-radius-sm: var(--radius-sm);
+  --border-radius-md: var(--radius-md);
+  --border-radius-lg: var(--radius-lg);
+  --border-radius-full: var(--radius-full);
+  --siae-radius-sm: var(--radius-sm);
+  --siae-radius-md: var(--radius-md);
+  --siae-radius-lg: var(--radius-lg);
+  --siae-radius-xl: var(--radius-xl);
+  --siae-radius-full: var(--radius-full);
+
+  /* ========================================
+     TRANSITIONS & ANIMATIONS
+     ======================================== */
+
+  /* Timing Functions */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Durations */
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+
+  /* Combined Transitions */
+  --transition-fast: all 0.15s var(--ease-out);
+  --transition-base: all 0.3s var(--ease-in-out);
+  --transition-slow: all 0.5s var(--ease-in-out);
+  --transition-bounce: all 0.3s var(--ease-bounce);
+
+  /* Legacy Support */
+  --siae-transition-fast: var(--transition-fast);
+  --siae-transition-base: var(--transition-base);
+
+  /* ========================================
+     Z-INDEX LAYERS
+     ======================================== */
+
+  --z-base: 0;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+
+  /* ========================================
+     RESPONSIVE BREAKPOINTS
+     ======================================== */
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ========================================
+     COMPONENT-SPECIFIC VARIABLES
+     ======================================== */
+
+  /* Buttons */
+  --btn-padding-sm: 0.5rem 1rem;
+  --btn-padding-md: 0.75rem 1.5rem;
+  --btn-padding-lg: 1rem 2rem;
+
+  /* Inputs */
+  --input-border: 2px solid var(--border-light);
+  --input-border-focus: 2px solid var(--primary);
+  --input-padding: 0.75rem 1rem;
+
+  /* Cards */
+  --card-padding: 1.5rem;
+  --card-padding-lg: 2rem;
+
+  /* Modals */
+  --modal-max-width: 600px;
+  --modal-max-width-lg: 800px;
+  --modal-max-width-xl: 1000px;
 }

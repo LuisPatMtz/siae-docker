@@ -25,6 +25,11 @@ class ICicloRepository(ABC):
         pass
     
     @abstractmethod
+    def get_by_nombre(self, nombre: str) -> Optional[CicloEscolar]:
+        """Obtiene un ciclo por su nombre"""
+        pass
+    
+    @abstractmethod
     def create(self, ciclo_data: CicloEscolarCreate) -> CicloEscolar:
         """Crea un nuevo ciclo"""
         pass

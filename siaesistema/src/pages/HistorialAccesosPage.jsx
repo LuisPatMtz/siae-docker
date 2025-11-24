@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Download, Filter, User, Clock } from 'lucide-react';
 import { accesosService, ciclosService, estudiantesService, gruposService } from '../api/services';
+import '../styles/historial-accesos.css';
 
 const HistorialAccesosPage = () => {
     const [accesos, setAccesos] = useState([]);
@@ -23,24 +24,24 @@ const HistorialAccesosPage = () => {
     const cargarDatosIniciales = async () => {
         try {
             setLoading(true);
-            
+
             // Cargar ciclo activo
             const cicloActivo = await ciclosService.getActivo();
             setFiltros(prev => ({ ...prev, cicloId: cicloActivo.id }));
-            
+
             // Cargar accesos del ciclo activo
             const accesosData = await accesosService.getByCiclo(cicloActivo.id);
             setAccesos(accesosData);
-            
+
             // Cargar estudiantes y grupos
             const [estudiantesData, gruposData] = await Promise.all([
                 estudiantesService.getAll(),
                 gruposService.getAll()
             ]);
-            
+
             setEstudiantes(estudiantesData);
             setGrupos(gruposData);
-            
+
         } catch (error) {
             console.error('Error al cargar datos:', error);
         } finally {
@@ -55,9 +56,9 @@ const HistorialAccesosPage = () => {
         if (filtros.matricula) {
             const estudiantesFiltrados = estudiantes
                 .filter(est => est.nfc?.nfc_uid)
-                .filter(est => est.matricula.includes(filtros.matricula) || 
-                              `${est.nombre} ${est.apellido}`.toLowerCase().includes(filtros.matricula.toLowerCase()));
-            
+                .filter(est => est.matricula.includes(filtros.matricula) ||
+                    `${est.nombre} ${est.apellido}`.toLowerCase().includes(filtros.matricula.toLowerCase()));
+
             const nfcUids = estudiantesFiltrados.map(est => est.nfc.nfc_uid);
             accesosFiltrados = accesosFiltrados.filter(acc => nfcUids.includes(acc.nfc_uid));
         }
@@ -66,7 +67,7 @@ const HistorialAccesosPage = () => {
         if (filtros.grupoId) {
             const estudiantesGrupo = estudiantes
                 .filter(est => est.id_grupo === parseInt(filtros.grupoId) && est.nfc?.nfc_uid);
-            
+
             const nfcUids = estudiantesGrupo.map(est => est.nfc.nfc_uid);
             accesosFiltrados = accesosFiltrados.filter(acc => nfcUids.includes(acc.nfc_uid));
         }
@@ -95,12 +96,12 @@ const HistorialAccesosPage = () => {
 
     const exportarCSV = () => {
         const accesosFiltrados = filtrarAccesos();
-        
+
         const headers = ['Fecha', 'Hora', 'Matrícula', 'Nombre', 'Grupo', 'NFC UID'];
         const rows = accesosFiltrados.map(acceso => {
             const estudiante = getEstudianteByNFC(acceso.nfc_uid);
             const fecha = new Date(acceso.hora_registro);
-            
+
             return [
                 fecha.toLocaleDateString('es-MX'),
                 fecha.toLocaleTimeString('es-MX'),
@@ -230,7 +231,7 @@ const HistorialAccesosPage = () => {
 
                 <div className="stat-card">
                     <div className="stat-value">
-                        {new Set(accesosFiltrados.map(a => 
+                        {new Set(accesosFiltrados.map(a =>
                             new Date(a.hora_registro).toISOString().split('T')[0]
                         )).size}
                     </div>
@@ -277,7 +278,7 @@ const HistorialAccesosPage = () => {
                                                 </td>
                                                 <td>{estudiante?.matricula || 'N/A'}</td>
                                                 <td>
-                                                    {estudiante 
+                                                    {estudiante
                                                         ? `${estudiante.nombre} ${estudiante.apellido}`
                                                         : 'Desconocido'
                                                     }

@@ -1,5 +1,5 @@
 // src/App.jsx
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 // Importamos componentes de Layout y Auth
@@ -8,15 +8,15 @@ import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
 import PermissionRoute from './components/Auth/PermissionRoute.jsx';
 import { useAuth } from './components/Auth/AuthContext.jsx';
 
-// Importamos las Páginas
-import LoginPage from './pages/LoginPage.jsx';
-import LoadingPage from './pages/LoadingPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import AlertasPage from './pages/AlertasPage.jsx';
-import GestionUsuariosPage from './pages/GestionUsuariosPage.jsx';
-import GestionEstudiantesPage from './pages/GestionEstudiantesPage.jsx';
-import RegistroAccesoPage from './pages/RegistroAccesoPage.jsx';
-import HistorialAccesosPage from './pages/HistorialAccesosPage.jsx';
+// Importamos las Páginas dinámicamente
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const LoadingPage = lazy(() => import('./pages/LoadingPage.jsx'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
+const AlertasPage = lazy(() => import('./pages/AlertasPage.jsx'));
+const GestionUsuariosPage = lazy(() => import('./pages/GestionUsuariosPage.jsx'));
+const GestionEstudiantesPage = lazy(() => import('./pages/GestionEstudiantesPage.jsx'));
+const RegistroAccesoPage = lazy(() => import('./pages/RegistroAccesoPage.jsx'));
+const HistorialAccesosPage = lazy(() => import('./pages/HistorialAccesosPage.jsx'));
 
 function App() {
     const { isAuthenticated, hasPermission } = useAuth();
@@ -39,83 +39,85 @@ function App() {
 
     return (
         <div className="app-container">
-            <Routes>
-                {/* Ruta 1: Login (Pública) */}
-                <Route path="/login" element={<LoginPage />} />
+            <Suspense fallback={<LoadingPage />}>
+                <Routes>
+                    {/* Ruta 1: Login (Pública) */}
+                    <Route path="/login" element={<LoginPage />} />
 
-                {/* Ruta 2: Carga (Pública) */}
-                <Route path="/loading" element={<LoadingPage />} />
+                    {/* Ruta 2: Carga (Pública) */}
+                    <Route path="/loading" element={<LoadingPage />} />
 
-                {/* Ruta 3: Rutas Protegidas (Privadas) */}
-                <Route element={<ProtectedRoute />}>
-                    <Route element={<MainLayout />}>
-                        {/* Dashboard - Protegido por permiso canViewDashboard */}
-                        <Route 
-                            path="/" 
-                            element={
-                                <PermissionRoute requiredPermission="canViewDashboard">
-                                    <DashboardPage />
-                                </PermissionRoute>
-                            } 
-                        />
-                        
-                        {/* Gestión de Alertas - Protegido por permiso canManageAlerts */}
-                        <Route 
-                            path="/alertas" 
-                            element={
-                                <PermissionRoute requiredPermission="canManageAlerts">
-                                    <AlertasPage />
-                                </PermissionRoute>
-                            } 
-                        />
-                        
-                        {/* Gestión de Usuarios - Protegido por permiso canManageUsers */}
-                        <Route 
-                            path="/usuarios" 
-                            element={
-                                <PermissionRoute requiredPermission="canManageUsers">
-                                    <GestionUsuariosPage />
-                                </PermissionRoute>
-                            } 
-                        />
-                        
-                        {/* Gestión de Estudiantes - Protegido por permiso canEditStudents */}
-                        <Route 
-                            path="/estudiantes" 
-                            element={
-                                <PermissionRoute requiredPermission="canEditStudents">
-                                    <GestionEstudiantesPage />
-                                </PermissionRoute>
-                            } 
-                        />
-                        
-                        {/* Registro de Accesos - Página pública dentro del sistema */}
-                        <Route 
-                            path="/registro-acceso" 
-                            element={<RegistroAccesoPage />} 
-                        />
-                        
-                        {/* Historial de Accesos - Protegido por permiso canViewDashboard */}
-                        <Route 
-                            path="/historial-accesos" 
-                            element={
-                                <PermissionRoute requiredPermission="canViewDashboard">
-                                    <HistorialAccesosPage />
-                                </PermissionRoute>
-                            } 
-                        />
+                    {/* Ruta 3: Rutas Protegidas (Privadas) */}
+                    <Route element={<ProtectedRoute />}>
+                        <Route element={<MainLayout />}>
+                            {/* Dashboard - Protegido por permiso canViewDashboard */}
+                            <Route 
+                                path="/" 
+                                element={
+                                    <PermissionRoute requiredPermission="canViewDashboard">
+                                        <DashboardPage />
+                                    </PermissionRoute>
+                                } 
+                            />
+                            
+                            {/* Gestión de Alertas - Protegido por permiso canManageAlerts */}
+                            <Route 
+                                path="/alertas" 
+                                element={
+                                    <PermissionRoute requiredPermission="canManageAlerts">
+                                        <AlertasPage />
+                                    </PermissionRoute>
+                                } 
+                            />
+                            
+                            {/* Gestión de Usuarios - Protegido por permiso canManageUsers */}
+                            <Route 
+                                path="/usuarios" 
+                                element={
+                                    <PermissionRoute requiredPermission="canManageUsers">
+                                        <GestionUsuariosPage />
+                                    </PermissionRoute>
+                                } 
+                            />
+                            
+                            {/* Gestión de Estudiantes - Protegido por permiso canEditStudents */}
+                            <Route 
+                                path="/estudiantes" 
+                                element={
+                                    <PermissionRoute requiredPermission="canEditStudents">
+                                        <GestionEstudiantesPage />
+                                    </PermissionRoute>
+                                } 
+                            />
+                            
+                            {/* Registro de Accesos - Página pública dentro del sistema */}
+                            <Route 
+                                path="/registro-acceso" 
+                                element={<RegistroAccesoPage />} 
+                            />
+                            
+                            {/* Historial de Accesos - Protegido por permiso canViewDashboard */}
+                            <Route 
+                                path="/historial-accesos" 
+                                element={
+                                    <PermissionRoute requiredPermission="canViewDashboard">
+                                        <HistorialAccesosPage />
+                                    </PermissionRoute>
+                                } 
+                            />
+                        </Route>
                     </Route>
-                </Route>
 
-                {/* Ruta 4: Redirección por defecto */}
-                <Route 
-                    path="*" 
-                    element={
-                        isAuthenticated ? <DefaultRedirect /> : <Navigate to="/login" replace />
-                    } 
-                />
+                    {/* Ruta 4: Redirección por defecto */}
+                    <Route 
+                        path="*" 
+                        element={
+                            isAuthenticated ? <DefaultRedirect /> : <Navigate to="/login" replace />
+                        } 
+                    />
 
-            </Routes>
+                </Routes>
+            </Suspense>
         </div>
     );
 }

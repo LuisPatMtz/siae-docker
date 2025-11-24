@@ -9,6 +9,7 @@ import './styles/layout.css'       // Header, nav, containers
 import './styles/components.css'   // Componentes reutilizables
 import './styles/dashboard.css'    // Dashboard y páginas específicas
 import './styles/students.css'     // Gestión de estudiantes y breadcrumbs
+import './styles/UsersManagement.css' // Gestión de usuarios (Premium)
 import './styles/toast.css'        // Sistema de notificaciones
 import './pages/Login_Y_Loading_Styles.css'  // Estilos de Login y Loading
 import './index.css'               // Estilos legacy y Login

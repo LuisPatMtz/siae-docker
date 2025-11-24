@@ -1,13 +1,15 @@
 // src/components/Students/LinkNfcModal.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Link2, CheckCircle } from 'lucide-react';
+import { Link2, CheckCircle, X } from 'lucide-react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { nfcService } from '../../api/services';
+import '../../styles/modals/SharedModalStyles.css';
+import '../../styles/modals/LinkNfcModal.css';
 
 const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
     // Hook optimizado para manejar ESC
     useEscapeKey(isOpen, onClose);
-    
+
     const [nfcId, setNfcId] = useState('');
     const [error, setError] = useState('');
     const [readingsCount, setReadingsCount] = useState(0); // Contador de lecturas
@@ -72,7 +74,7 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
     // Función para procesar una nueva lectura
     const processReading = (newUID) => {
         const cleanUID = newUID.trim().toUpperCase();
-        
+
         if (!isValidUID(cleanUID)) {
             setError('Formato inválido. Debe ser 8 caracteres hexadecimales (ej: 29115803)');
             return;
@@ -136,14 +138,14 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
             e.target.value = '';
             return;
         }
-        
+
         const value = e.target.value.toUpperCase();
-        
+
         // Limpiar timeout previo
         if (inputTimeoutRef.current) {
             clearTimeout(inputTimeoutRef.current);
         }
-        
+
         // Esperar 100ms sin nuevas teclas para considerar que terminó de escribir
         inputTimeoutRef.current = setTimeout(() => {
             // Verificar de nuevo que no hayamos alcanzado 3 lecturas
@@ -153,17 +155,17 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
                 }
                 return;
             }
-            
+
             if (value.length >= 8) {
                 // Tomar los primeros 8 caracteres válidos
                 const uid = value.substring(0, 8);
-                
+
                 if (isValidUID(uid)) {
                     processReading(uid);
                 } else {
                     setError('Formato inválido detectado. Por favor, vuelva a escanear.');
                 }
-                
+
                 // Limpiar el input inmediatamente para la siguiente lectura
                 if (inputFieldRef.current) {
                     inputFieldRef.current.value = '';
@@ -181,50 +183,66 @@ const LinkNfcModal = ({ isOpen, onClose, onSubmit, studentName, isSaving }) => {
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content link-nfc-modal" onClick={(e) => e.stopPropagation()}>
-                <h2 className="modal-title">Vincular Tarjeta NFC</h2>
-                
-                <div className="modal-student-info">
-                    <p className="modal-student-name">Estudiante: <strong>{studentName}</strong></p>
-                    <p className="modal-instruction">Acerque la tarjeta NFC al lector...</p>
+                <div className="modal-header">
+                    <h2 className="modal-title">
+                        <Link2 size={24} />
+                        Vincular Tarjeta NFC
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        className="close-form-btn"
+                        disabled={isSaving}
+                        type="button"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
-                {error && <div className="form-error">{error}</div>}
-                
-                <div className="nfc-capture-area">
-                    <input
-                        ref={inputFieldRef}
-                        type="text"
-                        id="nfcIdInput"
-                        onChange={handleInputChange}
-                        autoFocus
-                        autoComplete="off"
-                        disabled={isSaving || readingsCount >= 3}
-                        maxLength={8}
-                        className="nfc-hidden-input"
-                        placeholder="Lector NFC activo..."
-                    />
-                    
-                    {isSaving ? (
-                        <div className="nfc-preview success">
-                            <div className="nfc-icon">💾</div>
-                            <span>Guardando vínculo...</span>
-                        </div>
-                    ) : nfcId && readingsCount === 3 ? (
-                        <div className="nfc-preview success">
-                            <CheckCircle size={32} />
-                            <span>ID capturado: {nfcId}</span>
-                        </div>
-                    ) : (
-                        <div className="nfc-waiting">
-                            <div className="nfc-icon">📡</div>
-                            <span>Esperando lectura del lector NFC...</span>
-                        </div>
-                    )}
+                <div className="modal-body">
+                    <div className="modal-student-info">
+                        <p className="modal-student-name">Estudiante: <strong>{studentName}</strong></p>
+                        <p className="modal-instruction">Acerque la tarjeta NFC al lector...</p>
+                    </div>
+
+                    {error && <div className="form-feedback error">{error}</div>}
+
+                    <div className="nfc-capture-area">
+                        <input
+                            ref={inputFieldRef}
+                            type="text"
+                            id="nfcIdInput"
+                            onChange={handleInputChange}
+                            autoFocus
+                            autoComplete="off"
+                            disabled={isSaving || readingsCount >= 3}
+                            maxLength={8}
+                            className="nfc-hidden-input"
+                            placeholder="Lector NFC activo..."
+                        />
+
+                        {isSaving ? (
+                            <div className="nfc-preview success">
+                                <div className="nfc-icon">💾</div>
+                                <span>Guardando vínculo...</span>
+                            </div>
+                        ) : nfcId && readingsCount === 3 ? (
+                            <div className="nfc-preview success">
+                                <CheckCircle size={32} />
+                                <span>ID capturado: {nfcId}</span>
+                            </div>
+                        ) : (
+                            <div className="nfc-waiting">
+                                <div className="nfc-icon">📡</div>
+                                <span>Esperando lectura del lector NFC...</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="modal-actions">
                     <button type="button" className="modal-btn cancel" onClick={onClose} disabled={isSaving}>
-                        Cerrar
+                        <X size={16} />
+                        Cancelar
                     </button>
                 </div>
             </div>

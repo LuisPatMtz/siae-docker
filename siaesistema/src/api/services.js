@@ -14,7 +14,7 @@ export const authService = {
         const response = await apiClient.post('/login', formData);
         return response.data;
     },
-    
+
     getMe: async () => {
         const response = await apiClient.get('/users/me');
         return response.data;
@@ -29,29 +29,29 @@ export const usuariosService = {
         const response = await apiClient.get('/users');
         return response.data;
     },
-    
+
     getById: async (userId) => {
         const response = await apiClient.get(`/users/${userId}`);
         return response.data;
     },
-    
+
     create: async (userData) => {
         const response = await apiClient.post('/users', userData);
         return response.data;
     },
-    
+
     update: async (userId, userData) => {
         const response = await apiClient.put(`/users/${userId}`, userData);
         return response.data;
     },
-    
+
     updatePermissions: async (userId, permissions) => {
         const response = await apiClient.patch(`/users/${userId}/permissions`, {
             permissions
         });
         return response.data;
     },
-    
+
     delete: async (userId) => {
         const response = await apiClient.delete(`/users/${userId}`);
         return response.data;
@@ -68,32 +68,32 @@ export const ciclosService = {
         });
         return response.data;
     },
-    
+
     getActivo: async () => {
         const response = await apiClient.get('/ciclos/activo');
         return response.data;
     },
-    
+
     getById: async (cicloId) => {
         const response = await apiClient.get(`/ciclos/${cicloId}`);
         return response.data;
     },
-    
+
     create: async (cicloData) => {
         const response = await apiClient.post('/ciclos', cicloData);
         return response.data;
     },
-    
+
     update: async (cicloId, cicloData) => {
         const response = await apiClient.put(`/ciclos/${cicloId}`, cicloData);
         return response.data;
     },
-    
+
     activar: async (cicloId) => {
         const response = await apiClient.post(`/ciclos/${cicloId}/activar`);
         return response.data;
     },
-    
+
     delete: async (cicloId) => {
         const response = await apiClient.delete(`/ciclos/${cicloId}`);
         return response.data;
@@ -108,22 +108,22 @@ export const gruposService = {
         const response = await apiClient.get('/grupos');
         return response.data;
     },
-    
+
     getById: async (grupoId) => {
         const response = await apiClient.get(`/grupos/${grupoId}`);
         return response.data;
     },
-    
+
     create: async (grupoData) => {
         const response = await apiClient.post('/grupos', grupoData);
         return response.data;
     },
-    
+
     update: async (grupoId, grupoData) => {
         const response = await apiClient.put(`/grupos/${grupoId}`, grupoData);
         return response.data;
     },
-    
+
     delete: async (grupoId) => {
         const response = await apiClient.delete(`/grupos/${grupoId}`);
         return response.data;
@@ -138,32 +138,32 @@ export const estudiantesService = {
         const response = await apiClient.get('/estudiantes');
         return response.data;
     },
-    
+
     getByMatricula: async (matricula) => {
         const response = await apiClient.get(`/estudiantes/${matricula}`);
         return response.data;
     },
-    
+
     getByGrupo: async (grupoId) => {
         const response = await apiClient.get(`/estudiantes/grupo/${grupoId}`);
         return response.data;
     },
-    
+
     getByCiclo: async (cicloId) => {
         const response = await apiClient.get(`/estudiantes/ciclo/${cicloId}`);
         return response.data;
     },
-    
+
     create: async (estudianteData) => {
         const response = await apiClient.post('/estudiantes', estudianteData);
         return response.data;
     },
-    
+
     update: async (matricula, estudianteData) => {
         const response = await apiClient.put(`/estudiantes/${matricula}`, estudianteData);
         return response.data;
     },
-    
+
     uploadCSV: async (file) => {
         const formData = new FormData();
         formData.append('file', file);
@@ -174,7 +174,7 @@ export const estudiantesService = {
         });
         return response.data;
     },
-    
+
     bulkMoveGroup: async (matriculas, nuevoIdGrupo) => {
         const response = await apiClient.patch('/estudiantes/bulk-move-group', {
             matriculas,
@@ -182,7 +182,7 @@ export const estudiantesService = {
         });
         return response.data;
     },
-    
+
     delete: async (matricula) => {
         const response = await apiClient.delete(`/estudiantes/${matricula}`);
         return response.data;
@@ -197,33 +197,33 @@ export const nfcService = {
         const response = await apiClient.get('/nfc');
         return response.data;
     },
-    
+
     getByUID: async (nfcUid) => {
         const response = await apiClient.get(`/nfc/${nfcUid}`);
         return response.data;
     },
-    
+
     getByEstudiante: async (matricula) => {
         const response = await apiClient.get(`/nfc/estudiante/${matricula}`);
         return response.data;
     },
-    
+
     vincular: async (nfcData) => {
         // Endpoint alternativo para vincular NFC
         const response = await apiClient.post('/nfc/vincular', nfcData);
         return response.data;
     },
-    
+
     create: async (nfcData) => {
         const response = await apiClient.post('/nfc', nfcData);
         return response.data;
     },
-    
+
     delete: async (nfcUid) => {
         const response = await apiClient.delete(`/nfc/${nfcUid}`);
         return response.data;
     },
-    
+
     deleteByEstudiante: async (matricula) => {
         const response = await apiClient.delete(`/nfc/estudiante/${matricula}`);
         return response.data;
@@ -242,23 +242,23 @@ export const accesosService = {
         const response = await apiClient.post('/acceso/registrar', payload);
         return response.data;
     },
-    
+
     getByMatricula: async (matricula) => {
         const response = await apiClient.get(`/acceso/${matricula}`);
         return response.data;
     },
-    
+
     getByCiclo: async (cicloId) => {
         const response = await apiClient.get(`/acceso/ciclo/${cicloId}`);
         return response.data;
     },
-    
+
     // Método auxiliar para verificar si ya existe acceso hoy
     verificarAccesoHoy: async (nfcUid, cicloId) => {
         try {
             const accesos = await apiClient.get(`/acceso/ciclo/${cicloId}`);
             const hoy = new Date().toISOString().split('T')[0];
-            
+
             return accesos.data.find(acceso => {
                 const fechaAcceso = new Date(acceso.hora_registro).toISOString().split('T')[0];
                 return acceso.nfc_uid === nfcUid && fechaAcceso === hoy;
@@ -279,12 +279,12 @@ export const faltasService = {
         });
         return response.data;
     },
-    
+
     getById: async (faltaId) => {
         const response = await apiClient.get(`/faltas/${faltaId}`);
         return response.data;
     },
-    
+
     getByEstudiante: async (matricula, cicloId = null) => {
         const params = cicloId ? { id_ciclo: cicloId } : {};
         const response = await apiClient.get(`/faltas/estudiante/${matricula}`, {
@@ -292,7 +292,7 @@ export const faltasService = {
         });
         return response.data;
     },
-    
+
     getByFecha: async (fecha, cicloId = null) => {
         const params = cicloId ? { id_ciclo: cicloId } : {};
         const response = await apiClient.get(`/faltas/fecha/${fecha}`, {
@@ -300,24 +300,24 @@ export const faltasService = {
         });
         return response.data;
     },
-    
+
     create: async (faltaData) => {
         const response = await apiClient.post('/faltas', faltaData);
         return response.data;
     },
-    
+
     update: async (faltaId, faltaData) => {
         const response = await apiClient.put(`/faltas/${faltaId}`, faltaData);
         return response.data;
     },
-    
+
     justificar: async (faltaId, justificacion) => {
         const response = await apiClient.patch(`/faltas/${faltaId}/justificar`, null, {
             params: { justificacion }
         });
         return response.data;
     },
-    
+
     delete: async (faltaId) => {
         const response = await apiClient.delete(`/faltas/${faltaId}`);
         return response.data;
@@ -334,25 +334,52 @@ export const dashboardService = {
         });
         return response.data;
     },
-    
+
     getGrupoData: async (grupoId, periodo = 'semester') => {
         const response = await apiClient.get(`/dashboard/grupo/${grupoId}`, {
             params: { periodo } // week, month, semester
         });
         return response.data;
     },
-    
+
     getEstadisticasResumen: async () => {
         const response = await apiClient.get('/dashboard/estadisticas/resumen');
         return response.data;
     },
-    
+
     getEstadisticasPeriodos: async (turno = null, grupoId = null) => {
         const params = {};
         if (turno) params.turno = turno;
         if (grupoId) params.grupo_id = grupoId;
-        
+
         const response = await apiClient.get('/dashboard/estadisticas/periodos', { params });
+        return response.data;
+    }
+};
+
+// ============================================
+// SERVICIOS DE ASISTENCIA
+// ============================================
+export const asistenciaService = {
+    registrarPorMatricula: async (matricula) => {
+        const response = await apiClient.post('/asistencia/registrar', null, {
+            params: { matricula }
+        });
+        return response.data;
+    },
+
+    getHistorialEstudiante: async (matricula) => {
+        const response = await apiClient.get(`/asistencia/estudiante/${matricula}`);
+        return response.data;
+    },
+
+    getAsistenciasHoy: async () => {
+        const response = await apiClient.get('/asistencia/hoy');
+        return response.data;
+    },
+
+    getEstadisticasHoy: async () => {
+        const response = await apiClient.get('/asistencia/estadisticas/hoy');
         return response.data;
     }
 };
@@ -367,5 +394,6 @@ export default {
     nfc: nfcService,
     accesos: accesosService,
     faltas: faltasService,
-    dashboard: dashboardService
+    dashboard: dashboardService,
+    asistencia: asistenciaService
 };

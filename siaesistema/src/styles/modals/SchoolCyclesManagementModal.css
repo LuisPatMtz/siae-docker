@@ -1,0 +1,86 @@
+/* src/styles/modals/SchoolCyclesManagementModal.css */
+
+/* Estilos específicos para el modal de gestión de ciclos escolares */
+/* Los estilos base de tabla, controles y formularios están en SharedModalStyles.css */
+
+/* Nota informativa sobre ciclo activo */
+.cycle-info-note {
+    padding: var(--siae-spacing-sm);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+    border-left: 3px solid var(--siae-primary);
+    border-radius: var(--siae-radius-md);
+    margin-bottom: var(--siae-spacing-md);
+    font-size: 0.875rem;
+    color: var(--siae-text-secondary);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--siae-spacing-sm);
+}
+
+.cycle-info-note strong {
+    color: var(--siae-primary);
+    font-weight: 600;
+}
+
+/* Fila activa en la tabla */
+.students-table tbody tr.active-row {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(22, 163, 74, 0.04) 100%);
+    border-left: 3px solid var(--siae-success);
+}
+
+.students-table tbody tr.active-row:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(22, 163, 74, 0.06) 100%);
+}
+
+/* Badges de estado mejorados */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+}
+
+.badge.active {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(22, 163, 74, 0.1) 100%);
+    color: var(--siae-success);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    box-shadow: 0 2px 4px rgba(34, 197, 94, 0.1);
+}
+
+.badge.inactive {
+    background: var(--siae-border-light);
+    color: var(--siae-text-tertiary);
+    border: 1px solid var(--siae-border);
+}
+
+/* Botón de activar ciclo */
+.icon-btn.success {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.05) 100%);
+    color: var(--siae-success);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    transition: all 0.2s ease;
+}
+
+.icon-btn.success:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(22, 163, 74, 0.1) 100%);
+    border-color: var(--siae-success);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.2);
+}
+
+.icon-btn.success:active {
+    transform: translateY(0);
+}
+
+/* Contenedor de botones de acción */
+.action-buttons {
+    display: flex;
+    gap: var(--siae-spacing-xs);
+    align-items: center;
+}

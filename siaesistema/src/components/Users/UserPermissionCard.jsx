@@ -1,6 +1,38 @@
 import React, { useState } from 'react';
-import { Trash2, Edit3 } from 'lucide-react';
+import { Trash2, Edit3, User } from 'lucide-react';
 import DeleteUserConfirmModal from './DeleteUserConfirmModal.jsx';
+
+// Helper para obtener iniciales
+const getInitials = (name) => {
+    if (!name) return 'U';
+    return name
+        .split(' ')
+        .map(word => word[0])
+        .join('')
+        .substring(0, 2)
+        .toUpperCase();
+};
+
+// Helper para obtener color de fondo basado en el nombre
+const getAvatarColor = (name) => {
+    const colors = [
+        'linear-gradient(135deg, #4F46E5 0%, #3730A3 100%)', // Indigo
+        'linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)', // Blue
+        'linear-gradient(135deg, #059669 0%, #047857 100%)', // Emerald
+        'linear-gradient(135deg, #D97706 0%, #B45309 100%)', // Amber
+        'linear-gradient(135deg, #DC2626 0%, #991B1B 100%)', // Red
+        'linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%)', // Violet
+        'linear-gradient(135deg, #DB2777 0%, #9D174D 100%)', // Pink
+    ];
+
+    let hash = 0;
+    const str = name || 'default';
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    return colors[Math.abs(hash) % colors.length];
+};
 
 // --- CAMBIO 1 ---
 // El componente 'PermissionToggle' ya no acepta ni renderiza la prop 'description'
@@ -29,7 +61,7 @@ const PermissionToggle = ({ label, isChecked, onChange, userId }) => {
 const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    
+
     // Handler que avisa a la página padre (GestionUsuariosPage) sobre un cambio
     const handleChange = (permissionKey) => {
         const newValue = !user.permissions[permissionKey];
@@ -45,7 +77,7 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
     // Handler para confirmar eliminación
     const handleConfirmDelete = async () => {
         if (!onDelete) return;
-        
+
         setIsDeleting(true);
         try {
             await onDelete(user.id, user.full_name || user.username);
@@ -62,14 +94,23 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
         setIsDeleteModalOpen(false);
     };
 
+    const displayName = user.full_name || user.username;
+    const initials = getInitials(displayName);
+    const avatarBackground = getAvatarColor(user.username);
+
     return (
         <div className="user-permission-card card">
             <div className="user-info-header">
-                <h3 className="user-name">{user.full_name || user.username}</h3>
-                <span className="user-role-badge">{user.role}</span>
-                <span className="user-username">{user.username}</span>
+                <div className="user-avatar" style={{ background: avatarBackground }}>
+                    {initials}
+                </div>
+                <div className="user-details">
+                    <h3 className="user-name" title={displayName}>{displayName}</h3>
+                    <span className="user-role-badge">{user.role}</span>
+                    <span className="user-username">{user.username}</span>
+                </div>
             </div>
-            
+
             <div className="permissions-list">
                 {/* --- CAMBIO 2 --- */}
                 {/* Se eliminaron las props 'description' de todos los toggles */}
@@ -98,24 +139,24 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
                     userId={user.id}
                 />
             </div>
-            
+
             <div className="card-actions-group">
-                <button 
+                <button
                     className="edit-user-btn"
                     onClick={() => onEdit(user)}
                     title="Editar usuario"
                 >
                     <Edit3 size={16} />
-                    Editar Usuario
+                    Editar
                 </button>
-                
-                <button 
+
+                <button
                     className="delete-user-btn-full"
                     onClick={handleDelete}
                     title="Eliminar usuario"
                 >
                     <Trash2 size={16} />
-                    Eliminar Usuario
+                    Eliminar
                 </button>
             </div>
 
@@ -123,7 +164,7 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
                 isOpen={isDeleteModalOpen}
                 onClose={handleCancelDelete}
                 onConfirm={handleConfirmDelete}
-                userName={user.full_name || user.username}
+                userName={displayName}
                 isDeleting={isDeleting}
             />
         </div>

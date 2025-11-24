@@ -2,7 +2,7 @@
 from datetime import timedelta
 from typing import Annotated
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session
+from sqlmodel import Session, select
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.db.database import get_session
 # Importamos el modelo que SÍ tiene los permisos
@@ -23,7 +23,7 @@ def authenticate_user(username: str, password: str, session: Session) -> Usuario
     Busca al usuario y verifica su contraseña.
     Retorna el objeto Usuario si es exitoso, o False si falla.
     """
-    user = session.query(Usuario).filter(Usuario.username == username).first()
+    user = session.exec(select(Usuario).where(Usuario.username == username)).first()
     if not user:
         return False
     if not verify_password(password, user.hashed_password):

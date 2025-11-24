@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Calendar, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { X, Calendar, AlertCircle, Plus } from 'lucide-react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import '../../styles/modals/SharedModalStyles.css';
 
 const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
     const [formData, setFormData] = useState({
@@ -9,7 +10,7 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
         fecha_fin: ''
     });
     const [errors, setErrors] = useState({});
-    
+
     // Funcionalidad ESC optimizada
     useEscapeKey(isOpen, onClose);
 
@@ -19,7 +20,7 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
             ...prev,
             [name]: value
         }));
-        
+
         // Limpiar error del campo cuando el usuario empiece a escribir
         if (errors[name]) {
             setErrors(prev => ({
@@ -47,7 +48,7 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
         if (formData.fecha_inicio && formData.fecha_fin) {
             const fechaInicio = new Date(formData.fecha_inicio);
             const fechaFin = new Date(formData.fecha_fin);
-            
+
             if (fechaFin <= fechaInicio) {
                 newErrors.fecha_fin = 'La fecha de fin debe ser posterior a la fecha de inicio';
             }
@@ -79,17 +80,18 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content medium cycle-modal">
+            <div className="modal-content max-w-lg">
                 <div className="modal-header">
-                    <h2>
-                        <Calendar className="icon cycle-icon" size={24} />
+                    <h2 className="modal-title">
+                        <Calendar size={20} />
                         Crear Nuevo Ciclo Escolar
                     </h2>
-                    <button 
-                        onClick={handleClose} 
-                        className="modal-close-btn" 
+                    <button
+                        onClick={handleClose}
+                        className="close-form-btn"
                         disabled={isCreating}
                         type="button"
+                        aria-label="Cerrar modal"
                     >
                         <X size={20} />
                     </button>
@@ -97,9 +99,9 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
 
                 <div className="modal-body">
                     <form id="cycle-form" onSubmit={handleSubmit} className="modal-form">
-                        <div className="form-group">
-                            <label htmlFor="nombre" className="form-label">
-                                Nombre del Ciclo <span className="required">*</span>
+                        <div className="modal-input-group">
+                            <label htmlFor="nombre">
+                                Nombre del Ciclo <span style={{ color: 'var(--siae-error)' }}>*</span>
                             </label>
                             <input
                                 id="nombre"
@@ -109,21 +111,19 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
                                 onChange={handleInputChange}
                                 placeholder="Ej: Agosto-Enero 2025"
                                 disabled={isCreating}
-                                className={`form-input ${errors.nombre ? 'invalid' : ''}`}
                             />
                             {errors.nombre && (
-                                <div className="error-message">
-                                    <AlertCircle size={14} />
+                                <div className="form-feedback error">
+                                    <AlertCircle size={16} />
                                     {errors.nombre}
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
-                            <div className="form-group">
-                                <label htmlFor="fecha_inicio" className="form-label">
-                                    <Calendar size={16} />
-                                    Fecha de Inicio <span className="required">*</span>
+                        <div className="form-grid-col-2">
+                            <div className="modal-input-group">
+                                <label htmlFor="fecha_inicio">
+                                    Fecha de Inicio <span style={{ color: 'var(--siae-error)' }}>*</span>
                                 </label>
                                 <input
                                     id="fecha_inicio"
@@ -132,20 +132,18 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
                                     value={formData.fecha_inicio}
                                     onChange={handleInputChange}
                                     disabled={isCreating}
-                                    className={`form-input ${errors.fecha_inicio ? 'invalid' : ''}`}
                                 />
                                 {errors.fecha_inicio && (
-                                    <div className="error-message">
-                                        <AlertCircle size={14} />
+                                    <div className="form-feedback error">
+                                        <AlertCircle size={16} />
                                         {errors.fecha_inicio}
                                     </div>
                                 )}
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="fecha_fin" className="form-label">
-                                    <Calendar size={16} />
-                                    Fecha de Fin <span className="required">*</span>
+                            <div className="modal-input-group">
+                                <label htmlFor="fecha_fin">
+                                    Fecha de Fin <span style={{ color: 'var(--siae-error)' }}>*</span>
                                 </label>
                                 <input
                                     id="fecha_fin"
@@ -154,40 +152,38 @@ const CreateCycleModal = ({ isOpen, onClose, onSubmit, isCreating }) => {
                                     value={formData.fecha_fin}
                                     onChange={handleInputChange}
                                     disabled={isCreating}
-                                    className={`form-input ${errors.fecha_fin ? 'invalid' : ''}`}
                                 />
-                                    {errors.fecha_fin && (
-                                        <div className="error-message">
-                                            <AlertCircle size={14} />
-                                            {errors.fecha_fin}
-                                        </div>
-                                    )}
-                                </div>
+                                {errors.fecha_fin && (
+                                    <div className="form-feedback error">
+                                        <AlertCircle size={16} />
+                                        {errors.fecha_fin}
+                                    </div>
+                                )}
                             </div>
+                        </div>
                     </form>
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-actions">
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="modal-btn modal-btn-secondary"
+                        className="modal-btn cancel"
                         disabled={isCreating}
                     >
-                        <X size={16} />
                         Cancelar
                     </button>
                     <button
                         type="submit"
                         form="cycle-form"
-                        className={`modal-btn modal-btn-primary ${isCreating ? 'loading' : ''}`}
+                        className="modal-btn save"
                         disabled={isCreating}
                     >
                         {isCreating ? (
                             <>Creando...</>
                         ) : (
                             <>
-                                <Plus size={16} />
+                                <Plus size={18} />
                                 Crear Ciclo
                             </>
                         )}

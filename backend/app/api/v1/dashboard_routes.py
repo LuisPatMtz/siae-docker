@@ -1,3 +1,7 @@
+# app/api/v1/dashboard_routes.py
+"""
+Endpoints para el dashboard del sistema SIAE.
+"""
 import calendar
 from datetime import datetime, timedelta, date
 from typing import Dict, List, Optional
@@ -7,7 +11,6 @@ from sqlmodel import Session, select, func, distinct
 from app.db.database import get_session
 from app.models import (
     Estudiante,
-    Acceso,
     NFC,
     Grupo,
     CicloEscolar,
@@ -42,6 +45,9 @@ def get_asistencia_porcentaje(
 ) -> float:
     """
     Calcula el porcentaje de asistencia para una lista de estudiantes en un rango de fechas.
+    
+    NOTA: Esta función necesita ser actualizada para usar el nuevo sistema de asistencia.
+    Por ahora retorna 0.0 hasta que se implemente el nuevo modelo.
     """
     if not estudiantes_ids:
         return 0.0
@@ -53,37 +59,9 @@ def get_asistencia_porcentaje(
     if dias_habiles == 0:
         return 0.0
 
-    # Asistencias totales posibles (ej: 20 estudiantes * 22 días hábiles)
-    asistencias_posibles = total_estudiantes * dias_habiles
-
-    if asistencias_posibles == 0:
-        return 0.0
-
-    # Contar las asistencias reales usando el nuevo modelo
-    subquery = (
-        select(
-            NFC.matricula_estudiante, 
-            func.count(distinct(func.date(Acceso.hora_registro))).label("dias_asistidos")
-        )
-        .join(Acceso, NFC.nfc_uid == Acceso.nfc_uid)
-        .where(
-            NFC.matricula_estudiante.in_(estudiantes_ids),
-            func.date(Acceso.hora_registro) >= start_date,
-            func.date(Acceso.hora_registro) <= end_date
-        )
-        .group_by(NFC.matricula_estudiante)
-    ).subquery()
-
-    # Sumamos el total de días asistidos por todos los estudiantes
-    total_asistencias_reales_result = session.exec(
-        select(func.sum(subquery.c.dias_asistidos))
-    ).first()
-
-    total_asistencias_reales = total_asistencias_reales_result or 0.0
-
-    # Calcular el porcentaje
-    porcentaje = (total_asistencias_reales / asistencias_posibles) * 100
-    return round(porcentaje, 1)
+    # TODO: Implementar cálculo de asistencia con el nuevo modelo
+    # Por ahora retornamos 0.0
+    return 0.0
 
 # --- ENDPOINTS DEL ROUTER ---
 
@@ -281,15 +259,9 @@ def get_estadisticas_resumen(
         .where(Estudiante.id_ciclo == ciclo_activo.id)
     ).first()
     
-    # Contar accesos de hoy
-    hoy = date.today()
-    accesos_hoy = session.exec(
-        select(func.count(Acceso.id))
-        .where(
-            func.date(Acceso.hora_registro) == hoy,
-            Acceso.id_ciclo == ciclo_activo.id
-        )
-    ).first()
+    # TODO: Actualizar para usar el nuevo sistema de asistencia
+    # Por ahora retornamos 0 para accesos_hoy
+    accesos_hoy = 0
     
     # Contar grupos
     total_grupos = session.exec(

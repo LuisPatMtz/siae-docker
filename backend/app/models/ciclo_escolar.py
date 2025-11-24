@@ -2,6 +2,12 @@
 """
 Modelo de Ciclo Escolar: periodos académicos.
 """
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.estudiante import Estudiante
+    from app.models.acceso import Acceso
+    from app.models.falta import Falta
 from typing import Optional, List
 from datetime import date
 from sqlmodel import Field, SQLModel, Relationship

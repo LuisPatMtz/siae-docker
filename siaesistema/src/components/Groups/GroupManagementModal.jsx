@@ -1,18 +1,22 @@
 // src/components/Groups/GroupManagementModal.jsx
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Users, X } from 'lucide-react';
 import axiosInstance from '../../api/axios';
 import Modal from '../UI/Modal';
-import Card from '../UI/Card';
-import Tag from '../UI/Tag';
+import '../../styles/modals/SharedModalStyles.css';
+import '../../styles/modals/GroupManagementModal.css';
 
 const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const [groups, setGroups] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSemestre, setSelectedSemestre] = useState('');
   const [selectedTurno, setSelectedTurno] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [deletingGroupId, setDeletingGroupId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Estados para el formulario
   const [formData, setFormData] = useState({
@@ -27,6 +31,7 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   useEffect(() => {
     if (isOpen) {
       fetchGroups();
+      fetchStudents();
     }
   }, [isOpen]);
 
@@ -43,7 +48,20 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  const fetchStudents = async () => {
+    try {
+      const response = await axiosInstance.get('/estudiantes');
+      setStudents(response.data || []);
+    } catch (error) {
+      console.error('Error al cargar estudiantes:', error);
+      setStudents([]);
+    }
+  };
 
+  // Contar estudiantes por grupo
+  const getStudentCount = (groupId) => {
+    return students.filter(student => student.id_grupo === groupId).length;
+  };
 
   // Filtrar grupos
   const filteredGroups = groups.filter(group => {
@@ -72,7 +90,7 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   // Validar formulario
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.nombre.trim()) {
       errors.nombre = 'El nombre del grupo es obligatorio';
     } else if (formData.nombre.trim().length < 2) {
@@ -91,10 +109,10 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
     return Object.keys(errors).length === 0;
   };
 
-  // Enviar formulario
+  // Enviar formulario (crear o editar)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsSubmitting(true);
@@ -105,8 +123,14 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
         semestre: parseInt(formData.semestre)
       };
 
-      await axiosInstance.post('/grupos', dataToSend);
-      
+      if (editingGroup) {
+        // Actualizar grupo existente
+        await axiosInstance.put(`/grupos/${editingGroup.id}`, dataToSend);
+      } else {
+        // Crear nuevo grupo
+        await axiosInstance.post('/grupos', dataToSend);
+      }
+
       // Limpiar formulario
       setFormData({
         nombre: '',
@@ -115,19 +139,65 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
       });
       setFormErrors({});
       setShowForm(false);
-      
+      setEditingGroup(null);
+
       // Recargar datos
       await fetchGroups();
-      
+
       // Notificar éxito
       if (onSuccess) {
-        onSuccess('Grupo creado exitosamente');
+        onSuccess(editingGroup ? 'Grupo actualizado exitosamente' : 'Grupo creado exitosamente');
       }
     } catch (error) {
-      console.error('Error al crear grupo:', error);
-      setFormErrors({ 
-        submit: error.response?.data?.message || 'Error al crear el grupo' 
+      console.error('Error al guardar grupo:', error);
+      setFormErrors({
+        submit: error.response?.data?.message || `Error al ${editingGroup ? 'actualizar' : 'crear'} el grupo`
       });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Manejar edición de grupo
+  const handleEdit = (group) => {
+    setEditingGroup(group);
+    setFormData({
+      nombre: group.nombre,
+      turno: group.turno,
+      semestre: group.semestre.toString()
+    });
+    setShowForm(true);
+  };
+
+  // Manejar confirmación de eliminación
+  const handleDeleteClick = (groupId) => {
+    setDeletingGroupId(groupId);
+    setShowDeleteConfirm(true);
+  };
+
+  // Eliminar grupo
+  const handleDelete = async () => {
+    if (!deletingGroupId) return;
+
+    setIsSubmitting(true);
+    try {
+      await axiosInstance.delete(`/grupos/${deletingGroupId}`);
+
+      // Recargar datos
+      await fetchGroups();
+
+      // Notificar éxito
+      if (onSuccess) {
+        onSuccess('Grupo eliminado exitosamente');
+      }
+
+      setShowDeleteConfirm(false);
+      setDeletingGroupId(null);
+    } catch (error) {
+      console.error('Error al eliminar grupo:', error);
+      if (onSuccess) {
+        onSuccess(error.response?.data?.message || 'Error al eliminar el grupo', 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -139,6 +209,9 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
     setSelectedSemestre('');
     setSelectedTurno('');
     setShowForm(false);
+    setEditingGroup(null);
+    setDeletingGroupId(null);
+    setShowDeleteConfirm(false);
     setFormData({
       nombre: '',
       turno: 'Matutino',
@@ -151,141 +224,148 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Users size={24} />
-          Gestión de Grupos
-        </div>
-      }
-      size="xl"
-    >
-      <div className="student-management-content">
-        {!showForm ? (
-          <>
-            {/* Controles superiores */}
-            <div className="management-controls">
-              <div className="search-and-filters">
-                <div className="search-box">
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Users size={24} />
+            Gestión de Grupos
+          </div>
+        }
+        size="xl"
+      >
+        <div className="student-management-content">
+          {!showForm ? (
+            <>
+              {/* Controles superiores */}
+              <div className="management-controls">
+                {/* Búsqueda */}
+                <div className="search-input-group">
                   <Search size={18} />
                   <input
                     type="text"
                     placeholder="Buscar por nombre de grupo..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="search-input"
                   />
                 </div>
-                  
-                  <div className="filter-controls">
-                    <select 
-                      value={selectedSemestre} 
-                      onChange={(e) => setSelectedSemestre(e.target.value)}
-                      className="filter-select"
-                    >
-                      <option value="">Todos los semestres</option>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(sem => (
-                        <option key={sem} value={sem}>
-                          {sem}° Semestre
-                        </option>
-                      ))}
-                    </select>
-                    
-                    <select 
-                      value={selectedTurno} 
-                      onChange={(e) => setSelectedTurno(e.target.value)}
-                      className="filter-select"
-                    >
-                      <option value="">Todos los turnos</option>
-                      <option value="Matutino">Matutino</option>
-                      <option value="Vespertino">Vespertino</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <button 
+
+                {/* Filtro por Semestre */}
+                <select
+                  value={selectedSemestre}
+                  onChange={(e) => setSelectedSemestre(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">Todos los Semestres</option>
+                  {[1, 2, 3, 4, 5, 6].map(sem => (
+                    <option key={sem} value={sem}>
+                      Semestre {sem}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Filtro por Turno */}
+                <select
+                  value={selectedTurno}
+                  onChange={(e) => setSelectedTurno(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">Todos los Turnos</option>
+                  <option value="Matutino">Matutino</option>
+                  <option value="Vespertino">Vespertino</option>
+                </select>
+
+                {/* Botón Agregar */}
+                <button
                   onClick={() => setShowForm(true)}
-                  className="add-item-btn"
+                  className="action-btn primary"
                   disabled={loading}
+                  style={{ marginLeft: 'auto' }}
                 >
                   <Plus size={18} />
-                  Agregar Grupo
+                  Agregar
                 </button>
               </div>
 
-              {/* Grid de tarjetas de grupos */}
-              <div className="groups-grid-container">
+              {/* Tabla de grupos */}
+              <div className="students-table-wrapper">
                 {loading ? (
-                  <div className="loading-state">
-                    <Users size={48} className="loading-icon" />
+                  <div className="empty-state">
                     <p>Cargando grupos...</p>
                   </div>
                 ) : filteredGroups.length > 0 ? (
-                  <div className="groups-grid">
-                    {filteredGroups.map(group => (
-                      <div key={group.id} className="group-card">
-                        <div className="group-card-header">
-                          <div className="group-main-info">
-                            <h3 className="group-title">{group.nombre}</h3>
-                            <div className="group-badges">
-                              <span className={`turno-badge ${group.turno?.toLowerCase()}`}>
-                                {group.turno}
-                              </span>
-                              <span className="semestre-badge">
-                                {group.semestre}° Sem
-                              </span>
+                  <table className="students-table">
+                    <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Semestre</th>
+                        <th>Turno</th>
+                        <th>Estudiantes</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredGroups.map(group => (
+                        <tr key={group.id}>
+                          <td>
+                            <strong>{group.nombre}</strong>
+                          </td>
+                          <td>{group.semestre}° Semestre</td>
+                          <td>
+                            <span className={`status-badge ${group.turno?.toLowerCase()}`}>
+                              {group.turno}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Users size={14} />
+                              <span>{getStudentCount(group.id)}</span>
                             </div>
-                          </div>
-                          <div className="group-stats">
-                            <div className="stat-item">
-                              <Users size={16} />
-                              <span>0 estudiantes</span>
+                          </td>
+                          <td>
+                            <div className="table-actions">
+                              <button
+                                className="icon-btn edit"
+                                onClick={() => handleEdit(group)}
+                                title="Editar grupo"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                className="icon-btn delete"
+                                onClick={() => handleDeleteClick(group.id)}
+                                title="Eliminar grupo"
+                              >
+                                <Trash2 size={16} />
+                              </button>
                             </div>
-                          </div>
-                        </div>
-                        
-                        <div className="group-card-actions">
-                          <button 
-                            className="group-action-btn edit-btn"
-                            onClick={() => {/* TODO: Implementar edición */}}
-                            title="Editar grupo"
-                          >
-                            <Edit size={16} />
-                            Editar
-                          </button>
-                          <button 
-                            className="group-action-btn delete-btn"
-                            onClick={() => {/* TODO: Implementar eliminación */}}
-                            title="Eliminar grupo"
-                          >
-                            <Trash2 size={16} />
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 ) : (
                   <div className="empty-state">
-                    <Users size={64} className="empty-icon" />
+                    <Users size={64} style={{ color: 'var(--siae-text-tertiary)', opacity: 0.5 }} />
                     <h3>
-                      {searchTerm || selectedSemestre || selectedTurno 
+                      {searchTerm || selectedSemestre || selectedTurno
                         ? 'No se encontraron grupos'
                         : 'No hay grupos registrados'
                       }
                     </h3>
                     <p>
-                      {searchTerm || selectedSemestre || selectedTurno 
+                      {searchTerm || selectedSemestre || selectedTurno
                         ? 'Prueba con diferentes filtros de búsqueda'
                         : 'Crea tu primer grupo para empezar a organizar estudiantes'
                       }
                     </p>
                     {!searchTerm && !selectedSemestre && !selectedTurno && (
-                      <button 
+                      <button
                         onClick={() => setShowForm(true)}
-                        className="create-first-group-btn"
+                        className="action-btn primary"
+                        style={{ marginTop: 'var(--siae-spacing-md)' }}
                       >
                         <Plus size={18} />
                         Crear Primer Grupo
@@ -297,41 +377,37 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
             </>
           ) : (
             /* Formulario para agregar grupo */
-            <div className="form-container">
-              <div className="form-header">
-                <h3>Agregar Nuevo Grupo</h3>
-              </div>
-
-              <form onSubmit={handleSubmit} className="group-form">
+            <div className="modal-form-container">
+              <form onSubmit={handleSubmit} className="modal-form">
                 {formErrors.submit && (
-                  <div className="error-banner">
+                  <div className="form-feedback error">
                     {formErrors.submit}
                   </div>
                 )}
 
-                <div className="form-group">
-                  <label htmlFor="grupo-nombre" className="form-label">
-                    Nombre del Grupo *
-                  </label>
-                  <input
-                    type="text"
-                    id="grupo-nombre"
-                    name="nombre"
-                    value={formData.nombre}
-                    onChange={handleInputChange}
-                    placeholder="Ej: 101, 201A, 305"
-                    className={`form-input ${formErrors.nombre ? 'error' : ''}`}
-                    disabled={isSubmitting}
-                    maxLength="20"
-                  />
-                  {formErrors.nombre && (
-                    <span className="error-message">{formErrors.nombre}</span>
-                  )}
-                </div>
+                <div className="form-grid">
+                  <div className="modal-input-group full-width">
+                    <label htmlFor="grupo-nombre">
+                      Nombre del Grupo *
+                    </label>
+                    <input
+                      type="text"
+                      id="grupo-nombre"
+                      name="nombre"
+                      value={formData.nombre}
+                      onChange={handleInputChange}
+                      placeholder="Ej: 101, 201A, 305"
+                      className={formErrors.nombre ? 'error' : ''}
+                      disabled={isSubmitting}
+                      maxLength="20"
+                    />
+                    {formErrors.nombre && (
+                      <span className="form-feedback error">{formErrors.nombre}</span>
+                    )}
+                  </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="grupo-turno" className="form-label">
+                  <div className="modal-input-group">
+                    <label htmlFor="grupo-turno">
                       Turno *
                     </label>
                     <select
@@ -339,19 +415,19 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
                       name="turno"
                       value={formData.turno}
                       onChange={handleInputChange}
-                      className={`form-select ${formErrors.turno ? 'error' : ''}`}
+                      className={formErrors.turno ? 'error' : ''}
                       disabled={isSubmitting}
                     >
                       <option value="Matutino">Matutino</option>
                       <option value="Vespertino">Vespertino</option>
                     </select>
                     {formErrors.turno && (
-                      <span className="error-message">{formErrors.turno}</span>
+                      <span className="form-feedback error">{formErrors.turno}</span>
                     )}
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="grupo-semestre" className="form-label">
+                  <div className="modal-input-group">
+                    <label htmlFor="grupo-semestre">
                       Semestre *
                     </label>
                     <select
@@ -359,44 +435,49 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
                       name="semestre"
                       value={formData.semestre}
                       onChange={handleInputChange}
-                      className={`form-select ${formErrors.semestre ? 'error' : ''}`}
+                      className={formErrors.semestre ? 'error' : ''}
                       disabled={isSubmitting}
                     >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(sem => (
+                      {[1, 2, 3, 4, 5, 6].map(sem => (
                         <option key={sem} value={sem}>
                           {sem}° Semestre
                         </option>
                       ))}
                     </select>
                     {formErrors.semestre && (
-                      <span className="error-message">{formErrors.semestre}</span>
+                      <span className="form-feedback error">{formErrors.semestre}</span>
                     )}
                   </div>
                 </div>
 
-                <div className="form-actions">
+                <div className="modal-actions">
                   <button
                     type="button"
-                    onClick={() => setShowForm(false)}
-                    className="modal-btn modal-btn-secondary"
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditingGroup(null);
+                      setFormData({
+                        nombre: '',
+                        turno: 'Matutino',
+                        semestre: '1'
+                      });
+                      setFormErrors({});
+                    }}
+                    className="modal-btn cancel"
                     disabled={isSubmitting}
                   >
-                    <X size={16} />
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="modal-btn modal-btn-primary"
+                    className="modal-btn save"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? (
-                      'Creando...'
-                    ) : (
-                      <>
-                        <Plus size={16} />
-                        Crear Grupo
-                      </>
-                    )}
+                    {editingGroup ? <Edit size={18} /> : <Plus size={18} />}
+                    {isSubmitting
+                      ? (editingGroup ? 'Actualizando...' : 'Creando...')
+                      : (editingGroup ? 'Actualizar Grupo' : 'Crear Grupo')
+                    }
                   </button>
                 </div>
               </form>
@@ -404,6 +485,69 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
           )}
         </div>
       </Modal>
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteConfirm && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }}>
+          <div className="modal-content confirmation-modal" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h2 className="modal-title">
+                <Trash2 size={24} />
+                Confirmar Eliminación
+              </h2>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingGroupId(null);
+                }}
+                className="close-form-btn"
+                disabled={isSubmitting}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="confirmation-icon">
+                <Trash2 size={48} />
+              </div>
+
+              <h3 className="confirmation-title">¿Eliminar grupo?</h3>
+
+              <div className="confirmation-message">
+                ¿Estás seguro de que deseas eliminar este grupo?
+                <br /><br />
+                <strong>Esta acción no se puede deshacer.</strong>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeletingGroupId(null);
+                }}
+                className="modal-btn cancel"
+                disabled={isSubmitting}
+              >
+                <X size={16} />
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="modal-btn delete"
+                disabled={isSubmitting}
+              >
+                <Trash2 size={16} />
+                {isSubmitting ? 'Eliminando...' : 'Eliminar Grupo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

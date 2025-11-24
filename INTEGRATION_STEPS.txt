@@ -1,0 +1,17 @@
+// Paso 1: Agregar después de la línea 16
+import SchoolCyclesManagementModal from '../components/SchoolCycles/SchoolCyclesManagementModal.jsx';
+
+// Paso 2: Agregar después de la línea 31
+const [isSchoolCyclesManagementModalOpen, setIsSchoolCyclesManagementModalOpen] = useState(false);
+
+// Paso 3: En la línea 918, cambiar:
+// DE: onClick={showSchoolCycleManagement}
+// A:  onClick={() => setIsSchoolCyclesManagementModalOpen(true)}
+
+// Paso 4: Agregar antes de </main> (línea ~1509):  
+{/* Modal de Gestión de Ciclos Escolares */}
+<SchoolCyclesManagementModal
+    isOpen={isSchoolCyclesManagementModalOpen}
+    onClose={() => setIsSchoolCyclesManagementModalOpen(false)}
+    onSuccess={addToast}
+/>

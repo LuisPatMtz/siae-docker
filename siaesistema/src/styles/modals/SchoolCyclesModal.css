@@ -1,0 +1,234 @@
+/* School Cycles Modal Styles */
+/* Includes: Grid, Cards, Badges, Actions */
+
+.cycles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--siae-spacing-xl);
+    padding: var(--siae-spacing-md) 0;
+}
+
+.cycle-card {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: var(--siae-radius-lg);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    padding: var(--siae-spacing-xl);
+    position: relative;
+    overflow: hidden;
+    transition: all var(--siae-transition-normal);
+    display: flex;
+    flex-direction: column;
+    gap: var(--siae-spacing-lg);
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.02),
+        0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px);
+}
+
+.cycle-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
+    opacity: 0;
+    transition: opacity var(--siae-transition-fast);
+}
+
+.cycle-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    border-color: rgba(74, 144, 226, 0.3);
+    background: white;
+}
+
+.cycle-card:hover::before {
+    opacity: 1;
+}
+
+/* Active Cycle Styling */
+.cycle-card.active-cycle {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 253, 244, 0.8));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    box-shadow:
+        0 4px 12px rgba(16, 185, 129, 0.1),
+        0 0 0 1px rgba(16, 185, 129, 0.1);
+}
+
+.cycle-card.active-cycle::before {
+    background: linear-gradient(90deg, #10B981, #34D399);
+    opacity: 1;
+}
+
+.cycle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--siae-spacing-md);
+}
+
+.cycle-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--siae-text-primary);
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+}
+
+.active-badge {
+    background: rgba(16, 185, 129, 0.15);
+    color: #059669;
+    padding: 6px 12px;
+    border-radius: var(--siae-radius-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.cycle-dates {
+    display: flex;
+    flex-direction: column;
+    gap: var(--siae-spacing-sm);
+    padding: var(--siae-spacing-md);
+    background: rgba(248, 250, 252, 0.7);
+    border-radius: var(--siae-radius-md);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.date-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.date-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--siae-text-secondary);
+    font-weight: 500;
+}
+
+.date-label svg {
+    color: var(--siae-primary-blue);
+    opacity: 0.8;
+}
+
+.date-value {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--siae-text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.cycle-actions {
+    display: flex;
+    gap: var(--siae-spacing-md);
+    margin-top: auto;
+    padding-top: var(--siae-spacing-lg);
+    border-top: 1px solid var(--siae-border-light);
+}
+
+.activate-button {
+    flex: 1;
+    padding: var(--siae-spacing-sm) var(--siae-spacing-md);
+    background: white;
+    border: 1px solid var(--siae-primary-blue);
+    color: var(--siae-primary-blue);
+    border-radius: var(--siae-radius-md);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--siae-transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--siae-spacing-sm);
+    height: 42px;
+}
+
+.activate-button:hover {
+    background: var(--siae-primary-blue);
+    color: white;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.25);
+    transform: translateY(-1px);
+}
+
+.edit-button,
+.delete-button {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--siae-radius-md);
+    border: 1px solid transparent;
+    background: white;
+    color: var(--siae-text-secondary);
+    cursor: pointer;
+    transition: all var(--siae-transition-fast);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--siae-border-light);
+}
+
+.edit-button:hover {
+    background: rgba(74, 144, 226, 0.1);
+    color: var(--siae-primary-blue);
+    border-color: rgba(74, 144, 226, 0.3);
+    transform: translateY(-1px);
+}
+
+.delete-button:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--siae-danger);
+    border-color: rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+}
+
+/* Info Alert Styles */
+.cycle-info-alert {
+    display: flex;
+    align-items: center;
+    gap: var(--siae-spacing-md);
+    padding: var(--siae-spacing-sm) var(--siae-spacing-lg);
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--siae-radius-md);
+    color: var(--siae-primary-blue);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    flex: 1;
+}
+
+.cycle-info-alert svg {
+    flex-shrink: 0;
+}
+
+/* Responsive for Cycles */
+@media (max-width: 768px) {
+    .cycles-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cycle-card {
+        padding: var(--siae-spacing-md);
+    }
+
+    .cycle-info-alert {
+        font-size: 0.875rem;
+        padding: var(--siae-spacing-sm);
+    }
+}

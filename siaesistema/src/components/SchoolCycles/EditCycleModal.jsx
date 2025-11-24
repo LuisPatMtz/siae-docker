@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Save, AlertCircle, Edit3 } from 'lucide-react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import '../../styles/modals/SharedModalStyles.css';
 
 const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => {
     const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
             ...prev,
             [name]: value
         }));
-        
+
         // Limpiar error del campo cuando el usuario empiece a escribir
         if (errors[name]) {
             setErrors(prev => ({
@@ -57,7 +58,7 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
         if (formData.fecha_inicio && formData.fecha_fin) {
             const fechaInicio = new Date(formData.fecha_inicio);
             const fechaFin = new Date(formData.fecha_fin);
-            
+
             if (fechaFin <= fechaInicio) {
                 newErrors.fecha_fin = 'La fecha de fin debe ser posterior a la fecha de inicio';
             }
@@ -83,15 +84,15 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content medium cycle-modal">
+            <div className="modal-content medium">
                 <div className="modal-header">
-                    <h2>
-                        <Edit3 className="icon cycle-icon" size={24} />
+                    <h2 className="modal-title">
+                        <Edit3 size={24} />
                         Editar Ciclo Escolar
                     </h2>
-                    <button 
-                        onClick={handleClose} 
-                        className="modal-close-btn" 
+                    <button
+                        onClick={handleClose}
+                        className="close-form-btn"
                         disabled={isEditing}
                         type="button"
                     >
@@ -101,9 +102,9 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
 
                 <div className="modal-body">
                     <form id="edit-cycle-form" onSubmit={handleSubmit} className="modal-form">
-                        <div className="form-group">
-                            <label htmlFor="edit-nombre" className="form-label">
-                                Nombre del Ciclo <span className="required">*</span>
+                        <div className="modal-input-group">
+                            <label htmlFor="edit-nombre">
+                                Nombre del Ciclo <span style={{ color: 'var(--siae-error)' }}>*</span>
                             </label>
                             <input
                                 id="edit-nombre"
@@ -113,21 +114,21 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
                                 onChange={handleInputChange}
                                 placeholder="Ej: Agosto-Enero 2025"
                                 disabled={isEditing}
-                                className={`form-input ${errors.nombre ? 'invalid' : ''}`}
+                                className={errors.nombre ? 'invalid' : ''}
                             />
                             {errors.nombre && (
-                                <div className="error-message">
+                                <div className="form-feedback error">
                                     <AlertCircle size={14} />
                                     {errors.nombre}
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-lg)' }}>
-                            <div className="form-group">
-                                <label htmlFor="edit-fecha_inicio" className="form-label">
-                                    <Calendar size={16} />
-                                    Fecha de Inicio <span className="required">*</span>
+                        <div className="form-grid">
+                            <div className="modal-input-group">
+                                <label htmlFor="edit-fecha_inicio">
+                                    <Calendar size={16} style={{ display: 'inline', marginRight: '4px' }} />
+                                    Fecha de Inicio <span style={{ color: 'var(--siae-error)' }}>*</span>
                                 </label>
                                 <input
                                     id="edit-fecha_inicio"
@@ -136,20 +137,20 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
                                     value={formData.fecha_inicio}
                                     onChange={handleInputChange}
                                     disabled={isEditing}
-                                    className={`form-input ${errors.fecha_inicio ? 'invalid' : ''}`}
+                                    className={errors.fecha_inicio ? 'invalid' : ''}
                                 />
                                 {errors.fecha_inicio && (
-                                    <div className="error-message">
+                                    <div className="form-feedback error">
                                         <AlertCircle size={14} />
                                         {errors.fecha_inicio}
                                     </div>
                                 )}
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="edit-fecha_fin" className="form-label">
-                                    <Calendar size={16} />
-                                    Fecha de Fin <span className="required">*</span>
+                            <div className="modal-input-group">
+                                <label htmlFor="edit-fecha_fin">
+                                    <Calendar size={16} style={{ display: 'inline', marginRight: '4px' }} />
+                                    Fecha de Fin <span style={{ color: 'var(--siae-error)' }}>*</span>
                                 </label>
                                 <input
                                     id="edit-fecha_fin"
@@ -158,25 +159,24 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
                                     value={formData.fecha_fin}
                                     onChange={handleInputChange}
                                     disabled={isEditing}
-                                    className={`form-input ${errors.fecha_fin ? 'invalid' : ''}`}
+                                    className={errors.fecha_fin ? 'invalid' : ''}
                                 />
                                 {errors.fecha_fin && (
-                                    <div className="error-message">
+                                    <div className="form-feedback error">
                                         <AlertCircle size={14} />
                                         {errors.fecha_fin}
                                     </div>
                                 )}
                             </div>
                         </div>
-
                     </form>
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-actions">
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="modal-btn modal-btn-secondary"
+                        className="modal-btn cancel"
                         disabled={isEditing}
                     >
                         <X size={16} />
@@ -185,7 +185,7 @@ const EditCycleModal = ({ isOpen, onClose, onSubmit, isEditing, cycleData }) => 
                     <button
                         type="button"
                         onClick={handleSubmit}
-                        className={`modal-btn modal-btn-primary ${isEditing ? 'loading' : ''}`}
+                        className="modal-btn save"
                         disabled={isEditing}
                     >
                         {isEditing ? (

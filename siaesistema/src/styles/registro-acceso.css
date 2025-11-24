@@ -1,0 +1,732 @@
+/* src/styles/registro-acceso.css */
+/* ====================================
+   REGISTRO DE ACCESOS - Premium Design
+   ==================================== */
+
+.registro-acceso-container {
+    padding: 1.5rem 1rem;
+    max-width: 100%;
+    width: 100%;
+    margin: 0 auto;
+    min-height: calc(100vh - 80px);
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.registro-acceso-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--siae-primary-blue);
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
+    text-align: center;
+}
+
+/* ====================================
+   MODO PRUEBA PANEL
+   ==================================== */
+
+.modo-prueba-panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    box-shadow:
+        0 4px 12px -2px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.modo-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+    width: 48px;
+    height: 24px;
+    appearance: none;
+    background: #cbd5e1;
+    border-radius: 12px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+    background: linear-gradient(135deg, var(--siae-primary-blue), #60a5fa);
+}
+
+.toggle-label input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label input[type="checkbox"]:checked::before {
+    transform: translateX(24px);
+}
+
+.toggle-text {
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.9375rem;
+}
+
+.fecha-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.fecha-selector label {
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.875rem;
+}
+
+.input-fecha {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    color: #334155;
+    background: white;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.input-fecha:focus {
+    border-color: var(--siae-primary-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* ====================================
+   MATRICULA REGISTRATION SECTION
+   ==================================== */
+
+.matricula-registro-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.25rem;
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.matricula-registro-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.matricula-registro-section:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 20px 40px -10px rgba(0, 0, 0, 0.15),
+        0 8px 16px -4px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.section-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #10b981;
+    margin: 0 0 1.25rem 0;
+    letter-spacing: -0.01em;
+}
+
+.section-subtitle svg {
+    color: #10b981;
+}
+
+.matricula-input-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+}
+
+.matricula-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    color: #334155;
+    background: white;
+    transition: all 0.3s ease;
+    outline: none;
+    font-weight: 500;
+}
+
+.matricula-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    transform: translateY(-2px);
+}
+
+.matricula-input::placeholder {
+    color: #94a3b8;
+}
+
+.matricula-input:disabled {
+    background: #f1f5f9;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-registrar-matricula {
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    white-space: nowrap;
+}
+
+.btn-registrar-matricula:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669, #10b981);
+}
+
+.btn-registrar-matricula:active:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.btn-registrar-matricula:disabled {
+    background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ====================================
+   NFC CAPTURE INPUT
+   ==================================== */
+
+.nfc-capture-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}
+
+/* ====================================
+   ACCESO PANEL (Main Status Display)
+   ==================================== */
+
+.acceso-panel {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 1.5rem;
+    padding: 3rem 2.5rem;
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    text-align: center;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.acceso-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
+    transition: all 0.3s ease;
+}
+
+/* Estado: Esperando */
+.acceso-panel.esperando {
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+.acceso-panel.esperando .acceso-icon {
+    color: #64748b;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Estado: Procesando */
+.acceso-panel.procesando::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+/* Estado: Éxito */
+.acceso-panel.exito {
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.acceso-panel.exito::before {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.acceso-panel.exito .acceso-icon {
+    color: #10b981;
+    animation: successPop 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estado: Error */
+.acceso-panel.error {
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.acceso-panel.error::before {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.acceso-panel.error .acceso-icon {
+    color: #ef4444;
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Estado: Duplicado */
+.acceso-panel.duplicado {
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.acceso-panel.duplicado::before {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.acceso-icon {
+    transition: all 0.3s ease;
+}
+
+.duplicado-icon {
+    font-size: 64px;
+    animation: bounce 0.6s ease-in-out;
+}
+
+.spinner-large {
+    width: 64px;
+    height: 64px;
+    border: 6px solid #e2e8f0;
+    border-top-color: var(--siae-primary-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.acceso-mensaje {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+/* ====================================
+   ACCESO DETALLES
+   ==================================== */
+
+.acceso-detalles {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 500px;
+    margin-top: 0.5rem;
+}
+
+.detalle-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.detalle-item svg {
+    color: var(--siae-primary-blue);
+    flex-shrink: 0;
+}
+
+.badge-tipo {
+    padding: 0.5rem 1.25rem;
+    border-radius: 1.25rem;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.badge-tipo.entrada {
+    background: linear-gradient(135deg, #10b981, #34d399);
+    color: white;
+}
+
+.badge-tipo.salida {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    color: white;
+}
+
+.badge-tipo.nfc {
+    background: linear-gradient(135deg, var(--siae-primary-blue), #60a5fa);
+    color: white;
+}
+
+.badge-grupo {
+    padding: 0.375rem 1rem;
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    color: white;
+    border-radius: 1rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* ====================================
+   HISTORIAL DEL DÍA
+   ==================================== */
+
+.historial-hoy {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.25rem;
+    box-shadow:
+        0 10px 25px -5px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    position: relative;
+    overflow: hidden;
+}
+
+.historial-hoy::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+}
+
+.historial-hoy h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #8b5cf6;
+    margin: 0 0 1.25rem 0;
+    letter-spacing: -0.01em;
+}
+
+.historial-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    max-height: 350px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.historial-lista::-webkit-scrollbar {
+    width: 6px;
+}
+
+.historial-lista::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 0.25rem;
+}
+
+.historial-lista::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+    border-radius: 0.25rem;
+}
+
+.historial-lista::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+}
+
+.historial-item {
+    display: grid;
+    grid-template-columns: 70px 40px 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.875rem 1.125rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.historial-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
+}
+
+.historial-hora {
+    font-weight: 700;
+    color: #475569;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.historial-tipo {
+    font-size: 1.25rem;
+    text-align: center;
+}
+
+.historial-tipo.entrada {
+    filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3));
+}
+
+.historial-tipo.salida {
+    filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3));
+}
+
+.historial-estudiante {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.9375rem;
+}
+
+.historial-grupo {
+    font-weight: 600;
+    color: #8b5cf6;
+    font-size: 0.8125rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 0.75rem;
+    white-space: nowrap;
+}
+
+/* ====================================
+   ANIMATIONS
+   ==================================== */
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(0.95);
+    }
+}
+
+@keyframes successPop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ====================================
+   RESPONSIVE DESIGN
+   ==================================== */
+
+@media (max-width: 768px) {
+    .registro-acceso-container {
+        padding: 1rem 0.75rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .modo-prueba-panel {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .fecha-selector {
+        width: 100%;
+    }
+
+    .input-fecha {
+        flex: 1;
+    }
+
+    .matricula-registro-section {
+        padding: 1.25rem 1rem;
+    }
+
+    .matricula-input-group {
+        flex-direction: column;
+    }
+
+    .matricula-input {
+        min-width: 100%;
+    }
+
+    .btn-registrar-matricula {
+        width: 100%;
+    }
+
+    .acceso-panel {
+        padding: 2rem 1.5rem;
+        min-height: 240px;
+    }
+
+    .acceso-mensaje {
+        font-size: 1.125rem;
+    }
+
+    .historial-hoy {
+        padding: 1.25rem 1rem;
+    }
+
+    .historial-item {
+        grid-template-columns: 60px 30px 1fr;
+        gap: 0.5rem;
+        padding: 0.75rem 0.875rem;
+    }
+
+    .historial-grupo {
+        grid-column: 2 / -1;
+        justify-self: start;
+    }
+}
+
+@media (max-width: 480px) {
+    .registro-acceso-container {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+    }
+
+    .acceso-icon svg,
+    .duplicado-icon,
+    .spinner-large {
+        width: 48px !important;
+        height: 48px !important;
+    }
+
+    .acceso-mensaje {
+        font-size: 1rem;
+    }
+
+    .historial-item {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .historial-hora,
+    .historial-tipo,
+    .historial-estudiante,
+    .historial-grupo {
+        grid-column: 1;
+    }
+}

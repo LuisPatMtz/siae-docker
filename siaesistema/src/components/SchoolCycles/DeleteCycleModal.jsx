@@ -1,24 +1,25 @@
 import React from 'react';
 import { X, AlertTriangle, Trash2 } from 'lucide-react';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
+import '../../styles/modals/SharedModalStyles.css';
 
 const DeleteCycleModal = ({ isOpen, onClose, onConfirm, isDeleting, cycleData }) => {
     // Hook optimizado para manejar ESC
     useEscapeKey(isOpen, onClose);
-    
+
     if (!isOpen || !cycleData) return null;
 
     return (
         <div className="modal-overlay">
             <div className="modal-content small cycle-modal confirmation-modal">
                 <div className="modal-header">
-                    <h2>
+                    <h2 className="modal-title">
                         <AlertTriangle className="icon" size={24} />
                         Confirmar Eliminación
                     </h2>
-                    <button 
-                        onClick={onClose} 
-                        className="modal-close-btn" 
+                    <button
+                        onClick={onClose}
+                        className="close-form-btn"
                         disabled={isDeleting}
                         type="button"
                     >
@@ -30,9 +31,9 @@ const DeleteCycleModal = ({ isOpen, onClose, onConfirm, isDeleting, cycleData })
                     <div className="confirmation-icon">
                         <AlertTriangle size={40} />
                     </div>
-                    
+
                     <h3 className="confirmation-title">¿Eliminar ciclo escolar?</h3>
-                    
+
                     <div className="confirmation-message">
                         Estás a punto de eliminar el ciclo escolar{' '}
                         <span className="confirmation-highlight">{cycleData.nombre}</span>
@@ -46,11 +47,11 @@ const DeleteCycleModal = ({ isOpen, onClose, onConfirm, isDeleting, cycleData })
                     </div>
                 </div>
 
-                <div className="modal-footer">
+                <div className="modal-actions">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="modal-btn modal-btn-secondary"
+                        className="modal-btn cancel"
                         disabled={isDeleting}
                     >
                         <X size={16} />
@@ -59,7 +60,7 @@ const DeleteCycleModal = ({ isOpen, onClose, onConfirm, isDeleting, cycleData })
                     <button
                         type="button"
                         onClick={onConfirm}
-                        className={`modal-btn modal-btn-danger ${isDeleting ? 'loading' : ''}`}
+                        className="modal-btn delete"
                         disabled={isDeleting}
                     >
                         {isDeleting ? (
