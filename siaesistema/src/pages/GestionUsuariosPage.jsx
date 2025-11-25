@@ -107,6 +107,11 @@ const GestionUsuariosPage = () => {
 
     return (
         <main className="dashboard-main">
+            {/* Page Header */}
+            <div className="page-title-container">
+                <h1 className="page-title">Gestión de Usuarios</h1>
+            </div>
+            
             {/* Premium Toolbar */}
             <div className="users-toolbar">
                 <div className="search-container">

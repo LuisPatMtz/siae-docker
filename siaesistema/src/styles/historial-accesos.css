@@ -58,8 +58,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: var(--gradient-indigo);
+    height: 3px;
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
 }
 
 .historial-filters-card:hover {
@@ -211,18 +211,7 @@
     left: 0;
     right: 0;
     height: 3px;
-}
-
-.historial-stat-card.stat-total::before {
-    background: var(--gradient-primary);
-}
-
-.historial-stat-card.stat-entradas::before {
-    background: var(--gradient-success);
-}
-
-.historial-stat-card.stat-salidas::before {
-    background: var(--gradient-danger);
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
 }
 
 .historial-stat-card:hover {
@@ -298,8 +287,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: var(--gradient-cyan);
+    height: 3px;
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
 }
 
 .table-header {

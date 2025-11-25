@@ -215,6 +215,9 @@ const DashboardPage = () => {
 
   return (
     <main className="dashboard-main">
+      <div className="page-title-container">
+        <h1 className="page-title">Dashboard</h1>
+      </div>
       {(isTurnLoading || isLoadingGroups) ? (
         <div className="loading-message">
           {isTurnLoading && isLoadingGroups ? 'Cargando datos del dashboard...' :
@@ -240,17 +243,19 @@ const DashboardPage = () => {
             </div>
             <div className="dashboard-horizontal-section attendance-bar-section">
               <div className="attendance-bar-card">
-                <h2 className="card-title">Asistencia por Grupo</h2>
-                <div className="bar-period-selectors">
-                  {PERIOD_OPTIONS.map(option => (
-                    <button
-                      key={option.key}
-                      className={`bar-period-btn ${barPeriod === option.key ? 'active' : ''}`}
-                      onClick={() => setBarPeriod(option.key)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+                <div className="card-header-with-select">
+                  <h2 className="card-title">Asistencia por Grupo</h2>
+                  <select 
+                    className="period-select"
+                    value={barPeriod}
+                    onChange={(e) => setBarPeriod(e.target.value)}
+                  >
+                    {PERIOD_OPTIONS.map(option => (
+                      <option key={option.key} value={option.key}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <AttendanceBarChart data={attendanceBarData} periodLabel={PERIOD_OPTIONS.find(p => p.key === barPeriod)?.label} />
               </div>

@@ -381,6 +381,13 @@ const GestionEstudiantesPage = () => {
     return (
         <main className="dashboard-main">
             {/* Breadcrumbs */}
+            {/* Page Header - Only show when no forms active */}
+            {!formActive && (
+                <div className="page-title-container">
+                    <h1 className="page-title">Gestión de Estudiantes</h1>
+                </div>
+            )}
+
             {formActive && (
                 <div className="breadcrumbs-nav">
                     <button onClick={() => {

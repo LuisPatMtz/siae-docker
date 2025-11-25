@@ -58,8 +58,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: var(--gradient-success);
+    height: 3px;
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
 }
 
 .asistencias-filters-card:hover {
@@ -200,18 +200,7 @@
     left: 0;
     right: 0;
     height: 3px;
-}
-
-.asistencias-stat-card.stat-total::before {
-    background: var(--gradient-success);
-}
-
-.asistencias-stat-card.stat-estudiantes::before {
-    background: var(--gradient-primary);
-}
-
-.asistencias-stat-card.stat-dias::before {
-    background: var(--gradient-purple);
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
 }
 
 .asistencias-stat-card:hover {
@@ -255,8 +244,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    background: var(--gradient-success);
+    height: 3px;
+    background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
 }
 
 .asistencias-table-container {

@@ -2,11 +2,9 @@
 import React from 'react';
 import { useAuth } from '../Auth/AuthContext';
 import { LogOut, Menu } from 'lucide-react';
-import usePageTitle from '../../hooks/usePageTitle';
 
 const Header = ({ onMenuClick }) => {
   const { logout, user } = useAuth();
-  const pageTitle = usePageTitle();
 
   return (
     <header className="header">
@@ -19,10 +17,6 @@ const Header = ({ onMenuClick }) => {
           
           <div className="logo-container">
             <span className="logo">SIAE</span>
-          </div>
-
-          <div className="page-title-header">
-            <h1>{pageTitle}</h1>
           </div>
         </div>
 

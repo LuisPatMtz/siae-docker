@@ -99,8 +99,8 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--siae-primary-blue), #667eea);
+  height: 3px;
+  background: linear-gradient(90deg, var(--siae-primary-blue), #60a5fa);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;

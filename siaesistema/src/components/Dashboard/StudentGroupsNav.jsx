@@ -5,17 +5,9 @@ const StudentGroupsNav = ({ semesters, selectedGroup, onGroupSelect, showAllOpti
   // Calcular el total de grupos
   const totalGroups = Object.values(semesters).reduce((total, groups) => total + groups.length, 0);
   
-  // Determinar el título dinámico
-  const getTitleInfo = () => {
-    if (activeMode === 'general') {
-      return ` Total de grupos: (${totalGroups})`;
-    }
-    return `Grupos ${activeMode.charAt(0).toUpperCase() + activeMode.slice(1)} (${totalGroups} grupos)`;
-  };
-
   return (
     <div className="card student-groups-nav filter-variant">
-      <h2 className="card-title">{getTitleInfo()}</h2>
+      <h2 className="card-title">Grupos</h2>
 
       {showAllOption && (
         <div className="group-buttons all-groups-button">

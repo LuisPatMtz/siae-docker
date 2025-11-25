@@ -1,7 +1,7 @@
 // src/pages/HistorialAccesosPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Download, Filter, User, Clock } from 'lucide-react';
-import { accesosService, ciclosService, estudiantesService, gruposService } from '../api/services';
+import { asistenciaService, estudiantesService, gruposService } from '../api/services';
 import '../styles/historial-accesos.css';
 
 const HistorialAccesosPage = () => {
@@ -10,7 +10,6 @@ const HistorialAccesosPage = () => {
     const [grupos, setGrupos] = useState([]);
     const [loading, setLoading] = useState(false);
     const [filtros, setFiltros] = useState({
-        cicloId: null,
         grupoId: '',
         matricula: '',
         fechaInicio: '',
@@ -25,15 +24,12 @@ const HistorialAccesosPage = () => {
         try {
             setLoading(true);
 
-            // Cargar ciclo activo
-            const cicloActivo = await ciclosService.getActivo();
-            setFiltros(prev => ({ ...prev, cicloId: cicloActivo.id }));
+            // Cargar todas las entradas del sistema de asistencias
+            // Esto incluye tanto registros por NFC como por matrícula
+            const entradasData = await asistenciaService.getTodasEntradas();
+            setAccesos(entradasData);
 
-            // Cargar accesos del ciclo activo
-            const accesosData = await accesosService.getByCiclo(cicloActivo.id);
-            setAccesos(accesosData);
-
-            // Cargar estudiantes y grupos
+            // Cargar estudiantes y grupos para los filtros
             const [estudiantesData, gruposData] = await Promise.all([
                 estudiantesService.getAll(),
                 gruposService.getAll()
@@ -52,37 +48,46 @@ const HistorialAccesosPage = () => {
     const filtrarAccesos = () => {
         let accesosFiltrados = [...accesos];
 
-        // Filtrar por matrícula
+        // Filtrar por matrícula o nombre
         if (filtros.matricula) {
-            const estudiantesFiltrados = estudiantes
-                .filter(est => est.nfc?.nfc_uid)
-                .filter(est => est.matricula.includes(filtros.matricula) ||
-                    `${est.nombre} ${est.apellido}`.toLowerCase().includes(filtros.matricula.toLowerCase()));
+            accesosFiltrados = accesosFiltrados.filter(acc => {
+                const estudiante = acc.estudiante;
+                if (!estudiante) return false;
 
-            const nfcUids = estudiantesFiltrados.map(est => est.nfc.nfc_uid);
-            accesosFiltrados = accesosFiltrados.filter(acc => nfcUids.includes(acc.nfc_uid));
+                const nombreCompleto = `${estudiante.nombre} ${estudiante.apellido}`.toLowerCase();
+                const busqueda = filtros.matricula.toLowerCase();
+
+                return estudiante.matricula.toLowerCase().includes(busqueda) ||
+                    nombreCompleto.includes(busqueda);
+            });
         }
 
         // Filtrar por grupo
         if (filtros.grupoId) {
-            const estudiantesGrupo = estudiantes
-                .filter(est => est.id_grupo === parseInt(filtros.grupoId) && est.nfc?.nfc_uid);
+            accesosFiltrados = accesosFiltrados.filter(acc => {
+                // El estudiante viene dentro del objeto de asistencia
+                const estudiante = acc.estudiante;
+                // Necesitamos buscar el estudiante completo para obtener el ID del grupo si no viene en el objeto ligero
+                // O comparar con el nombre del grupo si es lo que tenemos
+                if (!estudiante) return false;
 
-            const nfcUids = estudiantesGrupo.map(est => est.nfc.nfc_uid);
-            accesosFiltrados = accesosFiltrados.filter(acc => nfcUids.includes(acc.nfc_uid));
+                // Si tenemos el ID del grupo en el estudiante local (del servicio getAll)
+                const estudianteLocal = estudiantes.find(e => e.matricula === estudiante.matricula);
+                return estudianteLocal && estudianteLocal.id_grupo === parseInt(filtros.grupoId);
+            });
         }
 
         // Filtrar por rango de fechas
         if (filtros.fechaInicio) {
             accesosFiltrados = accesosFiltrados.filter(acc => {
-                const fechaAcceso = new Date(acc.hora_registro).toISOString().split('T')[0];
+                const fechaAcceso = new Date(acc.timestamp).toISOString().split('T')[0];
                 return fechaAcceso >= filtros.fechaInicio;
             });
         }
 
         if (filtros.fechaFin) {
             accesosFiltrados = accesosFiltrados.filter(acc => {
-                const fechaAcceso = new Date(acc.hora_registro).toISOString().split('T')[0];
+                const fechaAcceso = new Date(acc.timestamp).toISOString().split('T')[0];
                 return fechaAcceso <= filtros.fechaFin;
             });
         }
@@ -90,25 +95,25 @@ const HistorialAccesosPage = () => {
         return accesosFiltrados;
     };
 
-    const getEstudianteByNFC = (nfcUid) => {
-        return estudiantes.find(est => est.nfc?.nfc_uid === nfcUid);
+    // Helper para parsear timestamp local (ya que backend envía sin timezone)
+    const parseLocalTimestamp = (isoString) => {
+        return new Date(isoString);
     };
 
     const exportarCSV = () => {
         const accesosFiltrados = filtrarAccesos();
 
-        const headers = ['Fecha', 'Hora', 'Matrícula', 'Nombre', 'Grupo', 'NFC UID'];
+        const headers = ['Fecha', 'Hora', 'Matrícula', 'Nombre', 'Grupo'];
         const rows = accesosFiltrados.map(acceso => {
-            const estudiante = getEstudianteByNFC(acceso.nfc_uid);
-            const fecha = new Date(acceso.hora_registro);
+            const estudiante = acceso.estudiante;
+            const fecha = parseLocalTimestamp(acceso.timestamp);
 
             return [
                 fecha.toLocaleDateString('es-MX'),
                 fecha.toLocaleTimeString('es-MX'),
                 estudiante?.matricula || 'N/A',
                 estudiante ? `${estudiante.nombre} ${estudiante.apellido}` : 'Desconocido',
-                estudiante?.grupo?.nombre || 'Sin grupo',
-                acceso.nfc_uid
+                estudiante?.grupo || 'Sin grupo'
             ];
         });
 
@@ -120,13 +125,12 @@ const HistorialAccesosPage = () => {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `accesos_${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `entradas_${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
     };
 
     const limpiarFiltros = () => {
         setFiltros({
-            cicloId: filtros.cicloId,
             grupoId: '',
             matricula: '',
             fechaInicio: '',
@@ -140,7 +144,7 @@ const HistorialAccesosPage = () => {
         <div className="historial-accesos-container">
             <div className="historial-page-header">
                 <h1 className="historial-page-title">Historial de Accesos (Entradas)</h1>
-                <p className="historial-page-subtitle">Todos los registros de entrada del sistema de asistencias</p>
+                <p className="historial-page-subtitle">Todos los registros de entrada (NFC y Matrícula)</p>
             </div>
 
             {/* Filtros */}
@@ -221,12 +225,12 @@ const HistorialAccesosPage = () => {
             <div className="historial-stats-grid">
                 <div className="historial-stat-card stat-total">
                     <div className="stat-value">{accesosFiltrados.length}</div>
-                    <div className="stat-label">Accesos Totales</div>
+                    <div className="stat-label">Entradas Totales</div>
                 </div>
 
                 <div className="historial-stat-card stat-entradas">
                     <div className="stat-value">
-                        {new Set(accesosFiltrados.map(a => a.nfc_uid)).size}
+                        {new Set(accesosFiltrados.map(a => a.estudiante?.matricula)).size}
                     </div>
                     <div className="stat-label">Estudiantes Únicos</div>
                 </div>
@@ -234,7 +238,7 @@ const HistorialAccesosPage = () => {
                 <div className="historial-stat-card stat-salidas">
                     <div className="stat-value">
                         {new Set(accesosFiltrados.map(a =>
-                            new Date(a.hora_registro).toISOString().split('T')[0]
+                            new Date(a.timestamp).toISOString().split('T')[0]
                         )).size}
                     </div>
                     <div className="stat-label">Días Registrados</div>
@@ -245,7 +249,7 @@ const HistorialAccesosPage = () => {
             <div className="historial-table-card">
                 <div className="table-container">
                     {loading ? (
-                        <div className="loading-spinner">Cargando accesos...</div>
+                        <div className="loading-spinner">Cargando entradas...</div>
                     ) : (
                         <table className="historial-table">
                             <thead>
@@ -255,25 +259,23 @@ const HistorialAccesosPage = () => {
                                     <th>Matrícula</th>
                                     <th>Nombre</th>
                                     <th>Grupo</th>
-                                    <th>NFC UID</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {accesosFiltrados.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6">
+                                        <td colSpan="5">
                                             <div className="empty-state">
-                                                <p className="empty-state-title">No se encontraron accesos</p>
+                                                <p className="empty-state-title">No se encontraron entradas</p>
                                                 <p className="empty-state-text">Intenta ajustar los filtros</p>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     accesosFiltrados
-                                        .sort((a, b) => new Date(b.hora_registro) - new Date(a.hora_registro))
                                         .map((acceso) => {
-                                            const estudiante = getEstudianteByNFC(acceso.nfc_uid);
-                                            const fecha = new Date(acceso.hora_registro);
+                                            const estudiante = acceso.estudiante;
+                                            const fecha = parseLocalTimestamp(acceso.timestamp);
 
                                             return (
                                                 <tr key={acceso.id}>
@@ -290,12 +292,7 @@ const HistorialAccesosPage = () => {
                                                         }
                                                     </td>
                                                     <td className="td-grupo">
-                                                        {estudiante?.grupo?.nombre || '-'}
-                                                    </td>
-                                                    <td>
-                                                        <code style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-                                                            {acceso.nfc_uid}
-                                                        </code>
+                                                        {estudiante?.grupo || '-'}
                                                     </td>
                                                 </tr>
                                             );

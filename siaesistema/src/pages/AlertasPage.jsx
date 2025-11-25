@@ -120,9 +120,8 @@ const AlertasPage = () => {
     return (
         <div className="alertas-container">
             {/* Header */}
-            <div className="alertas-page-header">
-                <h1 className="alertas-page-title">Gestión de Alertas</h1>
-                <p className="alertas-page-subtitle">Monitorea y justifica las faltas de los estudiantes</p>
+            <div className="page-title-container">
+                <h1 className="page-title">Gestión de Alertas</h1>
             </div>
 
             {/* Controls */}
