@@ -18,6 +18,7 @@ const GestionUsuariosPage = lazy(() => import('./pages/GestionUsuariosPage.jsx')
 const GestionEstudiantesPage = lazy(() => import('./pages/GestionEstudiantesPage.jsx'));
 const RegistroAccesoPage = lazy(() => import('./pages/RegistroAccesoPage.jsx'));
 const HistorialAsistenciasPage = lazy(() => import('./pages/HistorialAsistenciasPage.jsx'));
+const CorteFaltasPage = lazy(() => import('./pages/CorteFaltasPage.jsx'));
 
 function App() {
     return (
@@ -33,6 +34,7 @@ function App() {
                         <Route path="/gestion-estudiantes" element={<GestionEstudiantesPage />} />
                         <Route path="/registro-acceso" element={<RegistroAccesoPage />} />
                         <Route path="/historial-asistencias" element={<HistorialAsistenciasPage />} />
+                        <Route path="/corte-faltas" element={<CorteFaltasPage />} />
                     </Route>
                 </Route>
                 <Route path="*" element={<Navigate to="/login" replace />} />

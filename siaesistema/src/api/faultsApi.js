@@ -98,6 +98,58 @@ export const faultsApi = {
     delete: async (faltaId) => {
         const response = await apiClient.delete(`/faltas/${faltaId}`);
         return response.data;
+    },
+
+    /**
+     * Calcular días hábiles en un rango de fechas
+     * @param {string} fechaInicio - Formato YYYY-MM-DD
+     * @param {string} fechaFin - Formato YYYY-MM-DD
+     * @returns {Promise<object>} - {dias_habiles: number}
+     */
+    calcularDiasHabiles: async (fechaInicio, fechaFin) => {
+        const response = await apiClient.get('/faltas/dias-habiles', {
+            params: {
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin
+            }
+        });
+        return response.data;
+    },
+
+    /**
+     * Obtener reporte previo de asistencias antes de procesar corte
+     * @param {number} cicloId 
+     * @param {string} fechaInicio - Formato YYYY-MM-DD
+     * @param {string} fechaFin - Formato YYYY-MM-DD
+     * @returns {Promise<Array>}
+     */
+    obtenerReporteAsistencias: async (cicloId, fechaInicio, fechaFin) => {
+        const response = await apiClient.get('/faltas/reporte-asistencias', {
+            params: {
+                ciclo_id: cicloId,
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin
+            }
+        });
+        return response.data;
+    },
+
+    /**
+     * Procesar corte de faltas (marca automáticamente las inasistencias)
+     * @param {number} cicloId 
+     * @param {string} fechaInicio - Formato YYYY-MM-DD
+     * @param {string} fechaFin - Formato YYYY-MM-DD
+     * @returns {Promise<object>} - {dias_procesados, estudiantes_procesados, faltas_registradas, detalles}
+     */
+    procesarCorte: async (cicloId, fechaInicio, fechaFin) => {
+        const response = await apiClient.post('/faltas/corte', null, {
+            params: {
+                ciclo_id: cicloId,
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin
+            }
+        });
+        return response.data;
     }
 };
 

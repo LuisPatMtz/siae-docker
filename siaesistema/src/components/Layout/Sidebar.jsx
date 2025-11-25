@@ -10,6 +10,7 @@ import {
   ClipboardList,
   History,
   CheckCircle,
+  Scissors,
   X,
   ChevronLeft,
   ChevronRight,
@@ -129,6 +130,19 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             >
               <History size={20} />
               <span>Historial de Asistencias</span>
+            </NavLink>
+          )}
+
+          {/* Corte de Faltas */}
+          {hasPermission('canManageAlerts') && (
+            <NavLink
+              to="/corte-faltas"
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              onClick={onClose}
+              title="Corte de Faltas"
+            >
+              <Scissors size={20} />
+              <span>Corte de Faltas</span>
             </NavLink>
           )}
         </nav>
