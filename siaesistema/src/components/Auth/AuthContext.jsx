@@ -1,118 +1,123 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../../api/axios'; // ¡Importamos nuestro cliente API!
+import apiClient from '../../api/axios';
 
-// 1. Creamos el Contexto
 const AuthContext = createContext();
 
-// 2. Creamos el Proveedor (Provider) del Contexto
 export function AuthProvider({ children }) {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [user, setUser] = useState(null);
-    // 'isLoading' ahora solo se usa para el PROCESO DE LOGIN
-    const [isLoading, setIsLoading] = useState(false); 
-    // 'isAuthLoading' es solo para la CARGA INICIAL de la app
-    const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [user, setUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-    const fetchUserData = async () => {
-        try {
-            // El interceptor de axios.js ya añade el token
-            const userResponse = await apiClient.get('/users/me');
-            setUser(userResponse.data);
-            setIsAuthenticated(true);
-        } catch (error) {
-            console.error("Error al cargar datos del usuario (fetchUserData):", error.response || error);
-            localStorage.removeItem('token');
-            setIsAuthenticated(false);
-            setUser(null);
-            throw error; 
-        }
-    }
+    const fetchUserData = async () => {
+        try {
+            const userResponse = await apiClient.get('/users/me');
+            setUser(userResponse.data);
+            setIsAuthenticated(true);
+        } catch (error) {
+            console.error("Error al cargar datos del usuario (fetchUserData):", error.response || error);
+            localStorage.removeItem('token');
+            setIsAuthenticated(false);
+            setUser(null);
+            throw error;
+        }
+    }
 
-    // 3. Función de Login (ACTUALIZADA)
-    const login = async (username, password) => {
-        // Usamos el isLoading del PROCESO DE LOGIN
-        setIsLoading(true); 
+    const login = async (username, password) => {
+        setIsLoading(true);
 
-        try {
-            const formData = new URLSearchParams();
-            formData.append('username', username);
-            formData.append('password', password);
+        try {
+            console.log('[AuthContext] Starting login for:', username);
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
 
-            const response = await apiClient.post('/login', formData, {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            });
+            console.log('[AuthContext] Sending login request to /login');
+            const response = await apiClient.post('/login', formData, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
 
-            const { access_token } = response.data;
-            if (!access_token) {
-                throw new Error("La API no devolvió un access_token");
-            }
-            localStorage.setItem('token', access_token);
-            
-            await fetchUserData(); // Cargamos los datos del usuario
+            console.log('[AuthContext] Login response:', response.status);
+            const { access_token } = response.data;
+            if (!access_token) {
+                throw new Error("La API no devolvió un access_token");
+            }
 
-        } catch (error) {
-            console.error("Fallo en el proceso de login:", error);
-            localStorage.removeItem('token');
-            setIsAuthenticated(false);
-            setUser(null);
-            throw error; // Lanza el error para que LoginPage.jsx lo atrape
-        } finally {
-            setIsLoading(false); // Terminamos el loading del LOGIN
-        }
-    };
+            console.log('[AuthContext] Token received, saving to localStorage');
+            localStorage.setItem('token', access_token);
 
-    // 4. Función de Logout
-    const logout = () => {
-        localStorage.removeItem('token');
-        setIsAuthenticated(false);
-        setUser(null);
-        window.location.href = '/login'; 
-    };
+            console.log('[AuthContext] Fetching user data from /users/me');
+            await fetchUserData();
 
-    // 5. Verificar token al cargar la app
-    useEffect(() => {
-        const checkTokenOnLoad = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    await fetchUserData();
-                } catch (error) {
-                    console.log("Token inválido al cargar, limpiando sesión.");
-                }
-            }
-            // Terminamos la carga INICIAL
-            setIsAuthLoading(false); 
-        };
-        
-        checkTokenOnLoad();
-    }, []);
+            console.log('[AuthContext] Login completed successfully');
 
-    // 6. Función helper para verificar permisos
+        } catch (error) {
+            console.error("[AuthContext] Login failed:", error);
+            console.error("[AuthContext] Error response:", error.response);
+            localStorage.removeItem('token');
+            setIsAuthenticated(false);
+            setUser(null);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        setIsAuthenticated(false);
+        setUser(null);
+        window.location.href = '/login';
+    };
+
+    useEffect(() => {
+        const checkTokenOnLoad = async () => {
+            console.log('[AuthContext] Checking token on load...');
+            const token = localStorage.getItem('token');
+
+            if (token) {
+                console.log('[AuthContext] Token found in localStorage');
+                try {
+                    await fetchUserData();
+                    console.log('[AuthContext] Token valid, user authenticated');
+                } catch (error) {
+                    console.error('[AuthContext] Token invalid or expired:', error);
+                    localStorage.removeItem('token');
+                    setIsAuthenticated(false);
+                    setUser(null);
+                }
+            } else {
+                console.log('[AuthContext] No token found in localStorage');
+            }
+
+            setIsAuthLoading(false);
+            console.log('[AuthContext] Initial auth check complete');
+        };
+
+        checkTokenOnLoad();
+    }, []);
+
     const hasPermission = (permission) => {
         return user?.permissions?.[permission] === true;
     };
 
-    // 7. Pasamos los valores al resto de la app
     const value = {
         isAuthenticated,
         user,
-        isLoading, // El isLoading del LOGIN
-        isAuthLoading, // El isLoading de la carga INICIAL
+        isLoading,
+        isAuthLoading,
         login,
         logout,
-        hasPermission, // Función para verificar permisos
-    };    return (
-        <AuthContext.Provider value={value}>
-            {/* ESTA ES LA CORRECCIÓN: 
-               Solo bloqueamos la app en la carga INICIAL,
-               pero NO durante el login.
-            */}
-            {!isAuthLoading && children} 
-        </AuthContext.Provider>
-    );
+        hasPermission,
+    };
+
+    return (
+        <AuthContext.Provider value={value}>
+            {!isAuthLoading && children}
+        </AuthContext.Provider>
+    );
 }
 
-// 7. Hook personalizado para usar el contexto fácilmente
 export function useAuth() {
-    return useContext(AuthContext);
+    return useContext(AuthContext);
 }

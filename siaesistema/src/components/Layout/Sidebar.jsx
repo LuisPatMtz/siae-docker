@@ -9,6 +9,7 @@ import {
   GraduationCap,
   ClipboardList,
   History,
+  CheckCircle,
   X,
   ChevronLeft,
   ChevronRight
@@ -68,7 +69,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
           {/* Gestión de Usuarios */}
           {hasPermission('canManageUsers') && (
             <NavLink
-              to="/usuarios"
+              to="/gestion-usuarios"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
               onClick={onClose}
               title="Gestión de Usuarios"
@@ -81,7 +82,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
           {/* Gestión de Estudiantes */}
           {hasPermission('canEditStudents') && (
             <NavLink
-              to="/estudiantes"
+              to="/gestion-estudiantes"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
               onClick={onClose}
               title="Gestión de Estudiantes"
@@ -108,10 +109,23 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
               to="/historial-accesos"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
               onClick={onClose}
-              title="Historial"
+              title="Historial de Accesos (Entradas)"
             >
               <History size={20} />
-              <span>Historial</span>
+              <span>Historial (Entradas)</span>
+            </NavLink>
+          )}
+
+          {/* Asistencias */}
+          {hasPermission('canViewDashboard') && (
+            <NavLink
+              to="/asistencias"
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              onClick={onClose}
+              title="Asistencias Completas"
+            >
+              <CheckCircle size={20} />
+              <span>Asistencias Completas</span>
             </NavLink>
           )}
         </nav>

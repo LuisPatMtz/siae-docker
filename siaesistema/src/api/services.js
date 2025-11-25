@@ -380,6 +380,15 @@ export const asistenciaService = {
     getEstadisticasHoy: async () => {
         const response = await apiClient.get('/asistencia/estadisticas/hoy');
         return response.data;
+    },
+
+    getTodasEntradas: async (fechaInicio = null, fechaFin = null) => {
+        const params = {};
+        if (fechaInicio) params.fecha_inicio = fechaInicio;
+        if (fechaFin) params.fecha_fin = fechaFin;
+
+        const response = await apiClient.get('/asistencia/entradas', { params });
+        return response.data;
     }
 };
 

@@ -139,8 +139,8 @@ const HistorialAccesosPage = () => {
     return (
         <div className="historial-accesos-container">
             <div className="historial-page-header">
-                <h1 className="historial-page-title">Historial de Accesos</h1>
-                <p className="historial-page-subtitle">Consulta y exporta el registro completo de accesos</p>
+                <h1 className="historial-page-title">Historial de Accesos (Entradas)</h1>
+                <p className="historial-page-subtitle">Todos los registros de entrada del sistema de asistencias</p>
             </div>
 
             {/* Filtros */}

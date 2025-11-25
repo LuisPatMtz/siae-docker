@@ -12,17 +12,23 @@ html {
 }
 
 body {
-  margin: 0; /* Quitamos el margen por defecto */
+  margin: 0;
+  /* Quitamos el margen por defecto */
   padding: 0;
   height: 100%;
   width: 100%;
+  overflow-x: hidden;
+  /* Prevenir scroll horizontal */
   font-family: 'Inter', sans-serif;
-  background-color: #F8F9FB; /* Este es tu color 'siae-gray-bg' */
-  color: #374151; /* Este es tu color 'siae-dark' */
+  background-color: #F8F9FB;
+  /* Este es tu color 'siae-gray-bg' */
+  color: #374151;
+  /* Este es tu color 'siae-dark' */
   -webkit-font-smoothing: antialiased;
-  -moz-osx-smoothing: grayscale;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
-  box-sizing: border-box; /* Hacemos que el padding no afecte el tamaño */
+  box-sizing: border-box;
+  /* Hacemos que el padding no afecte el tamaño */
 }

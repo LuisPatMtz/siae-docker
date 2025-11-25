@@ -4,6 +4,16 @@ import { CheckCircle, XCircle, Clock, User, Calendar, Hash } from 'lucide-react'
 import { accesosService, ciclosService, estudiantesService, asistenciaService } from '../api/services';
 import '../styles/registro-acceso.css';
 
+// Helper: El backend envía timestamps sin timezone (ya en hora de México)
+// JavaScript los interpreta como UTC, así que necesitamos tratarlos como locales
+const parseLocalTimestamp = (isoString) => {
+    // Agregar 'Z' haría que se interprete como UTC, lo cual NO queremos
+    // En su lugar, parseamos manualmente para tratarlo como hora local
+    const date = new Date(isoString);
+    // El timestamp ya viene en hora de México, así que lo usamos directamente
+    return date;
+};
+
 const RegistroAccesoPage = () => {
     const [nfcInput, setNfcInput] = useState('');
     const [ultimoAcceso, setUltimoAcceso] = useState(null);
@@ -344,7 +354,7 @@ const RegistroAccesoPage = () => {
                 <div className="historial-hoy">
                     <h3>Asistencias de Hoy ({historialHoy.length})</h3>
                     <div className="historial-lista">
-                        {Array.isArray(historialHoy) && historialHoy.slice(0, 15).map((asistencia, index) => (
+                        {historialHoy.slice(0, 15).map((asistencia, index) => (
                             <div key={asistencia.id} className="historial-item">
                                 <span className="historial-hora">
                                     {new Date(asistencia.timestamp).toLocaleTimeString('es-MX', {
@@ -359,9 +369,7 @@ const RegistroAccesoPage = () => {
                                     {asistencia.estudiante.nombre} {asistencia.estudiante.apellido}
                                 </span>
                                 <span className="historial-grupo">
-                                    {typeof asistencia.estudiante.grupo === 'object'
-                                        ? asistencia.estudiante.grupo?.nombre || 'Sin grupo'
-                                        : asistencia.estudiante.grupo || 'Sin grupo'}
+                                    {asistencia.estudiante.grupo || 'Sin grupo'}
                                 </span>
                             </div>
                         ))}

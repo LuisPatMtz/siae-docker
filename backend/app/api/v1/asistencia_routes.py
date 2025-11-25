@@ -86,19 +86,18 @@ def registrar_asistencia(
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
                 tipo=tipo_registro,
-                timestamp=ahora,
+                timestamp=ahora.replace(tzinfo=None),
+                es_valida=es_valida,
+                entrada_relacionada_id=entrada_relacionada_id
+            )
+            
             session.add(nueva_asistencia)
             session.commit()
             session.refresh(nueva_asistencia)
             
         else:
             # Hay entrada reciente -> Intentar registrar SALIDA
-            # Asegurar que el timestamp de la DB tenga zona horaria
-            entrada_timestamp = ultima_entrada.timestamp
-            if entrada_timestamp.tzinfo is None:
-                entrada_timestamp = MEXICO_TZ.localize(entrada_timestamp)
-            
-            tiempo_transcurrido = ahora - entrada_timestamp
+            tiempo_transcurrido = ahora - ultima_entrada.timestamp
             horas_transcurridas = tiempo_transcurrido.total_seconds() / 3600
             
             # Validar rango de tiempo
@@ -132,7 +131,7 @@ def registrar_asistencia(
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
                 tipo=tipo_registro,
-                timestamp=ahora,
+                timestamp=ahora.replace(tzinfo=None),
                 es_valida=es_valida,
                 entrada_relacionada_id=entrada_relacionada_id
             )
@@ -251,6 +250,64 @@ def obtener_asistencias_hoy(session: Session = Depends(get_session)):
             })
     
     return resultado
+
+
+@router.get("/entradas", response_model=List[dict])
+def obtener_todas_entradas(
+    fecha_inicio: str = None,
+    fecha_fin: str = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Obtiene todas las entradas (tipo='entrada') de asistencias.
+    Opcionalmente filtradas por rango de fechas.
+    Incluye información del estudiante.
+    """
+    # Construir query base
+    query = select(Asistencia).where(Asistencia.tipo == "entrada")
+    
+    # Aplicar filtros de fecha si se proporcionan
+    if fecha_inicio:
+        try:
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+            query = query.where(func.date(Asistencia.timestamp) >= fecha_inicio_dt)
+        except ValueError:
+            pass
+    
+    if fecha_fin:
+        try:
+            fecha_fin_dt = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+            query = query.where(func.date(Asistencia.timestamp) <= fecha_fin_dt)
+        except ValueError:
+            pass
+    
+    # Ordenar por timestamp descendente
+    query = query.order_by(Asistencia.timestamp.desc())
+    
+    # Ejecutar query
+    entradas = session.exec(query).all()
+    
+    # Enriquecer con información del estudiante
+    resultado = []
+    for entrada in entradas:
+        estudiante = session.get(Estudiante, entrada.matricula_estudiante)
+        if estudiante:
+            resultado.append({
+                "id": entrada.id,
+                "tipo": entrada.tipo,
+                "timestamp": entrada.timestamp.isoformat(),
+                "es_valida": entrada.es_valida,
+                "entrada_relacionada_id": entrada.entrada_relacionada_id,
+                "estudiante": {
+                    "matricula": estudiante.matricula,
+                    "nombre": estudiante.nombre,
+                    "apellido": estudiante.apellido,
+                    "grupo": estudiante.grupo.nombre if estudiante.grupo else None
+                }
+            })
+    
+    return resultado
+
 
 
 @router.get("/estadisticas/hoy", response_model=dict)

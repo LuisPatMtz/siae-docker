@@ -3,23 +3,28 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthContext'; // Importamos el hook
 
 const ProtectedRoute = () => {
-  // Obtenemos el estado de autenticación y la carga inicial del contexto
-  const { isAuthenticated, isAuthLoading } = useAuth();
+    const { isAuthenticated, isAuthLoading } = useAuth();
 
-  // 1. Si todavía estamos en la carga INICIAL, no mostramos nada
-  // (esto evita la redirección antes de tiempo)
-  if (isAuthLoading) {
-    return null; // O un <Spinner /> global
-  }
+    console.log('[ProtectedRoute] isAuthLoading:', isAuthLoading);
+    console.log('[ProtectedRoute] isAuthenticated:', isAuthenticated);
 
-  // 2. Si la carga inicial terminó y NO está autenticado
-  if (!isAuthenticated) {
-    // Lo redirige a /login
-    return <Navigate to="/login" replace />;
-  }
+    // 1. Si todavía estamos en la carga INICIAL, no mostramos nada
+    // (esto evita la redirección antes de tiempo)
+    if (isAuthLoading) {
+        console.log('[ProtectedRoute] Still loading, showing nothing');
+        return null; // O un <Spinner /> global
+    }
 
-  // 3. Si está autenticado, renderiza las rutas hijas
-  return <Outlet />;
+    // 2. Si la carga inicial terminó y NO está autenticado
+    if (!isAuthenticated) {
+        console.log('[ProtectedRoute] Not authenticated, redirecting to /login');
+        // Lo redirige a /login
+        return <Navigate to="/login" replace />;
+    }
+
+    // 3. Si está autenticado, renderiza las rutas hijas
+    console.log('[ProtectedRoute] Authenticated, rendering protected content');
+    return <Outlet />;
 };
 
 export default ProtectedRoute;
