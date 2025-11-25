@@ -16,8 +16,10 @@ class Falta(SQLModel, table=True):
     matricula_estudiante: str = Field(foreign_key="estudiante.matricula")
     id_ciclo: int = Field(foreign_key="ciclo_escolar.id")
     fecha: date
-    estado: str = Field(default="Ausente", max_length=50)
+    estado: str = Field(default="Sin justificar", max_length=50)  # "Sin justificar", "Justificada"
     justificacion: Optional[str] = Field(default=None)
+    fecha_justificacion: Optional[date] = None
+    id_alerta_asociada: Optional[int] = Field(default=None, foreign_key="alertas.id")  # Alerta relacionada
     
     # Relaciones
     estudiante: "Estudiante" = Relationship(back_populates="faltas")  # noqa: F821
@@ -31,7 +33,7 @@ class FaltaCreate(SQLModel):
     matricula_estudiante: str
     id_ciclo: int
     fecha: date
-    estado: str = "Ausente"
+    estado: str = "Sin justificar"
     justificacion: Optional[str] = None
 
 
@@ -43,9 +45,12 @@ class FaltaRead(SQLModel):
     fecha: date
     estado: str
     justificacion: Optional[str]
+    fecha_justificacion: Optional[date]
+    id_alerta_asociada: Optional[int]
 
 
 class FaltaUpdate(SQLModel):
     """DTO para actualizar una falta"""
     estado: Optional[str] = None
     justificacion: Optional[str] = None
+    fecha_justificacion: Optional[date] = None

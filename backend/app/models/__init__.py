@@ -8,7 +8,7 @@ from app.models.usuario import Usuario
 from app.models.estudiante import Estudiante, EstudianteCreate, EstudianteRead, EstudianteUpdate, EstudianteBulkMoveGrupo
 from app.models.nfc import NFC, NFCCreate, NFCRead, NfcPayload
 from app.models.asistencia import Asistencia, AsistenciaCreate, AsistenciaRead
-from app.models.alerta import Alerta, AlertaCreate, AlertaRead
+from app.models.alerta import Alerta, AlertaCreate, AlertaRead, AlertaUpdate, AlertaHistorial, AlertaHistorialRead
 from app.models.falta import Falta, FaltaCreate, FaltaRead, FaltaUpdate
 from app.models.auth import Token, TokenData, UserRead, UserReadWithPermissions, AdminUserCreate, UserPermissionsUpdate, UserUpdate, UserPermissionData
 from app.models.dashboard import StatsData, TurnoDataResponse, GrupoAsistenciaResponse
@@ -49,6 +49,9 @@ __all__ = [
     # DTOs Alerta
     "AlertaCreate",
     "AlertaRead",
+    "AlertaUpdate",
+    "AlertaHistorial",
+    "AlertaHistorialRead",
     # DTOs Falta
     "FaltaCreate",
     "FaltaRead",

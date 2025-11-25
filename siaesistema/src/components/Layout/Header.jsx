@@ -3,11 +3,11 @@ import React from 'react';
 import { useAuth } from '../Auth/AuthContext';
 import { LogOut, Menu } from 'lucide-react';
 
-const Header = ({ onMenuClick }) => {
+const Header = ({ onMenuClick, isCollapsed }) => {
   const { logout, user } = useAuth();
 
   return (
-    <header className="header">
+    <header className={`header ${isCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
       <div className="header-content">
         
         <div className="header-left">

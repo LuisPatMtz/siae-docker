@@ -235,3 +235,86 @@ def delete_falta(
     session.commit()
     
     return None
+
+
+# ==================== SISTEMA DE CORTE DE FALTAS ====================
+
+@router.post("/corte", response_model=dict)
+def procesar_corte_faltas(
+    *,
+    session: Session = Depends(get_session),
+    fecha_inicio: date = Query(..., description="Fecha de inicio del corte"),
+    fecha_fin: date = Query(..., description="Fecha de fin del corte"),
+    ciclo_id: int = Query(..., description="ID del ciclo escolar"),
+    matricula_estudiante: Optional[str] = Query(None, description="Matrícula específica (opcional)")
+):
+    """
+    Procesa el corte de faltas para un periodo.
+    
+    - Excluye sábados y domingos (solo cuenta días hábiles)
+    - Si la permanencia es menor al 10% no cuenta ni como asistencia ni falta
+    - Marca faltas automáticamente para días sin asistencia válida
+    """
+    from app.services.falta_service import FaltaService
+    
+    falta_service = FaltaService(session)
+    resultado = falta_service.procesar_corte_faltas(
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        ciclo_id=ciclo_id,
+        matricula_estudiante=matricula_estudiante
+    )
+    
+    return resultado
+
+
+@router.get("/reporte-asistencias", response_model=List[dict])
+def obtener_reporte_asistencias(
+    *,
+    session: Session = Depends(get_session),
+    fecha_inicio: date = Query(..., description="Fecha de inicio del reporte"),
+    fecha_fin: date = Query(..., description="Fecha de fin del reporte"),
+    matricula_estudiante: Optional[str] = Query(None, description="Matrícula específica (opcional)")
+):
+    """
+    Genera reporte de asistencias para un periodo antes de hacer el corte.
+    
+    Muestra:
+    - Días hábiles del periodo
+    - Asistencias válidas (>= 10% permanencia)
+    - Asistencias menores al 10% (no cuentan)
+    - Faltas pendientes de registrar
+    - Porcentaje de asistencia
+    """
+    from app.services.falta_service import FaltaService
+    
+    falta_service = FaltaService(session)
+    reporte = falta_service.obtener_reporte_asistencias_periodo(
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin,
+        matricula_estudiante=matricula_estudiante
+    )
+    
+    return reporte
+
+
+@router.get("/dias-habiles", response_model=dict)
+def obtener_dias_habiles(
+    *,
+    fecha_inicio: date = Query(..., description="Fecha de inicio"),
+    fecha_fin: date = Query(..., description="Fecha de fin")
+):
+    """
+    Obtiene la lista de días hábiles (Lunes a Viernes) en un rango de fechas.
+    Útil para planificar cortes.
+    """
+    from app.services.falta_service import FaltaService
+    
+    dias_habiles = FaltaService.obtener_dias_habiles_rango(fecha_inicio, fecha_fin)
+    
+    return {
+        "fecha_inicio": fecha_inicio.isoformat(),
+        "fecha_fin": fecha_fin.isoformat(),
+        "total_dias_habiles": len(dias_habiles),
+        "dias_habiles": [dia.isoformat() for dia in dias_habiles]
+    }

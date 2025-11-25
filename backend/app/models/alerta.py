@@ -1,10 +1,10 @@
 # app/models/alerta.py
 """
-Modelo de Alerta: registro de alertas de estudiantes.
+Modelo de Alerta: registro de alertas de estudiantes con historial.
 """
-from typing import Optional
-from datetime import date
-from sqlmodel import Field, SQLModel
+from typing import Optional, List
+from datetime import date, datetime
+from sqlmodel import Field, SQLModel, Relationship
 
 class Alerta(SQLModel, table=True):
     """Tabla de alertas de estudiantes"""
@@ -12,17 +12,42 @@ class Alerta(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     matricula_estudiante: str = Field(foreign_key="estudiante.matricula")
-    tipo: str
+    tipo: str  # "Faltas", "Retardos", "Conducta", etc.
     mensaje: str
-    fecha: date
-    estado: str = "Activa"
+    fecha_creacion: date
+    fecha_modificacion: Optional[datetime] = None
+    estado: str = "Activa"  # "Activa", "Justificada", "Cerrada"
+    cantidad_faltas: int = Field(default=0)  # Total de faltas acumuladas
+    justificacion: Optional[str] = None  # Justificación si se resuelve
+    fecha_justificacion: Optional[date] = None  # Cuando se justificó
+    
+    # Relación con historial
+    historial: List["AlertaHistorial"] = Relationship(back_populates="alerta")
+
+
+class AlertaHistorial(SQLModel, table=True):
+    """Tabla de historial de cambios en alertas"""
+    __tablename__ = "alertas_historial"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    id_alerta: int = Field(foreign_key="alertas.id")
+    accion: str  # "Creada", "Falta Agregada", "Justificada", "Cerrada"
+    descripcion: str
+    cantidad_faltas_momento: int  # Faltas al momento de esta acción
+    fecha: datetime = Field(default_factory=datetime.now)
+    usuario: Optional[str] = None  # Quien realizó la acción
+    
+    # Relación
+    alerta: Alerta = Relationship(back_populates="historial")
+
 
 class AlertaCreate(SQLModel):
     """DTO para crear una alerta"""
     matricula_estudiante: str
     tipo: str
     mensaje: str
-    fecha: date
+    fecha_creacion: date
+    cantidad_faltas: int = 0
     estado: str = "Activa"
 
 class AlertaRead(SQLModel):
@@ -31,5 +56,25 @@ class AlertaRead(SQLModel):
     matricula_estudiante: str
     tipo: str
     mensaje: str
-    fecha: date
+    fecha_creacion: date
+    fecha_modificacion: Optional[datetime]
     estado: str
+    cantidad_faltas: int
+    justificacion: Optional[str]
+    fecha_justificacion: Optional[date]
+
+class AlertaUpdate(SQLModel):
+    """DTO para actualizar una alerta"""
+    estado: Optional[str] = None
+    justificacion: Optional[str] = None
+    cantidad_faltas: Optional[int] = None
+
+class AlertaHistorialRead(SQLModel):
+    """DTO para leer historial de alerta"""
+    id: int
+    id_alerta: int
+    accion: str
+    descripcion: str
+    cantidad_faltas_momento: int
+    fecha: datetime
+    usuario: Optional[str]

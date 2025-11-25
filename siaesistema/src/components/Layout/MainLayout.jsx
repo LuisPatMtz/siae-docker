@@ -1,7 +1,6 @@
 // src/components/Layout/MainLayout.jsx
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Header from './Header.jsx';
 import Sidebar from './Sidebar.jsx';
 
 const MainLayout = () => {
@@ -22,7 +21,6 @@ const MainLayout = () => {
 
   return (
     <div className="app-layout">
-      <Header onMenuClick={toggleSidebar} />
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={closeSidebar}

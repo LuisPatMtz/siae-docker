@@ -27,8 +27,8 @@ router = APIRouter(
 MEXICO_TZ = pytz.timezone('America/Mexico_City')
 
 # Constantes de validación
-HORA_MINIMA = 1  # Mínimo 1 hora entre entrada y salida
-HORA_MAXIMA = 8  # Máximo 8 horas entre entrada y salida
+MINUTOS_MINIMOS = 5  # Mínimo 5 minutos entre entrada y salida
+HORAS_MAXIMAS = 10  # Máximo 10 horas entre entrada y salida
 
 @router.post("/registrar", response_model=dict, status_code=status.HTTP_201_CREATED)
 def registrar_asistencia(
@@ -38,14 +38,14 @@ def registrar_asistencia(
     """
     Registra entrada o salida de un estudiante por matrícula.
     
-    Lógica con validación de rango 1-8 horas:
-    - Si no hay entrada en las últimas 8 horas: registra ENTRADA (es_valida=None)
-    - Si hay entrada en las últimas 8 horas sin salida válida:
+    Lógica con validación de tiempo y día diferente:
+    - Si no hay entrada del mismo día: registra ENTRADA (es_valida=None)
+    - Si hay entrada del mismo día: ERROR "Ya registraste entrada hoy"
+    - Si hay entrada de día anterior sin salida válida:
         * Valida tiempo transcurrido
-        * Si < 1 hora: ERROR "Debes permanecer al menos 1 hora"
-        * Si > 8 horas: ERROR "Tiempo máximo excedido (8 horas)"
-        * Si 1-8 horas: registra SALIDA (es_valida=True) y actualiza entrada
-    - Si ya hay entrada y salida válidas: registra nueva ENTRADA
+        * Si < 5 minutos: ERROR "Debes permanecer al menos 5 minutos"
+        * Si > 10 horas: ERROR "Tiempo máximo excedido (10 horas)"
+        * Si 5min-10h: registra SALIDA (es_valida=True) y actualiza entrada
     
     Returns:
         dict con información del registro: tipo, estudiante, timestamp, es_valida
@@ -61,32 +61,52 @@ def registrar_asistencia(
         
         # 2. Obtener la hora actual en zona horaria de México
         ahora = datetime.now(MEXICO_TZ)
-        hace_8_horas = ahora - timedelta(hours=HORA_MAXIMA)
+        hoy = ahora.date()
         
-        # 3. Buscar la última entrada en las últimas 8 horas sin salida válida
+        # Convertir a naive para comparación con la base de datos
+        ahora_naive = ahora.replace(tzinfo=None)
+        
+        # 3. Buscar entrada del día de hoy
+        entrada_hoy = session.exec(
+            select(Asistencia)
+            .where(
+                Asistencia.matricula_estudiante == matricula,
+                Asistencia.tipo == "entrada",
+                func.date(Asistencia.timestamp) == hoy
+            )
+        ).first()
+        
+        # Si hay entrada de hoy, no permitir otra entrada ni salida del mismo día
+        if entrada_hoy:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ya registraste tu entrada hoy. La salida debe ser en un día diferente."
+            )
+        
+        # 4. Buscar la última entrada pendiente (sin salida válida) de días anteriores
         ultima_entrada = session.exec(
             select(Asistencia)
             .where(
                 Asistencia.matricula_estudiante == matricula,
                 Asistencia.tipo == "entrada",
-                Asistencia.timestamp >= hace_8_horas,
-                Asistencia.es_valida == None  # Entrada sin salida válida
+                Asistencia.es_valida == None,  # Entrada sin salida válida
+                func.date(Asistencia.timestamp) < hoy  # De un día anterior
             )
             .order_by(Asistencia.timestamp.desc())
         ).first()
         
-        # 4. Determinar si es entrada o salida
+        # 5. Determinar si es entrada o salida
         if not ultima_entrada:
-            # No hay entrada reciente sin salida -> NUEVA ENTRADA
+            # No hay entrada pendiente de día anterior -> NUEVA ENTRADA
             tipo_registro = "entrada"
             es_valida = None  # Pendiente de salida
             entrada_relacionada_id = None
-            mensaje = "Entrada registrada exitosamente. Recuerda registrar tu salida entre 1 y 8 horas."
+            mensaje = f"Entrada registrada exitosamente. Recuerda registrar tu salida mañana (entre 5 minutos y 10 horas)."
             
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
                 tipo=tipo_registro,
-                timestamp=ahora.replace(tzinfo=None),
+                timestamp=ahora_naive,
                 es_valida=es_valida,
                 entrada_relacionada_id=entrada_relacionada_id
             )
@@ -96,19 +116,21 @@ def registrar_asistencia(
             session.refresh(nueva_asistencia)
             
         else:
-            # Hay entrada reciente -> Intentar registrar SALIDA
-            tiempo_transcurrido = ahora - ultima_entrada.timestamp
+            # Hay entrada pendiente de día anterior -> Intentar registrar SALIDA
+            # Calcular tiempo transcurrido (ambos son naive)
+            tiempo_transcurrido = ahora_naive - ultima_entrada.timestamp
+            minutos_transcurridos = tiempo_transcurrido.total_seconds() / 60
             horas_transcurridas = tiempo_transcurrido.total_seconds() / 3600
             
             # Validar rango de tiempo
-            if horas_transcurridas < HORA_MINIMA:
+            if minutos_transcurridos < MINUTOS_MINIMOS:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Debes permanecer al menos {HORA_MINIMA} hora(s) antes de registrar tu salida. "
-                           f"Tiempo transcurrido: {int(horas_transcurridas * 60)} minutos."
+                    detail=f"Debes permanecer al menos {MINUTOS_MINIMOS} minutos antes de registrar tu salida. "
+                           f"Tiempo transcurrido: {int(minutos_transcurridos)} minutos."
                 )
             
-            if horas_transcurridas > HORA_MAXIMA:
+            if horas_transcurridas > HORAS_MAXIMAS:
                 # Marcar entrada como inválida y permitir nueva entrada
                 ultima_entrada.es_valida = False
                 session.add(ultima_entrada)
@@ -116,22 +138,26 @@ def registrar_asistencia(
                 
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Tiempo máximo excedido ({HORA_MAXIMA} horas). "
+                    detail=f"Tiempo máximo excedido ({HORAS_MAXIMAS} horas). "
                            f"Tu entrada anterior ha sido marcada como inválida. "
                            f"Por favor registra una nueva entrada."
                 )
             
-            # Rango válido (1-8 horas) -> Registrar SALIDA
+            # Rango válido (5min-10h) -> Registrar SALIDA
             tipo_registro = "salida"
             es_valida = True
             entrada_relacionada_id = ultima_entrada.id
-            mensaje = f"Salida registrada exitosamente. Tiempo de permanencia: {int(horas_transcurridas)} horas y {int((horas_transcurridas % 1) * 60)} minutos."
+            
+            # Calcular tiempo de permanencia legible
+            horas = int(horas_transcurridas)
+            minutos = int((horas_transcurridas % 1) * 60)
+            mensaje = f"Salida registrada exitosamente. Tiempo de permanencia: {horas} horas y {minutos} minutos."
             
             # Crear salida
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
                 tipo=tipo_registro,
-                timestamp=ahora.replace(tzinfo=None),
+                timestamp=ahora_naive,
                 es_valida=es_valida,
                 entrada_relacionada_id=entrada_relacionada_id
             )
@@ -144,7 +170,7 @@ def registrar_asistencia(
             session.commit()
             session.refresh(nueva_asistencia)
         
-        # 5. Preparar respuesta con información completa
+        # 6. Preparar respuesta con información completa
         return {
             "id": nueva_asistencia.id,
             "tipo": tipo_registro,
@@ -259,12 +285,12 @@ def obtener_todas_entradas(
     session: Session = Depends(get_session)
 ):
     """
-    Obtiene todas las entradas (tipo='entrada') de asistencias.
+    Obtiene TODOS los registros de asistencias (entradas y salidas).
     Opcionalmente filtradas por rango de fechas.
     Incluye información del estudiante.
     """
-    # Construir query base
-    query = select(Asistencia).where(Asistencia.tipo == "entrada")
+    # Construir query base - ahora incluye tanto entradas como salidas
+    query = select(Asistencia)
     
     # Aplicar filtros de fecha si se proporcionan
     if fecha_inicio:
@@ -285,19 +311,19 @@ def obtener_todas_entradas(
     query = query.order_by(Asistencia.timestamp.desc())
     
     # Ejecutar query
-    entradas = session.exec(query).all()
+    registros = session.exec(query).all()
     
     # Enriquecer con información del estudiante
     resultado = []
-    for entrada in entradas:
-        estudiante = session.get(Estudiante, entrada.matricula_estudiante)
+    for registro in registros:
+        estudiante = session.get(Estudiante, registro.matricula_estudiante)
         if estudiante:
             resultado.append({
-                "id": entrada.id,
-                "tipo": entrada.tipo,
-                "timestamp": entrada.timestamp.isoformat(),
-                "es_valida": entrada.es_valida,
-                "entrada_relacionada_id": entrada.entrada_relacionada_id,
+                "id": registro.id,
+                "tipo": registro.tipo,
+                "timestamp": registro.timestamp.isoformat(),
+                "es_valida": registro.es_valida,
+                "entrada_relacionada_id": registro.entrada_relacionada_id,
                 "estudiante": {
                     "matricula": estudiante.matricula,
                     "nombre": estudiante.nombre,

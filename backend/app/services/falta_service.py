@@ -1,22 +1,292 @@
 # app/services/falta_service.py
 """
-Servicio de lógica de negocio para Faltas.
+Servicio de lógica de negocio para Faltas con sistema de corte automático.
 """
-from typing import List, Optional
-from datetime import date
-from sqlmodel import Session
+from typing import List, Optional, Dict
+from datetime import date, datetime, timedelta
+from sqlmodel import Session, select, func, and_
 from fastapi import HTTPException, status
 
-from app.models import Falta, FaltaCreate, FaltaUpdate, Estudiante, CicloEscolar
+from app.models import Falta, FaltaCreate, FaltaUpdate, Estudiante, CicloEscolar, Asistencia
 from app.repositories.falta_repo import FaltaRepository
 
 
 class FaltaService:
-    """Servicio para gestionar faltas"""
+    """Servicio para gestionar faltas y corte automático"""
+    
+    # Porcentaje mínimo de tiempo de permanencia para contar asistencia
+    PORCENTAJE_MINIMO_ASISTENCIA = 10  # 10% del tiempo esperado
+    
+    # Horas esperadas de permanencia (ejemplo: 8 horas)
+    HORAS_ESPERADAS = 8
     
     def __init__(self, session: Session):
         self.session = session
         self.falta_repo = FaltaRepository(session)
+    
+    @staticmethod
+    def es_dia_habil(fecha: date) -> bool:
+        """
+        Verifica si una fecha es día hábil (Lunes a Viernes).
+        Retorna False para sábados (5) y domingos (6).
+        """
+        return fecha.weekday() < 5  # 0=Lunes, 4=Viernes, 5=Sábado, 6=Domingo
+    
+    @staticmethod
+    def obtener_dias_habiles_rango(fecha_inicio: date, fecha_fin: date) -> List[date]:
+        """
+        Obtiene lista de días hábiles en un rango de fechas.
+        Excluye sábados y domingos.
+        """
+        dias_habiles = []
+        fecha_actual = fecha_inicio
+        
+        while fecha_actual <= fecha_fin:
+            if FaltaService.es_dia_habil(fecha_actual):
+                dias_habiles.append(fecha_actual)
+            fecha_actual += timedelta(days=1)
+        
+        return dias_habiles
+    
+    @staticmethod
+    def calcular_porcentaje_permanencia(entrada: datetime, salida: datetime) -> float:
+        """
+        Calcula el porcentaje de permanencia basado en las horas esperadas.
+        """
+        tiempo_permanencia = salida - entrada
+        horas_permanencia = tiempo_permanencia.total_seconds() / 3600
+        
+        porcentaje = (horas_permanencia / FaltaService.HORAS_ESPERADAS) * 100
+        return round(porcentaje, 2)
+    
+    def obtener_dias_con_asistencia(
+        self,
+        matricula: str,
+        fecha_inicio: date,
+        fecha_fin: date
+    ) -> Dict[date, Dict]:
+        """
+        Obtiene los días que el estudiante asistió con información detallada.
+        Calcula el porcentaje de permanencia para cada día.
+        """
+        # Obtener entradas válidas del periodo
+        statement = select(Asistencia).where(
+            and_(
+                Asistencia.matricula_estudiante == matricula,
+                Asistencia.tipo == "entrada",
+                Asistencia.es_valida == True,
+                func.date(Asistencia.timestamp) >= fecha_inicio,
+                func.date(Asistencia.timestamp) <= fecha_fin
+            )
+        ).order_by(Asistencia.timestamp)
+        
+        entradas = list(self.session.exec(statement).all())
+        
+        dias_asistencia = {}
+        
+        for entrada in entradas:
+            fecha_entrada = entrada.timestamp.date()
+            
+            # Buscar la salida correspondiente
+            salida = self.session.exec(
+                select(Asistencia).where(
+                    and_(
+                        Asistencia.matricula_estudiante == matricula,
+                        Asistencia.tipo == "salida",
+                        Asistencia.entrada_relacionada_id == entrada.id
+                    )
+                )
+            ).first()
+            
+            if salida:
+                # Calcular porcentaje de permanencia
+                porcentaje = self.calcular_porcentaje_permanencia(
+                    entrada.timestamp, salida.timestamp
+                )
+                
+                dias_asistencia[fecha_entrada] = {
+                    "entrada_id": entrada.id,
+                    "salida_id": salida.id,
+                    "hora_entrada": entrada.timestamp,
+                    "hora_salida": salida.timestamp,
+                    "porcentaje_permanencia": porcentaje,
+                    "cuenta_como_asistencia": porcentaje >= self.PORCENTAJE_MINIMO_ASISTENCIA
+                }
+        
+        return dias_asistencia
+    
+    def procesar_corte_faltas(
+        self,
+        fecha_inicio: date,
+        fecha_fin: date,
+        ciclo_id: int,
+        matricula_estudiante: str = None
+    ) -> Dict:
+        """
+        Procesa el corte de faltas para un periodo.
+        
+        Lógica:
+        1. Obtiene días hábiles del periodo (Lunes a Viernes)
+        2. Para cada estudiante, verifica asistencias
+        3. Si asistió pero < 10% de permanencia: No cuenta (ni asistencia ni falta)
+        4. Si no asistió: Marca falta
+        
+        Args:
+            fecha_inicio: Fecha de inicio del corte
+            fecha_fin: Fecha de fin del corte
+            ciclo_id: ID del ciclo escolar
+            matricula_estudiante: Si se especifica, solo procesa ese estudiante
+        
+        Returns:
+            Diccionario con estadísticas del corte
+        """
+        # Obtener días hábiles del periodo
+        dias_habiles = self.obtener_dias_habiles_rango(fecha_inicio, fecha_fin)
+        
+        if not dias_habiles:
+            return {
+                "error": "No hay días hábiles en el rango especificado",
+                "dias_habiles": 0
+            }
+        
+        # Obtener estudiantes a procesar
+        if matricula_estudiante:
+            estudiantes = [self.session.get(Estudiante, matricula_estudiante)]
+            if not estudiantes[0]:
+                return {"error": f"Estudiante {matricula_estudiante} no encontrado"}
+        else:
+            # Obtener todos los estudiantes activos
+            statement = select(Estudiante)
+            estudiantes = list(self.session.exec(statement).all())
+        
+        # Estadísticas del corte
+        stats = {
+            "fecha_inicio": fecha_inicio.isoformat(),
+            "fecha_fin": fecha_fin.isoformat(),
+            "dias_habiles": len(dias_habiles),
+            "estudiantes_procesados": 0,
+            "faltas_nuevas": 0,
+            "asistencias_menores_10_porciento": 0,
+            "detalles": []
+        }
+        
+        for estudiante in estudiantes:
+            # Obtener asistencias del estudiante
+            dias_con_asistencia = self.obtener_dias_con_asistencia(
+                estudiante.matricula, fecha_inicio, fecha_fin
+            )
+            
+            faltas_estudiante = 0
+            asistencias_menores = 0
+            
+            # Procesar cada día hábil
+            for dia in dias_habiles:
+                # Verificar si ya existe falta registrada para este día
+                falta_existente = self.session.exec(
+                    select(Falta).where(
+                        and_(
+                            Falta.matricula_estudiante == estudiante.matricula,
+                            Falta.fecha == dia
+                        )
+                    )
+                ).first()
+                
+                if falta_existente:
+                    continue  # Ya está procesado este día
+                
+                if dia in dias_con_asistencia:
+                    info_asistencia = dias_con_asistencia[dia]
+                    
+                    # Si asistió pero con menos del 10% de permanencia
+                    if not info_asistencia["cuenta_como_asistencia"]:
+                        asistencias_menores += 1
+                        stats["asistencias_menores_10_porciento"] += 1
+                        # No se registra ni como falta ni como asistencia válida
+                        continue
+                else:
+                    # No hay asistencia registrada para este día hábil → FALTA
+                    falta = Falta(
+                        matricula_estudiante=estudiante.matricula,
+                        id_ciclo=ciclo_id,
+                        fecha=dia,
+                        estado="Sin justificar"
+                    )
+                    self.session.add(falta)
+                    
+                    faltas_estudiante += 1
+                    stats["faltas_nuevas"] += 1
+            
+            if faltas_estudiante > 0 or asistencias_menores > 0:
+                stats["detalles"].append({
+                    "matricula": estudiante.matricula,
+                    "nombre": f"{estudiante.nombre} {estudiante.apellido}",
+                    "faltas_nuevas": faltas_estudiante,
+                    "asistencias_menores_10_porciento": asistencias_menores
+                })
+            
+            stats["estudiantes_procesados"] += 1
+        
+        self.session.commit()
+        
+        return stats
+    
+    def obtener_reporte_asistencias_periodo(
+        self,
+        fecha_inicio: date,
+        fecha_fin: date,
+        matricula_estudiante: str = None
+    ) -> List[Dict]:
+        """
+        Genera reporte de asistencias para un periodo.
+        Útil para revisar antes de hacer el corte.
+        """
+        dias_habiles = self.obtener_dias_habiles_rango(fecha_inicio, fecha_fin)
+        
+        # Obtener estudiantes
+        if matricula_estudiante:
+            estudiantes = [self.session.get(Estudiante, matricula_estudiante)]
+        else:
+            statement = select(Estudiante)
+            estudiantes = list(self.session.exec(statement).all())
+        
+        reporte = []
+        
+        for estudiante in estudiantes:
+            dias_con_asistencia = self.obtener_dias_con_asistencia(
+                estudiante.matricula, fecha_inicio, fecha_fin
+            )
+            
+            asistencias_validas = sum(
+                1 for info in dias_con_asistencia.values() 
+                if info["cuenta_como_asistencia"]
+            )
+            
+            asistencias_menores = sum(
+                1 for info in dias_con_asistencia.values() 
+                if not info["cuenta_como_asistencia"]
+            )
+            
+            faltas_sin_registrar = len(dias_habiles) - len(dias_con_asistencia)
+            
+            porcentaje_asistencia = (
+                (asistencias_validas / len(dias_habiles) * 100) 
+                if dias_habiles else 0
+            )
+            
+            reporte.append({
+                "matricula": estudiante.matricula,
+                "nombre": f"{estudiante.nombre} {estudiante.apellido}",
+                "grupo": estudiante.grupo.nombre if estudiante.grupo else "Sin grupo",
+                "dias_habiles": len(dias_habiles),
+                "asistencias_validas": asistencias_validas,
+                "asistencias_menores_10_porciento": asistencias_menores,
+                "faltas_pendientes": faltas_sin_registrar,
+                "porcentaje_asistencia": round(porcentaje_asistencia, 2)
+            })
+        
+        return reporte
+    
+    # --- Métodos originales del servicio ---
     
     def registrar_falta(self, falta_data: FaltaCreate) -> Falta:
         """

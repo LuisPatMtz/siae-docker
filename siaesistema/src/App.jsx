@@ -17,8 +17,7 @@ const AlertasPage = lazy(() => import('./pages/AlertasPage.jsx'));
 const GestionUsuariosPage = lazy(() => import('./pages/GestionUsuariosPage.jsx'));
 const GestionEstudiantesPage = lazy(() => import('./pages/GestionEstudiantesPage.jsx'));
 const RegistroAccesoPage = lazy(() => import('./pages/RegistroAccesoPage.jsx'));
-const HistorialAccesosPage = lazy(() => import('./pages/HistorialAccesosPage.jsx'));
-const AsistenciasPage = lazy(() => import('./pages/AsistenciasPage.jsx'));
+const HistorialAsistenciasPage = lazy(() => import('./pages/HistorialAsistenciasPage.jsx'));
 
 function App() {
     return (
@@ -33,8 +32,7 @@ function App() {
                         <Route path="/gestion-usuarios" element={<GestionUsuariosPage />} />
                         <Route path="/gestion-estudiantes" element={<GestionEstudiantesPage />} />
                         <Route path="/registro-acceso" element={<RegistroAccesoPage />} />
-                        <Route path="/historial-accesos" element={<HistorialAccesosPage />} />
-                        <Route path="/asistencias" element={<AsistenciasPage />} />
+                        <Route path="/historial-asistencias" element={<HistorialAsistenciasPage />} />
                     </Route>
                 </Route>
                 <Route path="*" element={<Navigate to="/login" replace />} />

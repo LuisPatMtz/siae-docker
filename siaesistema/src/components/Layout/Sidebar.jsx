@@ -1,6 +1,6 @@
 // src/components/Layout/Sidebar.jsx
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Auth/AuthContext';
 import {
   LayoutDashboard,
@@ -12,11 +12,22 @@ import {
   CheckCircle,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LogOut,
+  User
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  // Debug: verificar datos del usuario
+  console.log('User data in Sidebar:', user);
 
   return (
     <>
@@ -25,6 +36,11 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
 
       {/* Sidebar */}
       <aside className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+        {/* Logo Section */}
+        <div className="sidebar-logo-section">
+          <span className="sidebar-logo">SIAE</span>
+        </div>
+        
         <div className="sidebar-header">
           <h2 className="sidebar-title">{!isCollapsed && 'Menú'}</h2>
           <div className="sidebar-header-buttons">
@@ -103,32 +119,42 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <span>Registro de Accesos</span>
           </NavLink>
 
-          {/* Historial de Accesos */}
+          {/* Historial de Asistencias */}
           {hasPermission('canViewDashboard') && (
             <NavLink
-              to="/historial-accesos"
+              to="/historial-asistencias"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
               onClick={onClose}
-              title="Historial de Accesos (Entradas)"
+              title="Historial de Asistencias"
             >
               <History size={20} />
-              <span>Historial (Entradas)</span>
-            </NavLink>
-          )}
-
-          {/* Asistencias */}
-          {hasPermission('canViewDashboard') && (
-            <NavLink
-              to="/asistencias"
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
-              title="Asistencias Completas"
-            >
-              <CheckCircle size={20} />
-              <span>Asistencias Completas</span>
+              <span>Historial de Asistencias</span>
             </NavLink>
           )}
         </nav>
+
+        {/* User Info Section */}
+        <div className="sidebar-user-section">
+          <div className="sidebar-user-info">
+            <div className="user-avatar">
+              <User size={20} />
+            </div>
+            {!isCollapsed && (
+              <div className="user-details">
+                <div className="user-name">{user?.full_name || user?.username || 'Usuario'}</div>
+                <div className="user-role">{user?.role || 'Sin rol'}</div>
+              </div>
+            )}
+          </div>
+          <button 
+            className="sidebar-logout-btn" 
+            onClick={handleLogout}
+            title="Cerrar sesión"
+          >
+            <LogOut size={20} />
+            {!isCollapsed && <span>Salir</span>}
+          </button>
+        </div>
       </aside>
     </>
   );
