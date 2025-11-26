@@ -66,8 +66,8 @@ class FaltaService:
         fecha_fin: date
     ) -> Dict[date, Dict]:
         """
-        Obtiene los días que el estudiante asistió con información detallada.
-        Calcula el porcentaje de permanencia para cada día.
+        Obtiene los días que el estudiante asistió.
+        Solo verifica si hay una entrada válida, sin calcular porcentaje de permanencia.
         """
         # Obtener entradas válidas del periodo
         statement = select(Asistencia).where(
@@ -98,20 +98,13 @@ class FaltaService:
                 )
             ).first()
             
-            if salida:
-                # Calcular porcentaje de permanencia
-                porcentaje = self.calcular_porcentaje_permanencia(
-                    entrada.timestamp, salida.timestamp
-                )
-                
-                dias_asistencia[fecha_entrada] = {
-                    "entrada_id": entrada.id,
-                    "salida_id": salida.id,
-                    "hora_entrada": entrada.timestamp,
-                    "hora_salida": salida.timestamp,
-                    "porcentaje_permanencia": porcentaje,
-                    "cuenta_como_asistencia": porcentaje >= self.PORCENTAJE_MINIMO_ASISTENCIA
-                }
+            # Si hay entrada (con o sin salida), cuenta como asistencia
+            dias_asistencia[fecha_entrada] = {
+                "entrada_id": entrada.id,
+                "salida_id": salida.id if salida else None,
+                "hora_entrada": entrada.timestamp,
+                "hora_salida": salida.timestamp if salida else None
+            }
         
         return dias_asistencia
     
@@ -127,9 +120,8 @@ class FaltaService:
         
         Lógica:
         1. Obtiene días hábiles del periodo (Lunes a Viernes)
-        2. Para cada estudiante, verifica asistencias
-        3. Si asistió pero < 10% de permanencia: No cuenta (ni asistencia ni falta)
-        4. Si no asistió: Marca falta
+        2. Para cada estudiante, verifica si tiene entrada registrada
+        3. Si no tiene entrada: Marca falta y genera/actualiza alerta
         
         Args:
             fecha_inicio: Fecha de inicio del corte
@@ -140,6 +132,8 @@ class FaltaService:
         Returns:
             Diccionario con estadísticas del corte
         """
+        from app.services.alerta_service import AlertaService
+        
         # Obtener días hábiles del periodo
         dias_habiles = self.obtener_dias_habiles_rango(fecha_inicio, fecha_fin)
         
@@ -166,7 +160,7 @@ class FaltaService:
             "dias_habiles": len(dias_habiles),
             "estudiantes_procesados": 0,
             "faltas_nuevas": 0,
-            "asistencias_menores_10_porciento": 0,
+            "asistencias_menores_10_porciento": 0,  # Mantener para compatibilidad, siempre será 0
             "detalles": []
         }
         
@@ -177,7 +171,6 @@ class FaltaService:
             )
             
             faltas_estudiante = 0
-            asistencias_menores = 0
             
             # Procesar cada día hábil
             for dia in dias_habiles:
@@ -194,17 +187,8 @@ class FaltaService:
                 if falta_existente:
                     continue  # Ya está procesado este día
                 
-                if dia in dias_con_asistencia:
-                    info_asistencia = dias_con_asistencia[dia]
-                    
-                    # Si asistió pero con menos del 10% de permanencia
-                    if not info_asistencia["cuenta_como_asistencia"]:
-                        asistencias_menores += 1
-                        stats["asistencias_menores_10_porciento"] += 1
-                        # No se registra ni como falta ni como asistencia válida
-                        continue
-                else:
-                    # No hay asistencia registrada para este día hábil → FALTA
+                # Si no hay asistencia registrada para este día hábil → FALTA
+                if dia not in dias_con_asistencia:
                     falta = Falta(
                         matricula_estudiante=estudiante.matricula,
                         id_ciclo=ciclo_id,
@@ -212,16 +196,20 @@ class FaltaService:
                         estado="Sin justificar"
                     )
                     self.session.add(falta)
+                    self.session.flush()  # Para obtener el ID de la falta
+                    
+                    # Generar o actualizar alerta
+                    AlertaService.procesar_nueva_falta(self.session, falta)
                     
                     faltas_estudiante += 1
                     stats["faltas_nuevas"] += 1
             
-            if faltas_estudiante > 0 or asistencias_menores > 0:
+            if faltas_estudiante > 0:
                 stats["detalles"].append({
                     "matricula": estudiante.matricula,
                     "nombre": f"{estudiante.nombre} {estudiante.apellido}",
                     "faltas_nuevas": faltas_estudiante,
-                    "asistencias_menores_10_porciento": asistencias_menores
+                    "asistencias_menores_10_porciento": 0
                 })
             
             stats["estudiantes_procesados"] += 1
@@ -256,18 +244,13 @@ class FaltaService:
                 estudiante.matricula, fecha_inicio, fecha_fin
             )
             
-            asistencias_validas = sum(
-                1 for info in dias_con_asistencia.values() 
-                if info["cuenta_como_asistencia"]
-            )
+            # Contar asistencias (cualquier día con entrada)
+            asistencias_validas = len(dias_con_asistencia)
             
-            asistencias_menores = sum(
-                1 for info in dias_con_asistencia.values() 
-                if not info["cuenta_como_asistencia"]
-            )
+            # Calcular faltas pendientes
+            faltas_sin_registrar = len(dias_habiles) - asistencias_validas
             
-            faltas_sin_registrar = len(dias_habiles) - len(dias_con_asistencia)
-            
+            # Calcular porcentaje
             porcentaje_asistencia = (
                 (asistencias_validas / len(dias_habiles) * 100) 
                 if dias_habiles else 0
@@ -279,7 +262,7 @@ class FaltaService:
                 "grupo": estudiante.grupo.nombre if estudiante.grupo else "Sin grupo",
                 "dias_habiles": len(dias_habiles),
                 "asistencias_validas": asistencias_validas,
-                "asistencias_menores_10_porciento": asistencias_menores,
+                "asistencias_menores_10_porciento": 0,  # Ya no se usa
                 "faltas_pendientes": faltas_sin_registrar,
                 "porcentaje_asistencia": round(porcentaje_asistencia, 2)
             })

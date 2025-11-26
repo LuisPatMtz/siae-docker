@@ -1,11 +1,12 @@
 // src/pages/AlertasPage.jsx
 import React, { useState, useEffect } from 'react';
-import { Search, History, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Search, History, CheckCircle } from 'lucide-react';
 import { alertasService } from '../api/services';
 import DashboardControls from '../components/Dashboard/DashboardControls.jsx';
 import AlertsTable from '../components/Alerts/AlertsTable.jsx';
 import JustifyModal from '../components/Alerts/JustifyModal.jsx';
 import JustificationHistoryModal from '../components/Alerts/JustificationHistoryModal.jsx';
+import ContactModal from '../components/Alerts/ContactModal.jsx';
 import '../styles/alertas.css';
 
 const AlertasPage = () => {
@@ -18,6 +19,7 @@ const AlertasPage = () => {
     const [modalState, setModalState] = useState({ isOpen: false, studentId: null, studentName: '', faltasIds: [] });
     const [justificationHistory, setJustificationHistory] = useState([]);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+    const [contactModalState, setContactModalState] = useState({ isOpen: false, student: null });
 
     // Cargar datos del backend según el turno
     useEffect(() => {
@@ -86,6 +88,14 @@ const AlertasPage = () => {
     const openHistoryModal = () => setIsHistoryModalOpen(true);
     const closeHistoryModal = () => setIsHistoryModalOpen(false);
 
+    const openContactModal = (student) => {
+        setContactModalState({ isOpen: true, student });
+    };
+
+    const closeContactModal = () => {
+        setContactModalState({ isOpen: false, student: null });
+    };
+
     // Enviar justificación al backend
     const submitJustification = async (reason) => {
         const { studentId, faltasIds } = modalState;
@@ -107,8 +117,10 @@ const AlertasPage = () => {
             };
             setJustificationHistory(prevHistory => [newHistoryEntry, ...prevHistory]);
 
-            // Eliminar al alumno de las listas activas
-            setAllAlertsList(prevList => prevList.filter(alert => alert.id !== studentId));
+            // Recargar datos del backend en lugar de manipular el estado local
+            const alertas = await alertasService.getEstudiantesConFaltas(activeMode);
+            setAllAlertsList(alertas);
+            setFilteredAlertsList(alertas);
 
             closeJustifyModal();
         } catch (error) {
@@ -179,6 +191,7 @@ const AlertasPage = () => {
                     onOpenJustifyModal={openJustifyModal}
                     onToggleHistory={toggleHistory}
                     expandedHistoryId={expandedHistoryId}
+                    onOpenContactModal={openContactModal}
                 />
             )}
 
@@ -195,6 +208,13 @@ const AlertasPage = () => {
                 isOpen={isHistoryModalOpen}
                 onClose={closeHistoryModal}
                 history={justificationHistory}
+            />
+
+            {/* Modal de Contacto */}
+            <ContactModal
+                isOpen={contactModalState.isOpen}
+                onClose={closeContactModal}
+                student={contactModalState.student}
             />
         </div>
     );

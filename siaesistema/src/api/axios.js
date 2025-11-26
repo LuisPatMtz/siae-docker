@@ -11,7 +11,7 @@ apiClient.interceptors.request.use(
     (config) => {
         // Obtenemos el token guardado en localStorage
         const token = localStorage.getItem('token');
-        
+
         // Si el token existe, lo añadimos a la cabecera (header)
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
@@ -33,14 +33,15 @@ apiClient.interceptors.response.use(
     },
     (error) => {
         // Verificamos si el error es por token expirado o inválido (401)
-        if (error.response && error.response.status === 401) {
+        // Y aseguramos que NO sea una petición de login (para permitir que el componente Login maneje el error)
+        if (error.response && error.response.status === 401 && !error.config.url.includes('/login')) {
             // Limpiamos el localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            
+
             // Mostramos una notificación al usuario
             const message = error.response.data?.detail || 'Tu sesión ha expirado';
-            
+
             // Creamos una notificación visual
             if (typeof window !== 'undefined') {
                 // Verificamos si ya existe una notificación
@@ -72,7 +73,7 @@ apiClient.interceptors.response.use(
                             <span>${message}</span>
                         </div>
                     `;
-                    
+
                     // Agregamos la animación
                     const style = document.createElement('style');
                     style.textContent = `
@@ -89,7 +90,7 @@ apiClient.interceptors.response.use(
                     `;
                     document.head.appendChild(style);
                     document.body.appendChild(notification);
-                    
+
                     // Removemos la notificación después de 3 segundos y redirigimos
                     setTimeout(() => {
                         notification.style.animation = 'slideIn 0.3s ease reverse';
@@ -102,7 +103,7 @@ apiClient.interceptors.response.use(
                 }
             }
         }
-        
+
         return Promise.reject(error);
     }
 );

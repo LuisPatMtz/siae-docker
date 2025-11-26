@@ -408,7 +408,7 @@ export const alertasService = {
             // 2. Obtener todas las faltas del ciclo
             const faltas = await faltasService.getAll({
                 id_ciclo: cicloId,
-                estado: 'injustificada' // Solo faltas injustificadas
+                estado: 'Sin justificar' // Solo faltas sin justificar
             });
 
             // 3. Obtener todos los estudiantes
@@ -447,6 +447,9 @@ export const alertasService = {
                     id: estudiante.id,
                     matricula: estudiante.matricula,
                     nombre: `${estudiante.nombre} ${estudiante.apellido}`,
+                    nombreCompleto: estudiante.nombre,
+                    apellido: estudiante.apellido,
+                    correo: estudiante.correo,
                     grupo: grupo.nombre,
                     turno: grupo.turno,
                     unjustifiedFaltas: faltasEstudiante.length,
@@ -491,7 +494,7 @@ export const alertasService = {
             // 2. Obtener faltas justificadas
             const faltasJustificadas = await faltasService.getAll({
                 id_ciclo: cicloId,
-                estado: 'justificada'
+                estado: 'Justificado'
             });
 
             // 3. Obtener estudiantes

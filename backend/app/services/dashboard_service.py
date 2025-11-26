@@ -10,7 +10,7 @@ from fastapi import HTTPException, status
 import pytz
 
 from app.models import (
-    Estudiante, Acceso, NFC, Grupo, CicloEscolar,
+    Estudiante, Asistencia, NFC, Grupo, CicloEscolar,
     StatsData, TurnoDataResponse, GrupoAsistenciaResponse
 )
 
@@ -65,13 +65,14 @@ class DashboardService:
         subquery = (
             select(
                 NFC.matricula_estudiante, 
-                func.count(distinct(func.date(Acceso.hora_registro))).label("dias_asistidos")
+                func.count(distinct(func.date(Asistencia.timestamp))).label("dias_asistidos")
             )
-            .join(Acceso, NFC.nfc_uid == Acceso.nfc_uid)
+            .join(Asistencia, NFC.nfc_uid == Asistencia.nfc_uid)
             .where(
                 NFC.matricula_estudiante.in_(estudiantes_ids),
-                func.date(Acceso.hora_registro) >= start_date,
-                func.date(Acceso.hora_registro) <= end_date
+                Asistencia.tipo == "entrada",
+                func.date(Asistencia.timestamp) >= start_date,
+                func.date(Asistencia.timestamp) <= end_date
             )
             .group_by(NFC.matricula_estudiante)
         ).subquery()
@@ -241,13 +242,13 @@ class DashboardService:
             .where(Estudiante.id_ciclo == ciclo_activo.id)
         ).first()
         
-        # Contar accesos de hoy
+        # Contar accesos de hoy (entradas)
         hoy = datetime.now(self.MEXICO_TZ).date()
         accesos_hoy = self.session.exec(
-            select(func.count(Acceso.id))
+            select(func.count(Asistencia.id))
             .where(
-                func.date(Acceso.hora_registro) == hoy,
-                Acceso.id_ciclo == ciclo_activo.id
+                func.date(Asistencia.timestamp) == hoy,
+                Asistencia.tipo == "entrada"
             )
         ).first()
         

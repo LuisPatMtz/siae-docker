@@ -3,9 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { cyclesApi } from '../api/cyclesApi';
 import { faultsApi } from '../api/faultsApi';
 import { Calendar, CheckCircle, AlertTriangle, FileText, Play } from 'lucide-react';
+import Modal from '../components/UI/Modal';
+import { useToast } from '../components/UI/ToastContainer.jsx';
 import '../styles/corte-faltas.css';
 
 const CorteFaltasPage = () => {
+  const { showSuccess, showError, ToastContainer } = useToast();
+
   const [ciclos, setCiclos] = useState([]);
   const [cicloSeleccionado, setCicloSeleccionado] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
@@ -15,6 +19,33 @@ const CorteFaltasPage = () => {
   const [resultado, setResultado] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [conteoCortes, setConteoCortes] = useState(1);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Auto-seleccionar fechas cuando cambia el ciclo
+  useEffect(() => {
+    if (cicloSeleccionado && ciclos.length > 0) {
+      // Buscar por id o id_ciclo para asegurar compatibilidad
+      const ciclo = ciclos.find(c =>
+        (c.id && c.id.toString() === cicloSeleccionado.toString()) ||
+        (c.id_ciclo && c.id_ciclo.toString() === cicloSeleccionado.toString())
+      );
+
+      if (ciclo && ciclo.fecha_inicio) {
+        try {
+          // Asegurar formato YYYY-MM-DD
+          const fechaInicioCiclo = new Date(ciclo.fecha_inicio).toISOString().split('T')[0];
+          const fechaHoy = new Date().toISOString().split('T')[0];
+
+          setFechaInicio(fechaInicioCiclo);
+          setFechaFin(fechaHoy);
+          setDiasHabiles(null); // Resetear cálculo previo
+        } catch (e) {
+          console.error("Error al formatear fechas del ciclo:", e);
+        }
+      }
+    }
+  }, [cicloSeleccionado, ciclos]);
 
   // Cargar ciclos escolares al montar
   useEffect(() => {
@@ -25,11 +56,14 @@ const CorteFaltasPage = () => {
     try {
       const data = await cyclesApi.getAll();
       setCiclos(data);
-      
+
       // Seleccionar el ciclo activo por defecto
       const cicloActivo = data.find(c => c.activo);
       if (cicloActivo) {
-        setCicloSeleccionado(cicloActivo.id_ciclo.toString());
+        const id = cicloActivo.id || cicloActivo.id_ciclo;
+        if (id) {
+          setCicloSeleccionado(id.toString());
+        }
       }
     } catch (err) {
       console.error('Error al cargar ciclos:', err);
@@ -78,19 +112,19 @@ const CorteFaltasPage = () => {
     }
   };
 
-  const procesarCorte = async () => {
+  const procesarCorte = () => {
     if (!cicloSeleccionado || !fechaInicio || !fechaFin) {
       setError('Completa todos los campos requeridos');
       return;
     }
+    setShowConfirmModal(true);
+  };
 
-    if (!window.confirm('¿Estás seguro de procesar el corte de faltas? Esta acción registrará las faltas de forma automática.')) {
-      return;
-    }
-
+  const confirmarCorte = async () => {
     setLoading(true);
     setError('');
     setReporte(null);
+    setShowConfirmModal(false);
 
     try {
       const data = await faultsApi.procesarCorte(
@@ -99,7 +133,8 @@ const CorteFaltasPage = () => {
         fechaFin
       );
       setResultado(data);
-      alert('Corte de faltas procesado exitosamente');
+      setConteoCortes(prev => prev + 1);
+      showSuccess('Corte de faltas procesado exitosamente');
     } catch (err) {
       console.error('Error al procesar corte:', err);
       setError(err.response?.data?.detail || 'Error al procesar el corte de faltas');
@@ -112,14 +147,16 @@ const CorteFaltasPage = () => {
     <div className="corte-faltas-container">
       <div className="page-title-container">
         <h1 className="page-title">Corte de Faltas</h1>
+        <div className="corte-counter-badge">
+          Corte #{conteoCortes}
+        </div>
       </div>
 
       <div className="corte-info-card">
         <h3>¿Qué hace el corte de faltas?</h3>
         <ul>
           <li>📅 Procesa solo días hábiles (Lunes a Viernes)</li>
-          <li>⏱️ Las asistencias con menos del 10% de permanencia no cuentan</li>
-          <li>❌ Marca faltas automáticamente para días sin asistencia válida</li>
+          <li>❌ Marca faltas automáticamente para días sin asistencia</li>
           <li>🔔 Genera alertas automáticas según el número de faltas</li>
         </ul>
       </div>
@@ -132,104 +169,42 @@ const CorteFaltasPage = () => {
       )}
 
       <div className="corte-form-card">
-        <h2>Configuración del Corte</h2>
-        
-        <div className="form-grid">
-          <div className="form-group">
-            <label>Ciclo Escolar *</label>
-            <select
-              value={cicloSeleccionado}
-              onChange={(e) => setCicloSeleccionado(e.target.value)}
-              className="form-input"
-            >
-              <option value="">Selecciona un ciclo</option>
-              {ciclos.map(ciclo => (
-                <option key={ciclo.id} value={ciclo.id}>
-                  {ciclo.nombre} {ciclo.activo ? '(Activo)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+        <h2>Realizar Corte</h2>
 
-          <div className="form-group">
-            <label>Fecha de Inicio *</label>
-            <input
-              type="date"
-              value={fechaInicio}
-              onChange={(e) => {
-                setFechaInicio(e.target.value);
-                setDiasHabiles(null);
-              }}
-              className="form-input"
-            />
+        <div className="corte-summary">
+          <div className="summary-item">
+            <span className="label">Ciclo Activo:</span>
+            <span className="value">
+              {ciclos.find(c => (c.id && c.id.toString() === cicloSeleccionado.toString()) || (c.id_ciclo && c.id_ciclo.toString() === cicloSeleccionado.toString()))?.nombre || 'Ninguno'}
+            </span>
           </div>
-
-          <div className="form-group">
-            <label>Fecha de Fin *</label>
-            <input
-              type="date"
-              value={fechaFin}
-              onChange={(e) => {
-                setFechaFin(e.target.value);
-                setDiasHabiles(null);
-              }}
-              className="form-input"
-            />
+          <div className="summary-item">
+            <span className="label">Periodo de Corte:</span>
+            <span className="value">
+              {fechaInicio ? new Date(fechaInicio).toLocaleDateString('es-MX') : '...'}
+              {' - '}
+              {fechaFin ? new Date(fechaFin).toLocaleDateString('es-MX') : '...'}
+            </span>
           </div>
         </div>
 
-        <div className="form-actions">
-          <button 
-            onClick={calcularDiasHabiles}
-            className="btn btn-secondary"
-            disabled={!fechaInicio || !fechaFin}
-          >
-            <Calendar size={18} />
-            Calcular Días Hábiles
-          </button>
-
-          <button 
-            onClick={generarReporte}
-            className="btn btn-info"
-            disabled={loading || !fechaInicio || !fechaFin}
-          >
-            <FileText size={18} />
-            {loading ? 'Generando...' : 'Ver Reporte Previo'}
-          </button>
-
-          <button 
+        <div className="form-actions centered">
+          <button
             onClick={procesarCorte}
-            className="btn btn-danger"
+            className="btn btn-danger btn-large"
             disabled={loading || !cicloSeleccionado || !fechaInicio || !fechaFin}
           >
-            <Play size={18} />
-            {loading ? 'Procesando...' : 'Procesar Corte'}
+            <Play size={24} />
+            {loading ? 'Procesando Corte...' : 'Realizar Corte de Faltas'}
           </button>
         </div>
       </div>
-
-      {diasHabiles && (
-        <div className="dias-habiles-card">
-          <h3>
-            <Calendar size={20} />
-            Días Hábiles en el Periodo
-          </h3>
-          <div className="dias-info">
-            <span className="dias-count">{diasHabiles.total_dias_habiles}</span>
-            <span className="dias-label">días hábiles</span>
-          </div>
-          <p className="dias-rango">
-            Del {new Date(diasHabiles.fecha_inicio).toLocaleDateString('es-MX')} 
-            {' '}al {new Date(diasHabiles.fecha_fin).toLocaleDateString('es-MX')}
-          </p>
-        </div>
-      )}
 
       {reporte && (
         <div className="reporte-card">
           <h2>Reporte de Asistencias</h2>
           <p className="reporte-subtitle">Revisa la información antes de procesar el corte</p>
-          
+
           <div className="reporte-table-container">
             <table className="reporte-table">
               <thead>
@@ -273,7 +248,7 @@ const CorteFaltasPage = () => {
             <CheckCircle size={32} />
             <h2>Corte Procesado Exitosamente</h2>
           </div>
-          
+
           <div className="resultado-stats">
             <div className="stat-item">
               <span className="stat-label">Días Hábiles</span>
@@ -299,7 +274,7 @@ const CorteFaltasPage = () => {
               <ul>
                 {resultado.detalles.map((detalle, idx) => (
                   <li key={idx}>
-                    <strong>{detalle.nombre}</strong> ({detalle.matricula}): 
+                    <strong>{detalle.nombre}</strong> ({detalle.matricula}):
                     {' '}<span className="text-danger">{detalle.faltas_nuevas} faltas nuevas</span>
                     {detalle.asistencias_menores_10_porciento > 0 && (
                       <>, <span className="text-warning">{detalle.asistencias_menores_10_porciento} asist. &lt;10%</span></>
@@ -311,6 +286,56 @@ const CorteFaltasPage = () => {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        title="Confirmar Corte de Faltas"
+        size="md"
+      >
+        <div className="modal-warning-box">
+          <AlertTriangle className="flex-shrink-0" size={24} />
+          <p className="modal-warning-text">¡Atención! Esta acción es irreversible.</p>
+        </div>
+
+        <p className="modal-text">
+          Estás a punto de procesar el corte de faltas para el periodo:
+        </p>
+
+        <div className="modal-period-display">
+          <p className="period-text">
+            {fechaInicio ? new Date(fechaInicio).toLocaleDateString('es-MX') : '...'}
+            {' - '}
+            {fechaFin ? new Date(fechaFin).toLocaleDateString('es-MX') : '...'}
+          </p>
+        </div>
+
+        <p className="modal-text">
+          Al confirmar:
+        </p>
+        <ul className="modal-list">
+          <li>Se calcularán las faltas para todos los estudiantes activos.</li>
+          <li>Se registrarán las faltas en el historial.</li>
+          <li>Se generarán las alertas correspondientes.</li>
+        </ul>
+
+        <div className="modal-actions-custom">
+          <button
+            onClick={() => setShowConfirmModal(false)}
+            className="btn btn-secondary"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={confirmarCorte}
+            className="btn btn-danger"
+          >
+            Confirmar y Procesar
+          </button>
+        </div>
+      </Modal>
+
+      <ToastContainer />
     </div>
   );
 };
