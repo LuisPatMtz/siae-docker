@@ -444,7 +444,7 @@ export const alertasService = {
 
                 const faltasEstudiante = faltasPorEstudiante[matricula];
                 alertas.push({
-                    id: estudiante.id,
+                    id: estudiante.matricula, // Usar matrícula como ID único ya que Estudiante no tiene campo id numérico
                     matricula: estudiante.matricula,
                     nombre: `${estudiante.nombre} ${estudiante.apellido}`,
                     nombreCompleto: estudiante.nombre,

@@ -69,44 +69,57 @@ class FaltaService:
         Obtiene los días que el estudiante asistió.
         Solo verifica si hay una entrada válida, sin calcular porcentaje de permanencia.
         """
-        # Obtener entradas válidas del periodo
-        statement = select(Asistencia).where(
-            and_(
-                Asistencia.matricula_estudiante == matricula,
-                Asistencia.tipo == "entrada",
-                Asistencia.es_valida == True,
-                func.date(Asistencia.timestamp) >= fecha_inicio,
-                func.date(Asistencia.timestamp) <= fecha_fin
-            )
-        ).order_by(Asistencia.timestamp)
-        
-        entradas = list(self.session.exec(statement).all())
-        
-        dias_asistencia = {}
-        
-        for entrada in entradas:
-            fecha_entrada = entrada.timestamp.date()
+        try:
+            # Convertir fechas a datetime para comparación consistente
+            # Las fechas en la BD son timezone-naive (México), así que usamos datetime naive
+            fecha_inicio_dt = datetime.combine(fecha_inicio, datetime.min.time())
+            fecha_fin_dt = datetime.combine(fecha_fin, datetime.max.time())
             
-            # Buscar la salida correspondiente
-            salida = self.session.exec(
-                select(Asistencia).where(
-                    and_(
-                        Asistencia.matricula_estudiante == matricula,
-                        Asistencia.tipo == "salida",
-                        Asistencia.entrada_relacionada_id == entrada.id
-                    )
+            # Obtener entradas válidas del periodo
+            statement = select(Asistencia).where(
+                and_(
+                    Asistencia.matricula_estudiante == matricula,
+                    Asistencia.tipo == "entrada",
+                    Asistencia.es_valida == True,
+                    Asistencia.timestamp >= fecha_inicio_dt,
+                    Asistencia.timestamp <= fecha_fin_dt
                 )
-            ).first()
+            ).order_by(Asistencia.timestamp)
             
-            # Si hay entrada (con o sin salida), cuenta como asistencia
-            dias_asistencia[fecha_entrada] = {
-                "entrada_id": entrada.id,
-                "salida_id": salida.id if salida else None,
-                "hora_entrada": entrada.timestamp,
-                "hora_salida": salida.timestamp if salida else None
-            }
-        
-        return dias_asistencia
+            entradas = list(self.session.exec(statement).all())
+            
+            dias_asistencia = {}
+            
+            for entrada in entradas:
+                # Extraer solo la fecha del timestamp
+                fecha_entrada = entrada.timestamp.date()
+                
+                # Buscar la salida correspondiente
+                salida = self.session.exec(
+                    select(Asistencia).where(
+                        and_(
+                            Asistencia.matricula_estudiante == matricula,
+                            Asistencia.tipo == "salida",
+                            Asistencia.entrada_relacionada_id == entrada.id
+                        )
+                    )
+                ).first()
+                
+                # Si hay entrada (con o sin salida), cuenta como asistencia
+                dias_asistencia[fecha_entrada] = {
+                    "entrada_id": entrada.id,
+                    "salida_id": salida.id if salida else None,
+                    "hora_entrada": entrada.timestamp,
+                    "hora_salida": salida.timestamp if salida else None
+                }
+            
+            return dias_asistencia
+            
+        except Exception as e:
+            # Log del error para debugging
+            print(f"Error en obtener_dias_con_asistencia para {matricula}: {str(e)}")
+            # Retornar diccionario vacío en caso de error
+            return {}
     
     def procesar_corte_faltas(
         self,
@@ -170,41 +183,46 @@ class FaltaService:
                 estudiante.matricula, fecha_inicio, fecha_fin
             )
             
+            # Obtener TODAS las faltas existentes del estudiante en el periodo de una sola vez
+            faltas_existentes_query = select(Falta.fecha).where(
+                and_(
+                    Falta.matricula_estudiante == estudiante.matricula,
+                    Falta.fecha >= fecha_inicio,
+                    Falta.fecha <= fecha_fin
+                )
+            )
+            fechas_con_falta = set(self.session.exec(faltas_existentes_query).all())
+            
             faltas_estudiante = 0
+            faltas_a_crear = []
             
             # Procesar cada día hábil
             for dia in dias_habiles:
-                # Verificar si ya existe falta registrada para este día
-                falta_existente = self.session.exec(
-                    select(Falta).where(
-                        and_(
-                            Falta.matricula_estudiante == estudiante.matricula,
-                            Falta.fecha == dia
-                        )
-                    )
-                ).first()
+                # Si ya existe falta o hay asistencia, omitir
+                if dia in fechas_con_falta or dia in dias_con_asistencia:
+                    continue
                 
-                if falta_existente:
-                    continue  # Ya está procesado este día
-                
-                # Si no hay asistencia registrada para este día hábil → FALTA
-                if dia not in dias_con_asistencia:
-                    falta = Falta(
-                        matricula_estudiante=estudiante.matricula,
-                        id_ciclo=ciclo_id,
-                        fecha=dia,
-                        estado="Sin justificar"
-                    )
-                    self.session.add(falta)
-                    self.session.flush()  # Para obtener el ID de la falta
-                    
-                    # Generar o actualizar alerta
-                    AlertaService.procesar_nueva_falta(self.session, falta)
-                    
-                    faltas_estudiante += 1
-                    stats["faltas_nuevas"] += 1
+                # Crear falta (sin guardar aún)
+                falta = Falta(
+                    matricula_estudiante=estudiante.matricula,
+                    id_ciclo=ciclo_id,
+                    fecha=dia,
+                    estado="Sin justificar"
+                )
+                faltas_a_crear.append(falta)
+                faltas_estudiante += 1
             
-            if faltas_estudiante > 0:
+            # Guardar todas las faltas del estudiante de una vez
+            if faltas_a_crear:
+                for falta in faltas_a_crear:
+                    self.session.add(falta)
+                self.session.flush()  # Para obtener los IDs
+                
+                # Generar o actualizar alerta
+                for falta in faltas_a_crear:
+                    AlertaService.procesar_nueva_falta(self.session, falta)
+                
+                stats["faltas_nuevas"] += faltas_estudiante
                 stats["detalles"].append({
                     "matricula": estudiante.matricula,
                     "nombre": f"{estudiante.nombre} {estudiante.apellido}",

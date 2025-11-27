@@ -137,7 +137,20 @@ const CorteFaltasPage = () => {
       showSuccess('Corte de faltas procesado exitosamente');
     } catch (err) {
       console.error('Error al procesar corte:', err);
-      setError(err.response?.data?.detail || 'Error al procesar el corte de faltas');
+
+      // Extraer el mensaje de error más específico posible
+      let errorMessage = 'Error al procesar el corte de faltas';
+
+      if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = `Error de red: ${err.message}`;
+      }
+
+      setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
