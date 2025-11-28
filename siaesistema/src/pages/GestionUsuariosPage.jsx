@@ -5,7 +5,6 @@ import AddUserModal from '../components/Users/AddUserModal.jsx';
 import EditUserModal from '../components/Users/EditUserModal.jsx';
 import DeleteUserSelectModal from '../components/Users/DeleteUserSelectModal.jsx';
 import DeleteConfirmModal from '../components/Users/DeleteConfirmModal.jsx';
-import { useToast } from '../components/UI/ToastContainer.jsx';
 import useUsers from '../hooks/useUsers';
 
 const GestionUsuariosPage = () => {
@@ -32,8 +31,6 @@ const GestionUsuariosPage = () => {
     // Voy a confiar en useToast del hook.
 
     const [isSaving, setIsSaving] = useState(false); // Estado de carga genérico para modals (UI state)
-
-    const { ToastContainer } = useToast(); // Solo necesitamos el container, las funciones las usa el hook
 
     // Handlers UI -> Hook Calls
 
@@ -188,9 +185,6 @@ const GestionUsuariosPage = () => {
                 onConfirm={confirmDeleteUser}
                 userName={userToDelete.name}
             />
-
-            {/* Contenedor de notificaciones toast */}
-            <ToastContainer />
         </main>
     );
 };

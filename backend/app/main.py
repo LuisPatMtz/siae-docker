@@ -23,7 +23,9 @@ from app.api.v1 import (
 
     tarjetas_router,
     faltas_router,
-    asistencia_router
+    asistencia_router,
+    justificaciones_router,
+    maintenance_router
 )
 
 
@@ -132,6 +134,8 @@ app.include_router(dashboard_router)
 app.include_router(tarjetas_router)
 app.include_router(faltas_router)
 app.include_router(asistencia_router)
+app.include_router(justificaciones_router)
+app.include_router(maintenance_router)
 
 
 @app.get("/")

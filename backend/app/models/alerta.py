@@ -12,16 +12,20 @@ class Alerta(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
     matricula_estudiante: str = Field(foreign_key="estudiante.matricula")
+    id_ciclo: int = Field(foreign_key="ciclo_escolar.id")  # Ciclo al que pertenece la alerta
     tipo: str  # "Faltas", "Retardos", "Conducta", etc.
     mensaje: str
     fecha_creacion: date
     fecha_modificacion: Optional[datetime] = None
     estado: str = "Activa"  # "Activa", "Justificada", "Cerrada"
     cantidad_faltas: int = Field(default=0)  # Total de faltas acumuladas
-    justificacion: Optional[str] = None  # Justificación si se resuelve
+    justificacion_id: Optional[int] = Field(default=None, foreign_key="justificaciones.id")  # ID de justificación
+    justificacion: Optional[str] = None  # Justificación si se resuelve (deprecated, usar justificacion_id)
     fecha_justificacion: Optional[date] = None  # Cuando se justificó
     
-    # Relación con historial
+    # Relaciones
+    ciclo: "CicloEscolar" = Relationship()  # noqa: F821
+    justificacion_rel: Optional["Justificacion"] = Relationship()  # noqa: F821
     historial: List["AlertaHistorial"] = Relationship(back_populates="alerta")
 
 
@@ -44,6 +48,7 @@ class AlertaHistorial(SQLModel, table=True):
 class AlertaCreate(SQLModel):
     """DTO para crear una alerta"""
     matricula_estudiante: str
+    id_ciclo: int
     tipo: str
     mensaje: str
     fecha_creacion: date
@@ -54,18 +59,21 @@ class AlertaRead(SQLModel):
     """DTO para leer una alerta"""
     id: int
     matricula_estudiante: str
+    id_ciclo: int
     tipo: str
     mensaje: str
     fecha_creacion: date
     fecha_modificacion: Optional[datetime]
     estado: str
     cantidad_faltas: int
+    justificacion_id: Optional[int]
     justificacion: Optional[str]
     fecha_justificacion: Optional[date]
 
 class AlertaUpdate(SQLModel):
     """DTO para actualizar una alerta"""
     estado: Optional[str] = None
+    justificacion_id: Optional[int] = None
     justificacion: Optional[str] = None
     cantidad_faltas: Optional[int] = None
 

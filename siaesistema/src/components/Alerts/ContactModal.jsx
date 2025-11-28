@@ -1,8 +1,21 @@
 // src/components/Alerts/ContactModal.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Mail, User, Hash, Users } from 'lucide-react';
 
 const ContactModal = ({ isOpen, onClose, student }) => {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+            return () => document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [isOpen, onClose]);
+
     if (!isOpen || !student) return null;
 
     return (

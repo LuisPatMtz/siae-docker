@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiClient from '../api/axios';
-import { useToast } from '../components/UI/ToastContainer.jsx';
+import { useToast } from '../contexts/ToastContext.jsx';
 
 const useUsers = () => {
     const [users, setUsers] = useState([]);
@@ -81,6 +81,16 @@ const useUsers = () => {
         const targetUser = originalUsers.find(u => u.id === userId);
         if (!targetUser) return;
 
+        // Mapeo de nombres de permisos para mensajes más amigables
+        const permissionLabels = {
+            canViewDashboard: 'Ver Dashboard',
+            canManageAlerts: 'Gestionar Alertas',
+            canEditStudents: 'Editar Estudiantes',
+            canManageUsers: 'Gestionar Usuarios',
+            canManageMaintenance: 'Mantenimiento',
+            canManageAttendance: 'Gestión de Asistencia'
+        };
+
         setUsers(currentUsers => currentUsers.map(user => {
             if (user.id === userId) {
                 return {
@@ -99,7 +109,18 @@ const useUsers = () => {
             await apiClient.patch(`/users/${userId}/permissions`, {
                 permissions: updatedPermissions
             });
-            showSuccess('Permisos actualizados correctamente');
+            
+            // Mensaje personalizado según el permiso y el estado
+            const permissionLabel = permissionLabels[permissionKey] || permissionKey;
+            const userName = targetUser.full_name || targetUser.username;
+            
+            if (newValue) {
+                // Mensaje cuando se ACTIVA un permiso
+                showSuccess(`✓ Permiso "${permissionLabel}" activado para ${userName}`);
+            } else {
+                // Mensaje cuando se DESACTIVA un permiso
+                showSuccess(`Permiso "${permissionLabel}" desactivado para ${userName}`);
+            }
         } catch (error) {
             console.error("Error al actualizar permiso:", error);
             showError('Error al guardar el permiso. Cambios revertidos.');

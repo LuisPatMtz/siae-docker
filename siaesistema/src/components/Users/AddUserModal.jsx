@@ -6,21 +6,23 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     // Hook optimizado para manejar ESC
     useEscapeKey(isOpen, onClose);
-    
+
     // Estados para todos los campos del formulario
     const [username, setUsername] = useState('');
     const [fullName, setFullName] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState('Docente'); // Rol por defecto
-    
+
     // Estado para los checkboxes de permisos
     const [permissions, setPermissions] = useState({
         canViewDashboard: true, // Por defecto, casi todos pueden ver
         canManageAlerts: false,
         canEditStudents: false,
         canManageUsers: false,
+        canManageMaintenance: false,
+        canManageAttendance: false,
     });
-    
+
     const [error, setError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
@@ -36,6 +38,8 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
         setPermissions({
             canViewDashboard: true, canManageAlerts: false,
             canEditStudents: false, canManageUsers: false,
+            canManageMaintenance: false,
+            canManageAttendance: false,
         });
         setError('');
     };
@@ -43,14 +47,14 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        
+
         if (!username || !fullName || !password) {
             setError('Usuario, Nombre Completo y Contraseña son obligatorios.');
             return;
         }
 
         setIsSaving(true);
-        
+
         const newUserData = {
             username,
             full_name: fullName,
@@ -89,7 +93,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
                         <X size={24} />
                     </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
                         {error && (
@@ -97,7 +101,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
                                 <AlertCircle size={18} /> {error}
                             </div>
                         )}
-                        
+
                         <h3 className="form-section-title">Datos de Acceso</h3>
                         <div className="form-grid-col-3">
                             <div className="modal-input-group">
@@ -126,7 +130,7 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
                         </div>
 
                         <h3 className="form-section-title">Permisos del Usuario</h3>
-                        <div className="form-grid-col-2">
+                        <div className="form-grid-permissions">
                             {/* Checkbox para cada permiso */}
                             <label className="checkbox-label">
                                 <input type="checkbox" checked={permissions.canViewDashboard} onChange={() => handlePermissionChange('canViewDashboard')} />
@@ -144,9 +148,17 @@ const AddUserModal = ({ isOpen, onClose, onSubmit }) => {
                                 <input type="checkbox" checked={permissions.canManageUsers} onChange={() => handlePermissionChange('canManageUsers')} />
                                 Gestionar Usuarios
                             </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" checked={permissions.canManageMaintenance} onChange={() => handlePermissionChange('canManageMaintenance')} />
+                                Mantenimiento
+                            </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" checked={permissions.canManageAttendance} onChange={() => handlePermissionChange('canManageAttendance')} />
+                                Gestión de Asistencia
+                            </label>
                         </div>
                     </div>
-                    
+
                     <div className="modal-actions">
                         <button type="button" className="modal-btn cancel" onClick={handleClose} disabled={isSaving}>
                             Cancelar

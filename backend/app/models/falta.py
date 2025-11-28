@@ -2,7 +2,7 @@
 """
 Modelo de Falta: registro de ausencias de estudiantes.
 """
-from typing import Optional
+from typing import Optional, List
 from datetime import date
 from sqlmodel import Field, SQLModel, Relationship, UniqueConstraint
 
@@ -17,13 +17,15 @@ class Falta(SQLModel, table=True):
     id_ciclo: int = Field(foreign_key="ciclo_escolar.id")
     fecha: date
     estado: str = Field(default="Sin justificar", max_length=50)  # "Sin justificar", "Justificada"
-    justificacion: Optional[str] = Field(default=None)
-    fecha_justificacion: Optional[date] = None
+    justificacion: Optional[str] = Field(default=None)  # DEPRECATED: mantener por compatibilidad
+    fecha_justificacion: Optional[date] = None  # DEPRECATED: mantener por compatibilidad
+    id_justificacion: Optional[int] = Field(default=None, foreign_key="justificaciones.id")  # Nueva relación
     id_alerta_asociada: Optional[int] = Field(default=None, foreign_key="alertas.id")  # Alerta relacionada
     
     # Relaciones
     estudiante: "Estudiante" = Relationship(back_populates="faltas")  # noqa: F821
     ciclo: "CicloEscolar" = Relationship(back_populates="faltas")  # noqa: F821
+    justificacion_rel: Optional["Justificacion"] = Relationship(back_populates="faltas")  # noqa: F821
 
 
 # --- DTOs ---
@@ -46,6 +48,7 @@ class FaltaRead(SQLModel):
     estado: str
     justificacion: Optional[str]
     fecha_justificacion: Optional[date]
+    id_justificacion: Optional[int]  # Agregado
     id_alerta_asociada: Optional[int]
 
 
@@ -54,3 +57,4 @@ class FaltaUpdate(SQLModel):
     estado: Optional[str] = None
     justificacion: Optional[str] = None
     fecha_justificacion: Optional[date] = None
+    id_justificacion: Optional[int] = None  # Agregado

@@ -63,10 +63,11 @@ class FaltaService:
         self,
         matricula: str,
         fecha_inicio: date,
-        fecha_fin: date
+        fecha_fin: date,
+        ciclo_id: int
     ) -> Dict[date, Dict]:
         """
-        Obtiene los días que el estudiante asistió.
+        Obtiene los días que el estudiante asistió en un ciclo específico.
         Solo verifica si hay una entrada válida, sin calcular porcentaje de permanencia.
         """
         try:
@@ -75,10 +76,11 @@ class FaltaService:
             fecha_inicio_dt = datetime.combine(fecha_inicio, datetime.min.time())
             fecha_fin_dt = datetime.combine(fecha_fin, datetime.max.time())
             
-            # Obtener entradas válidas del periodo
+            # Obtener entradas válidas del periodo para el ciclo específico
             statement = select(Asistencia).where(
                 and_(
                     Asistencia.matricula_estudiante == matricula,
+                    Asistencia.id_ciclo == ciclo_id,
                     Asistencia.tipo == "entrada",
                     Asistencia.es_valida == True,
                     Asistencia.timestamp >= fecha_inicio_dt,
@@ -162,9 +164,20 @@ class FaltaService:
             if not estudiantes[0]:
                 return {"error": f"Estudiante {matricula_estudiante} no encontrado"}
         else:
-            # Obtener todos los estudiantes activos
-            statement = select(Estudiante)
+            # Obtener todos los estudiantes del ciclo especificado
+            statement = select(Estudiante).where(Estudiante.id_ciclo == ciclo_id)
             estudiantes = list(self.session.exec(statement).all())
+        
+        # Verificar si hay estudiantes en el ciclo
+        if not estudiantes:
+            return {
+                "error": f"No hay estudiantes registrados en el ciclo {ciclo_id}",
+                "fecha_inicio": fecha_inicio.isoformat(),
+                "fecha_fin": fecha_fin.isoformat(),
+                "dias_habiles": len(dias_habiles),
+                "estudiantes_procesados": 0,
+                "faltas_nuevas": 0
+            }
         
         # Estadísticas del corte
         stats = {
@@ -178,15 +191,16 @@ class FaltaService:
         }
         
         for estudiante in estudiantes:
-            # Obtener asistencias del estudiante
+            # Obtener asistencias del estudiante para este ciclo
             dias_con_asistencia = self.obtener_dias_con_asistencia(
-                estudiante.matricula, fecha_inicio, fecha_fin
+                estudiante.matricula, fecha_inicio, fecha_fin, ciclo_id
             )
             
-            # Obtener TODAS las faltas existentes del estudiante en el periodo de una sola vez
+            # Obtener TODAS las faltas existentes del estudiante en el periodo Y ciclo de una sola vez
             faltas_existentes_query = select(Falta.fecha).where(
                 and_(
                     Falta.matricula_estudiante == estudiante.matricula,
+                    Falta.id_ciclo == ciclo_id,
                     Falta.fecha >= fecha_inicio,
                     Falta.fecha <= fecha_fin
                 )
@@ -214,21 +228,31 @@ class FaltaService:
             
             # Guardar todas las faltas del estudiante de una vez
             if faltas_a_crear:
-                for falta in faltas_a_crear:
-                    self.session.add(falta)
-                self.session.flush()  # Para obtener los IDs
+                from sqlalchemy.exc import IntegrityError
+                faltas_guardadas = 0
                 
-                # Generar o actualizar alerta
                 for falta in faltas_a_crear:
-                    AlertaService.procesar_nueva_falta(self.session, falta)
+                    try:
+                        self.session.add(falta)
+                        self.session.flush()  # Intentar guardar esta falta
+                        
+                        # Si se guardó exitosamente, procesar alerta
+                        AlertaService.procesar_nueva_falta(self.session, falta)
+                        faltas_guardadas += 1
+                        
+                    except IntegrityError:
+                        # Si ya existe, hacer rollback de esta falta específica y continuar
+                        self.session.rollback()
+                        continue
                 
-                stats["faltas_nuevas"] += faltas_estudiante
-                stats["detalles"].append({
-                    "matricula": estudiante.matricula,
-                    "nombre": f"{estudiante.nombre} {estudiante.apellido}",
-                    "faltas_nuevas": faltas_estudiante,
-                    "asistencias_menores_10_porciento": 0
-                })
+                if faltas_guardadas > 0:
+                    stats["faltas_nuevas"] += faltas_guardadas
+                    stats["detalles"].append({
+                        "matricula": estudiante.matricula,
+                        "nombre": f"{estudiante.nombre} {estudiante.apellido}",
+                        "faltas_nuevas": faltas_guardadas,
+                        "asistencias_menores_10_porciento": 0
+                    })
             
             stats["estudiantes_procesados"] += 1
         
@@ -258,8 +282,16 @@ class FaltaService:
         reporte = []
         
         for estudiante in estudiantes:
+            # Obtener ciclo activo para el reporte
+            ciclo_activo = self.session.exec(
+                select(CicloEscolar).where(CicloEscolar.activo == True)
+            ).first()
+            
+            if not ciclo_activo:
+                continue
+            
             dias_con_asistencia = self.obtener_dias_con_asistencia(
-                estudiante.matricula, fecha_inicio, fecha_fin
+                estudiante.matricula, fecha_inicio, fecha_fin, ciclo_activo.id
             )
             
             # Contar asistencias (cualquier día con entrada)

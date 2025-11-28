@@ -14,6 +14,8 @@ const EditUserModal = ({ isOpen, onClose, onSubmit, user }) => {
         canManageAlerts: false,
         canEditStudents: false,
         canManageUsers: false,
+        canManageMaintenance: false,
+        canManageAttendance: false,
     });
     
     const [error, setError] = useState('');
@@ -30,6 +32,8 @@ const EditUserModal = ({ isOpen, onClose, onSubmit, user }) => {
                 canManageAlerts: false,
                 canEditStudents: false,
                 canManageUsers: false,
+                canManageMaintenance: false,
+                canManageAttendance: false,
             });
         }
     }, [isOpen, user]);
@@ -47,6 +51,8 @@ const EditUserModal = ({ isOpen, onClose, onSubmit, user }) => {
             canManageAlerts: false,
             canEditStudents: false,
             canManageUsers: false,
+            canManageMaintenance: false,
+            canManageAttendance: false,
         });
         setError('');
     };
@@ -142,7 +148,7 @@ const EditUserModal = ({ isOpen, onClose, onSubmit, user }) => {
                         </div>
 
                         <h3 className="form-section-title">Permisos del Usuario</h3>
-                        <div className="form-grid-col-2">
+                        <div className="form-grid-permissions">
                             <label className="checkbox-label">
                                 <input 
                                     type="checkbox" 
@@ -174,6 +180,22 @@ const EditUserModal = ({ isOpen, onClose, onSubmit, user }) => {
                                     onChange={() => handlePermissionChange('canManageUsers')} 
                                 />
                                 Gestionar Usuarios
+                            </label>
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={permissions.canManageMaintenance} 
+                                    onChange={() => handlePermissionChange('canManageMaintenance')} 
+                                />
+                                Mantenimiento
+                            </label>
+                            <label className="checkbox-label">
+                                <input 
+                                    type="checkbox" 
+                                    checked={permissions.canManageAttendance} 
+                                    onChange={() => handlePermissionChange('canManageAttendance')} 
+                                />
+                                Gestión de Asistencia
                             </label>
                         </div>
                     </div>

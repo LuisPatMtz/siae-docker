@@ -12,6 +12,8 @@ from app.api.v1.dashboard_routes import router as dashboard_router
 from app.api.v1.tarjetas_routes import router as tarjetas_router
 from app.api.v1.faltas_routes import router as faltas_router
 from app.api.v1.asistencia_routes import router as asistencia_router
+from app.api.v1.justificaciones_routes import router as justificaciones_router
+from app.api.v1.maintenance_routes import router as maintenance_router
 
 __all__ = [
     "auth_router",
@@ -24,4 +26,6 @@ __all__ = [
     "tarjetas_router",
     "faltas_router",
     "asistencia_router",
+    "justificaciones_router",
+    "maintenance_router",
 ]

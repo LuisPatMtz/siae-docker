@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiClient from '../api/axios';
-import { useToast } from '../components/UI/ToastContainer.jsx';
+import { useToast } from '../contexts/ToastContext.jsx';
 
 const useStudents = (isLinkListViewVisible) => {
     const [allStudents, setAllStudents] = useState([]);

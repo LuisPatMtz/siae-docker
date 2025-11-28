@@ -138,6 +138,18 @@ const UserPermissionCard = ({ user, onPermissionChange, onDelete, onEdit }) => {
                     onChange={() => handleChange('canManageUsers')}
                     userId={user.id}
                 />
+                <PermissionToggle
+                    label="Mantenimiento"
+                    isChecked={user.permissions.canManageMaintenance}
+                    onChange={() => handleChange('canManageMaintenance')}
+                    userId={user.id}
+                />
+                <PermissionToggle
+                    label="Gestión de Asistencia"
+                    isChecked={user.permissions.canManageAttendance}
+                    onChange={() => handleChange('canManageAttendance')}
+                    userId={user.id}
+                />
             </div>
 
             <div className="card-actions-group">

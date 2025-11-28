@@ -1,7 +1,20 @@
 // src/components/Alerts/ClearHistoryConfirmModal.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const ClearHistoryConfirmModal = ({ isOpen, onClose, onConfirm }) => {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+            return () => document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [isOpen, onClose]);
+
     if (!isOpen) {
         return null;
     }

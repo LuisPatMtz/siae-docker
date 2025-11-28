@@ -4,11 +4,11 @@ import { cyclesApi } from '../api/cyclesApi';
 import { faultsApi } from '../api/faultsApi';
 import { Calendar, CheckCircle, AlertTriangle, FileText, Play } from 'lucide-react';
 import Modal from '../components/UI/Modal';
-import { useToast } from '../components/UI/ToastContainer.jsx';
+import { useToast } from '../contexts/ToastContext.jsx';
 import '../styles/corte-faltas.css';
 
 const CorteFaltasPage = () => {
-  const { showSuccess, showError, ToastContainer } = useToast();
+  const { showSuccess, showError } = useToast();
 
   const [ciclos, setCiclos] = useState([]);
   const [cicloSeleccionado, setCicloSeleccionado] = useState('');
@@ -347,8 +347,6 @@ const CorteFaltasPage = () => {
           </button>
         </div>
       </Modal>
-
-      <ToastContainer />
     </div>
   );
 };

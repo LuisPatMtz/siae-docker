@@ -15,7 +15,8 @@ from app.models import (
     Estudiante,
     Asistencia, AsistenciaCreate, AsistenciaRead,
     Usuario,
-    NFC, NfcPayload
+    NFC, NfcPayload,
+    CicloEscolar
 )
 
 router = APIRouter(
@@ -59,18 +60,30 @@ def registrar_asistencia(
                 detail=f"Estudiante con matrícula {matricula} no encontrado."
             )
         
-        # 2. Obtener la hora actual en zona horaria de México
+        # 2. Obtener el ciclo activo
+        ciclo_activo = session.exec(
+            select(CicloEscolar).where(CicloEscolar.activo == True)
+        ).first()
+        
+        if not ciclo_activo:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No hay un ciclo escolar activo. Por favor activa un ciclo."
+            )
+        
+        # 3. Obtener la hora actual en zona horaria de México
         ahora = datetime.now(MEXICO_TZ)
         hoy = ahora.date()
         
         # Convertir a naive para comparación con la base de datos
         ahora_naive = ahora.replace(tzinfo=None)
         
-        # 3. Buscar entrada del día de hoy
+        # 4. Buscar entrada del día de hoy EN EL CICLO ACTIVO
         entrada_hoy = session.exec(
             select(Asistencia)
             .where(
                 Asistencia.matricula_estudiante == matricula,
+                Asistencia.id_ciclo == ciclo_activo.id,
                 Asistencia.tipo == "entrada",
                 func.date(Asistencia.timestamp) == hoy
             )
@@ -83,11 +96,12 @@ def registrar_asistencia(
                 detail="Ya registraste tu entrada hoy. La salida debe ser en un día diferente."
             )
         
-        # 4. Buscar la última entrada pendiente (sin salida válida) de días anteriores
+        # 5. Buscar la última entrada pendiente (sin salida válida) de días anteriores EN EL CICLO ACTIVO
         ultima_entrada = session.exec(
             select(Asistencia)
             .where(
                 Asistencia.matricula_estudiante == matricula,
+                Asistencia.id_ciclo == ciclo_activo.id,
                 Asistencia.tipo == "entrada",
                 Asistencia.es_valida == None,  # Entrada sin salida válida
                 func.date(Asistencia.timestamp) < hoy  # De un día anterior
@@ -105,6 +119,7 @@ def registrar_asistencia(
             
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
+                id_ciclo=ciclo_activo.id,
                 tipo=tipo_registro,
                 timestamp=ahora_naive,
                 es_valida=es_valida,
@@ -156,6 +171,7 @@ def registrar_asistencia(
             # Crear salida
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
+                id_ciclo=ciclo_activo.id,
                 tipo=tipo_registro,
                 timestamp=ahora_naive,
                 es_valida=es_valida,

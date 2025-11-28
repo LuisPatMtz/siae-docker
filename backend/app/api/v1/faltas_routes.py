@@ -2,7 +2,7 @@
 from typing import List, Optional
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func, and_
 
 from app.db.database import get_session
 from app.models import (
@@ -20,6 +20,17 @@ router = APIRouter(
     tags=["Faltas"],
     dependencies=[Depends(get_current_user)]
 )
+
+# Endpoint de prueba sin dependencias
+@router.get("/test-endpoint")
+def test_endpoint():
+    """Endpoint de prueba simple"""
+    return {"status": "ok", "message": "Endpoint funcionando"}
+
+@router.get("/estudiantes-con-faltas-test")
+def get_estudiantes_con_faltas_test():
+    """Endpoint de prueba sin parámetros"""
+    return [{"id": "test", "nombre": "Estudiante Test", "faltas": 5}]
 
 @router.post("", response_model=FaltaRead, status_code=status.HTTP_201_CREATED)
 def create_falta(
@@ -142,6 +153,107 @@ def get_faltas_por_fecha(
     statement = statement.order_by(Falta.matricula_estudiante)
     faltas = session.exec(statement).all()
     return faltas
+
+
+@router.get("/estudiantes-con-faltas")
+def get_estudiantes_con_faltas(
+    session: Session = Depends(get_session),
+    turno: str = "general",
+    ciclo_id: Optional[int] = None
+):
+    """
+    Obtiene estudiantes con faltas injustificadas agrupados por turno.
+    Endpoint optimizado para la página de Gestión de Alertas.
+    """
+    from app.models import Grupo
+    from app.core.logging import api_logger
+    
+    api_logger.info(f"🔍 Buscando estudiantes con faltas - turno: {turno}, ciclo_id: {ciclo_id}")
+    
+    # Si no se especifica ciclo_id, obtener el ciclo activo
+    if not ciclo_id:
+        ciclo_activo = session.exec(
+            select(CicloEscolar).where(CicloEscolar.activo == True)
+        ).first()
+        
+        if not ciclo_activo:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No hay un ciclo escolar activo"
+            )
+        ciclo_id = ciclo_activo.id
+    
+    # Query base: faltas sin justificar del ciclo
+    faltas_query = select(
+        Falta.matricula_estudiante,
+        func.count(Falta.id).label('total_faltas'),
+        func.array_agg(Falta.fecha).label('fechas'),
+        func.array_agg(Falta.id).label('falta_ids')
+    ).where(
+        and_(
+            Falta.id_ciclo == ciclo_id,
+            Falta.estado == "Sin justificar"
+        )
+    ).group_by(Falta.matricula_estudiante)
+    
+    # Ejecutar query de faltas
+    faltas_agrupadas = session.exec(faltas_query).all()
+    
+    if not faltas_agrupadas:
+        return []
+    
+    # Obtener matrículas con faltas
+    matriculas_con_faltas = [f.matricula_estudiante for f in faltas_agrupadas]
+    
+    # Obtener estudiantes y sus grupos
+    estudiantes_query = select(Estudiante, Grupo).where(
+        Estudiante.matricula.in_(matriculas_con_faltas)
+    ).join(Grupo, Estudiante.id_grupo == Grupo.id)
+    
+    estudiantes_dict = {}
+    for estudiante, grupo in session.exec(estudiantes_query).all():
+        estudiantes_dict[estudiante.matricula] = {
+            'estudiante': estudiante,
+            'grupo': grupo
+        }
+    
+    # Construir respuesta
+    resultado = []
+    for falta_info in faltas_agrupadas:
+        matricula = falta_info.matricula_estudiante
+        
+        if matricula not in estudiantes_dict:
+            continue
+        
+        est_data = estudiantes_dict[matricula]
+        estudiante = est_data['estudiante']
+        grupo = est_data['grupo']
+        
+        # Filtrar por turno si no es 'general'
+        if turno != "general":
+            turno_grupo = grupo.turno.lower() if grupo.turno else ""
+            if turno_grupo != turno.lower():
+                continue
+        
+        resultado.append({
+            "id": estudiante.matricula,
+            "matricula": estudiante.matricula,
+            "nombre": f"{estudiante.nombre} {estudiante.apellido}",
+            "nombreCompleto": estudiante.nombre,
+            "apellido": estudiante.apellido,
+            "correo": estudiante.correo,
+            "grupo": grupo.nombre,
+            "turno": grupo.turno,
+            "unjustifiedFaltas": falta_info.total_faltas,
+            "unjustifiedDates": [fecha.isoformat() for fecha in falta_info.fechas],
+            "faltasIds": list(falta_info.falta_ids)
+        })
+    
+    # Ordenar por número de faltas (descendente)
+    resultado.sort(key=lambda x: x['unjustifiedFaltas'], reverse=True)
+    
+    return resultado
+
 
 @router.get("/{id_falta}", response_model=FaltaRead)
 def get_falta_por_id(
@@ -318,3 +430,5 @@ def obtener_dias_habiles(
         "total_dias_habiles": len(dias_habiles),
         "dias_habiles": [dia.isoformat() for dia in dias_habiles]
     }
+
+

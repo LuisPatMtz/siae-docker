@@ -1,15 +1,95 @@
 // src/components/Alerts/JustificationHistoryModal.jsx
-import React, { useState } from 'react';
-import { X, Calendar, User, FileText, Clock, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, User, FileText, Clock, Filter, Eye } from 'lucide-react';
+import { faltasService } from '../../api/services';
 
 const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
   const [filterMonth, setFilterMonth] = useState('all');
+  const [faltasPorJustificacion, setFaltasPorJustificacion] = useState({});
+  const [loadingFaltas, setLoadingFaltas] = useState(false);
+  const [selectedJustification, setSelectedJustification] = useState(null);
+  const [showDaysModal, setShowDaysModal] = useState(false);
+
+  // Cargar las faltas para obtener las fechas justificadas
+  useEffect(() => {
+    if (isOpen && history.length > 0) {
+      cargarFaltasJustificadas();
+    }
+  }, [isOpen, history]);
+
+  // Manejar tecla ESC para cerrar modales
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showDaysModal) {
+          setShowDaysModal(false);
+        } else if (isOpen) {
+          onClose();
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isOpen, showDaysModal, onClose]);
+
+  const cargarFaltasJustificadas = async () => {
+    setLoadingFaltas(true);
+    try {
+      // Obtener IDs de justificaciones del historial
+      const justificacionIds = history.map(h => h.justificacionId || h.id);
+      console.log('IDs de justificaciones en historial:', justificacionIds);
+      
+      // Obtener todas las faltas justificadas
+      const faltasResponse = await faltasService.getAll({ estado: 'Justificado' });
+      console.log('Faltas justificadas cargadas:', faltasResponse);
+      
+      // Agrupar faltas por combinación de justificación + matrícula
+      const faltasPorJust = {};
+      faltasResponse.forEach(falta => {
+        console.log(`Falta ${falta.id}: id_justificacion=${falta.id_justificacion}, matricula=${falta.matricula_estudiante}, fecha=${falta.fecha}`);
+        if (falta.id_justificacion && falta.matricula_estudiante) {
+          // Crear clave única: justificacionId-matricula
+          const key = `${falta.id_justificacion}-${falta.matricula_estudiante}`;
+          if (!faltasPorJust[key]) {
+            faltasPorJust[key] = [];
+          }
+          faltasPorJust[key].push(falta);
+        }
+      });
+      
+      console.log('Faltas agrupadas por justificación+matrícula:', faltasPorJust);
+      console.log('Verificación de coincidencias:');
+      history.forEach(item => {
+        const key = `${item.justificacionId || item.id}-${item.matriculaEstudiante}`;
+        console.log(`  Justificación ${item.justificacionId || item.id} - ${item.studentName}: ${faltasPorJust[key] ? faltasPorJust[key].length : 0} faltas`);
+      });
+      
+      setFaltasPorJustificacion(faltasPorJust);
+    } catch (error) {
+      console.error('Error al cargar faltas justificadas:', error);
+    } finally {
+      setLoadingFaltas(false);
+    }
+  };
 
   if (!isOpen) return null;
 
+  // Función para convertir UTC a hora local de México (UTC-6)
+  const toMexicoTime = (dateString) => {
+    const date = new Date(dateString);
+    // Si la fecha viene sin zona horaria, asumimos que es UTC y restamos 6 horas
+    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
+      date.setHours(date.getHours() - 6);
+    }
+    return date;
+  };
+
   // Obtener meses únicos del historial
   const months = [...new Set(history.map(item => {
-    const date = new Date(item.justifiedAt);
+    const date = toMexicoTime(item.justifiedAt);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   }))];
 
@@ -17,13 +97,13 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
   const filteredHistory = filterMonth === 'all'
     ? history
     : history.filter(item => {
-      const date = new Date(item.justifiedAt);
+      const date = toMexicoTime(item.justifiedAt);
       const itemMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       return itemMonth === filterMonth;
     });
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
+    const date = toMexicoTime(dateString);
     return date.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: 'long',
@@ -39,12 +119,276 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
     return date.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
   };
 
+  // Abrir modal de días justificados
+  const handleOpenDaysModal = (item) => {
+    const key = `${item.justificacionId || item.id}-${item.matriculaEstudiante}`;
+    console.log('Abriendo modal de días para:', item);
+    console.log('Key generada:', key);
+    console.log('Faltas disponibles:', faltasPorJustificacion[key]);
+    console.log('Estado showDaysModal antes:', showDaysModal);
+    
+    setSelectedJustification({
+      ...item,
+      faltas: faltasPorJustificacion[key] || []
+    });
+    setShowDaysModal(true);
+    
+    console.log('Estado showDaysModal después:', true);
+  };
+
+  // Renderizar modal de días justificados
+  const renderDaysModal = () => {
+    if (!showDaysModal || !selectedJustification) return null;
+
+    const faltas = selectedJustification.faltas;
+    
+    // Obtener fechas únicas de las faltas
+    const fechas = faltas.map(falta => {
+      const fecha = new Date(falta.fecha);
+      return fecha.toISOString().split('T')[0];
+    });
+    const fechasUnicas = [...new Set(fechas)].sort();
+
+    return (
+      <div 
+        className="modal-overlay" 
+        onClick={() => setShowDaysModal(false)}
+        style={{ zIndex: 10000 }}
+      >
+        <div
+          className="modal-content"
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}
+        >
+          {/* Header */}
+          <div style={{
+            padding: '1.5rem 2rem',
+            borderBottom: '2px solid #e5e7eb',
+            background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            borderRadius: '16px 16px 0 0',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white'
+              }}>
+                <Calendar size={28} />
+              </div>
+              <div>
+                <h2 style={{
+                  margin: 0,
+                  fontSize: '1.5rem',
+                  fontWeight: 800,
+                  color: 'white',
+                  letterSpacing: '-0.02em'
+                }}>
+                  Días Justificados
+                </h2>
+                <p style={{
+                  margin: '0.25rem 0 0',
+                  fontSize: '0.875rem',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontWeight: 500
+                }}>
+                  {selectedJustification.studentName}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowDaysModal(false)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'rgba(255, 255, 255, 0.2)',
+                backdropFilter: 'blur(10px)',
+                border: 'none',
+                borderRadius: '8px',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: 'white',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
+                e.currentTarget.style.transform = 'scale(1.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div style={{ padding: '1.5rem' }}>
+            {fechasUnicas.length === 0 ? (
+              <div style={{
+                padding: '2rem',
+                background: '#fff3cd',
+                borderRadius: '8px',
+                border: '1px solid #ffc107',
+                textAlign: 'center'
+              }}>
+                <span style={{
+                  fontSize: '0.875rem',
+                  color: '#856404',
+                  fontStyle: 'italic'
+                }}>
+                  No se encontraron días específicos para esta justificación
+                </span>
+              </div>
+            ) : (
+              <>
+                <div style={{
+                  marginBottom: '1rem',
+                  padding: '0.5rem 0.75rem',
+                  background: '#dbeafe',
+                  borderRadius: '6px',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  color: '#1e40af',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  display: 'inline-block'
+                }}>
+                  {fechasUnicas.length} {fechasUnicas.length === 1 ? 'día' : 'días'}
+                </div>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(65px, 1fr))',
+                  gap: '0.5rem'
+                }}>
+                  {fechasUnicas.map((fecha, index) => {
+                    const date = new Date(fecha + 'T12:00:00');
+                    const dia = date.getDate();
+                    const mes = date.toLocaleDateString('es-MX', { month: 'short' }).toUpperCase();
+                    const diaSemana = date.toLocaleDateString('es-MX', { weekday: 'short' }).toUpperCase();
+                    
+                    return (
+                      <div
+                        key={index}
+                        style={{
+                          background: '#fee2e2',
+                          border: '2px solid #fca5a5',
+                          borderRadius: '6px',
+                          padding: '0.5rem 0.35rem',
+                          textAlign: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#fecaca';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#fee2e2';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        <div style={{
+                          fontSize: '0.5625rem',
+                          fontWeight: 700,
+                          color: '#991b1b',
+                          textTransform: 'uppercase',
+                          marginBottom: '0.15rem',
+                          letterSpacing: '0.05em'
+                        }}>
+                          {diaSemana}
+                        </div>
+                        <div style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 700,
+                          color: '#dc2626',
+                          lineHeight: '1',
+                          margin: '0.15rem 0'
+                        }}>
+                          {dia}
+                        </div>
+                        <div style={{
+                          fontSize: '0.5625rem',
+                          fontWeight: 700,
+                          color: '#991b1b',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em'
+                        }}>
+                          {mes}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div style={{
+            padding: '0.75rem 1.5rem',
+            borderTop: '2px solid #e5e7eb',
+            background: '#f9fafb',
+            borderRadius: '0 0 16px 16px',
+            display: 'flex',
+            justifyContent: 'flex-end'
+          }}>
+            <button
+              onClick={() => setShowDaysModal(false)}
+              style={{
+                padding: '0.625rem 1.25rem',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                color: 'white',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(99, 102, 241, 0.2)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 4px 8px rgba(99, 102, 241, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(99, 102, 241, 0.2)';
+              }}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="modal-content"
-        onClick={(e) => e.stopPropagation()}
-        style={{
+    <>
+      {renderDaysModal()}
+      <div className="modal-overlay" onClick={onClose}>
+        <div
+          className="modal-content"
+          onClick={(e) => e.stopPropagation()}
+          style={{
           maxWidth: '900px',
           maxHeight: '90vh',
           background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
@@ -90,7 +434,7 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
                 color: 'rgba(255, 255, 255, 0.9)',
                 fontWeight: 500
               }}>
-                {filteredHistory.length} {filteredHistory.length === 1 ? 'justificación registrada' : 'justificaciones registradas'}
+                {filteredHistory.length} {filteredHistory.length === 1 ? 'registro' : 'registros'}
               </p>
             </div>
           </div>
@@ -198,15 +542,15 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {filteredHistory.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.justificacionId || item.id}-${item.matriculaEstudiante}`}
                   style={{
                     background: 'white',
                     border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
+                    borderRadius: '10px',
+                    padding: '1rem',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
                   }}
@@ -221,24 +565,24 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <div style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '10px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
                         background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white'
                       }}>
-                        <User size={20} />
+                        <User size={18} />
                       </div>
                       <div>
                         <h3 style={{
                           margin: 0,
-                          fontSize: '1.125rem',
+                          fontSize: '1rem',
                           fontWeight: 700,
                           color: '#111827'
                         }}>
@@ -248,31 +592,104 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          marginTop: '0.25rem'
+                          marginTop: '0.25rem',
+                          flexWrap: 'wrap'
                         }}>
-                          <Calendar size={14} style={{ color: '#6b7280' }} />
-                          <span style={{
-                            fontSize: '0.875rem',
-                            color: '#6b7280',
-                            fontWeight: 500
-                          }}>
-                            {formatDate(item.justifiedAt)}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Calendar size={13} style={{ color: '#6b7280' }} />
+                            <span style={{
+                              fontSize: '0.8125rem',
+                              color: '#6b7280',
+                              fontWeight: 500
+                            }}>
+                              {formatDate(item.justifiedAt)}
+                            </span>
+                          </div>
+                          {item.faltasCount && (
+                            <span style={{
+                              fontSize: '0.6875rem',
+                              fontWeight: 600,
+                              color: '#6366f1',
+                              background: '#eef2ff',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '4px'
+                            }}>
+                              {item.faltasCount} {item.faltasCount === 1 ? 'falta' : 'faltas'}
+                            </span>
+                          )}
+                          {item.estudiantesCount && item.estudiantesCount > 1 && (
+                            <span style={{
+                              fontSize: '0.6875rem',
+                              fontWeight: 600,
+                              color: '#8b5cf6',
+                              background: '#f5f3ff',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '4px'
+                            }}>
+                              {item.estudiantesCount} estudiantes
+                            </span>
+                          )}
+                          {item.usuario && (
+                            <span style={{
+                              fontSize: '0.6875rem',
+                              fontWeight: 600,
+                              color: '#059669',
+                              background: '#d1fae5',
+                              padding: '0.15rem 0.4rem',
+                              borderRadius: '4px'
+                            }}>
+                              Por: {item.usuario}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Botón para ver días justificados */}
+                    <button
+                      onClick={() => handleOpenDaysModal(item)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        padding: '0.5rem 0.875rem',
+                        border: '1px solid #3b82f6',
+                        borderRadius: '6px',
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        background: 'white',
+                        color: '#3b82f6',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#3b82f6';
+                        e.currentTarget.style.color = 'white';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'white';
+                        e.currentTarget.style.color = '#3b82f6';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <Eye size={15} />
+                      Ver Días ({item.faltasCount})
+                    </button>
                   </div>
 
                   <div style={{
-                    background: '#f9fafb',
-                    borderRadius: '8px',
-                    padding: '1rem',
-                    borderLeft: '4px solid #6366f1'
+                    background: '#f0f9ff',
+                    borderRadius: '6px',
+                    padding: '0.75rem',
+                    borderLeft: '3px solid #6366f1'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                      <FileText size={16} style={{ color: '#6366f1' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.4rem' }}>
+                      <FileText size={14} style={{ color: '#6366f1' }} />
                       <span style={{
-                        fontSize: '0.8125rem',
+                        fontSize: '0.75rem',
                         fontWeight: 700,
                         color: '#374151',
                         textTransform: 'uppercase',
@@ -283,9 +700,9 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
                     </div>
                     <p style={{
                       margin: 0,
-                      fontSize: '0.9375rem',
+                      fontSize: '0.875rem',
                       color: '#1f2937',
-                      lineHeight: '1.6',
+                      lineHeight: '1.5',
                       fontStyle: 'italic'
                     }}>
                       "{item.reason}"
@@ -333,7 +750,8 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

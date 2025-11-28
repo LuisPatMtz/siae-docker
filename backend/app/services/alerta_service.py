@@ -15,11 +15,13 @@ class AlertaService:
     def obtener_alerta_activa_por_estudiante(
         session: Session,
         matricula: str,
+        id_ciclo: int,
         tipo: str = "Faltas"
     ) -> Optional[Alerta]:
-        """Obtiene la alerta activa de un estudiante"""
+        """Obtiene la alerta activa de un estudiante en un ciclo específico"""
         statement = select(Alerta).where(
             Alerta.matricula_estudiante == matricula,
+            Alerta.id_ciclo == id_ciclo,
             Alerta.tipo == tipo,
             Alerta.estado == "Activa"
         )
@@ -29,6 +31,7 @@ class AlertaService:
     def crear_alerta(
         session: Session,
         matricula: str,
+        id_ciclo: int,
         tipo: str,
         mensaje: str,
         cantidad_faltas: int = 1,
@@ -38,6 +41,7 @@ class AlertaService:
         # Crear alerta
         alerta = Alerta(
             matricula_estudiante=matricula,
+            id_ciclo=id_ciclo,
             tipo=tipo,
             mensaje=mensaje,
             fecha_creacion=date.today(),
@@ -210,14 +214,15 @@ class AlertaService:
         usuario: Optional[str] = None
     ) -> Optional[Alerta]:
         """
-        Procesa una nueva falta y actualiza o crea alerta.
+        Procesa una nueva falta y actualiza o crea alerta en el ciclo correspondiente.
         Retorna la alerta afectada o None si no se generó alerta.
         """
         matricula = falta.matricula_estudiante
+        id_ciclo = falta.id_ciclo
         
-        # Buscar alerta activa
+        # Buscar alerta activa en este ciclo
         alerta_activa = AlertaService.obtener_alerta_activa_por_estudiante(
-            session, matricula, "Faltas"
+            session, matricula, id_ciclo, "Faltas"
         )
         
         if alerta_activa:
@@ -234,12 +239,12 @@ class AlertaService:
             
             return alerta
         else:
-            # Crear nueva alerta (primera falta sin justificar)
+            # Crear nueva alerta (primera falta sin justificar en este ciclo)
             estudiante = session.get(Estudiante, matricula)
             mensaje = f"El estudiante {estudiante.nombre} {estudiante.apellido} tiene 1 falta sin justificar"
             
             alerta = AlertaService.crear_alerta(
-                session, matricula, "Faltas", mensaje, 1, usuario
+                session, matricula, id_ciclo, "Faltas", mensaje, 1, usuario
             )
             
             # Asociar falta con alerta

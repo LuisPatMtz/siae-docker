@@ -15,13 +15,16 @@ import './pages/Login_Y_Loading_Styles.css'  // Estilos de Login y Loading
 import './index.css'               // Estilos legacy y Login
 
 import { AuthProvider } from './components/Auth/AuthContext.jsx'
+import { ToastProvider } from './contexts/ToastContext.jsx'
 import { BrowserRouter } from 'react-router-dom'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <BrowserRouter>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </BrowserRouter>
     </AuthProvider>
   </React.StrictMode>,

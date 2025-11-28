@@ -23,7 +23,7 @@ import DeleteCycleModal from '../components/SchoolCycles/DeleteCycleModal.jsx';
 import StudentManagementModal from '../components/Students/StudentManagementModal.jsx';
 import GroupManagementModal from '../components/Groups/GroupManagementModal.jsx';
 import SchoolCyclesManagementModal from '../components/SchoolCycles/SchoolCyclesManagementModal.jsx';
-import { useToast } from '../components/UI/ToastContainer.jsx';
+import { useToast } from '../contexts/ToastContext.jsx';
 import Modal from '../components/UI/Modal.jsx';
 import useEscapeKey from '../hooks/useEscapeKey';
 
@@ -101,7 +101,7 @@ const GestionEstudiantesPage = () => {
     const [bulkChangeType, setBulkChangeType] = useState('');
     const [isProcessingBulkChange, setIsProcessingBulkChange] = useState(false);
 
-    const { showSuccess, showError, showWarning, ToastContainer } = useToast();
+    const { showSuccess, showError, showWarning } = useToast();
 
     // Helper for modals
     const addToast = (message, type) => {
@@ -989,8 +989,6 @@ const GestionEstudiantesPage = () => {
                 onClose={() => setIsSchoolCyclesManagementModalOpen(false)}
                 onSuccess={addToast}
             />
-
-            <ToastContainer />
         </main>
     );
 };

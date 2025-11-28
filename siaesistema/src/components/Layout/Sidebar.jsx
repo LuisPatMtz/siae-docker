@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  User
+  User,
+  Database
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
@@ -41,7 +42,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
         <div className="sidebar-logo-section">
           <span className="sidebar-logo">SIAE</span>
         </div>
-        
+
         <div className="sidebar-header">
           <h2 className="sidebar-title">{!isCollapsed && 'Menú'}</h2>
           <div className="sidebar-header-buttons">
@@ -110,15 +111,17 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
           )}
 
           {/* Registro de Accesos */}
-          <NavLink
-            to="/registro-acceso"
-            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-            onClick={onClose}
-            title="Registro de Accesos"
-          >
-            <ClipboardList size={20} />
-            <span>Registro de Accesos</span>
-          </NavLink>
+          {hasPermission('canManageAttendance') && (
+            <NavLink
+              to="/registro-acceso"
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              onClick={onClose}
+              title="Registro de Accesos"
+            >
+              <ClipboardList size={20} />
+              <span>Registro de Accesos</span>
+            </NavLink>
+          )}
 
           {/* Historial de Asistencias */}
           {hasPermission('canViewDashboard') && (
@@ -134,7 +137,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
           )}
 
           {/* Corte de Faltas */}
-          {hasPermission('canManageAlerts') && (
+          {hasPermission('canManageAttendance') && (
             <NavLink
               to="/corte-faltas"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
@@ -143,6 +146,19 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             >
               <Scissors size={20} />
               <span>Corte de Faltas</span>
+            </NavLink>
+          )}
+
+          {/* Mantenimiento */}
+          {hasPermission('canManageMaintenance') && (
+            <NavLink
+              to="/mantenimiento"
+              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+              onClick={onClose}
+              title="Mantenimiento"
+            >
+              <Database size={20} />
+              <span>Mantenimiento</span>
             </NavLink>
           )}
         </nav>
@@ -160,8 +176,8 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
               </div>
             )}
           </div>
-          <button 
-            className="sidebar-logout-btn" 
+          <button
+            className="sidebar-logout-btn"
             onClick={handleLogout}
             title="Cerrar sesión"
           >

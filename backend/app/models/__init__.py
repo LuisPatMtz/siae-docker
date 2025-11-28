@@ -10,6 +10,7 @@ from app.models.nfc import NFC, NFCCreate, NFCRead, NfcPayload
 from app.models.asistencia import Asistencia, AsistenciaCreate, AsistenciaRead
 from app.models.alerta import Alerta, AlertaCreate, AlertaRead, AlertaUpdate, AlertaHistorial, AlertaHistorialRead
 from app.models.falta import Falta, FaltaCreate, FaltaRead, FaltaUpdate
+from app.models.justificacion import Justificacion, JustificacionCreate, JustificacionRead
 from app.models.auth import Token, TokenData, UserRead, UserReadWithPermissions, AdminUserCreate, UserPermissionsUpdate, UserUpdate, UserPermissionData
 from app.models.dashboard import StatsData, TurnoDataResponse, GrupoAsistenciaResponse
 # Importar modelos completos después para evitar dependencias circulares
@@ -25,6 +26,7 @@ __all__ = [
     "Asistencia",
     "Alerta",
     "Falta",
+    "Justificacion",
     # DTOs Ciclo
     "CicloEscolarCreate",
     "CicloEscolarRead",
@@ -56,6 +58,9 @@ __all__ = [
     "FaltaCreate",
     "FaltaRead",
     "FaltaUpdate",
+    # DTOs Justificacion
+    "JustificacionCreate",
+    "JustificacionRead",
     # DTOs Auth
     "Token",
     "TokenData",

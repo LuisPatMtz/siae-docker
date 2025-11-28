@@ -13,6 +13,7 @@ class Asistencia(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     matricula_estudiante: str = Field(foreign_key="estudiante.matricula")
+    id_ciclo: int = Field(foreign_key="ciclo_escolar.id")  # Ciclo escolar al que pertenece
     tipo: str = Field(max_length=10)  # 'entrada' o 'salida'
     timestamp: datetime = Field(default_factory=get_mexico_time)
     
@@ -21,15 +22,18 @@ class Asistencia(SQLModel, table=True):
     entrada_relacionada_id: Optional[int] = Field(default=None)  # ID de la entrada asociada (solo para salidas)
 
     estudiante: "Estudiante" = Relationship(back_populates="asistencias")  # noqa: F821
+    ciclo: "CicloEscolar" = Relationship()  # noqa: F821
 
 # --- DTOs ---
 class AsistenciaCreate(SQLModel):
     matricula_estudiante: str
+    id_ciclo: int
     tipo: str
 
 class AsistenciaRead(SQLModel):
     id: int
     matricula_estudiante: str
+    id_ciclo: int
     tipo: str
     timestamp: datetime
     es_valida: Optional[bool] = None

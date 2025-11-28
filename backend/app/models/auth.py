@@ -13,6 +13,8 @@ class UserPermissionData(SQLModel):
     canManageAlerts: bool = Field(default=False)
     canEditStudents: bool = Field(default=False)
     canManageUsers: bool = Field(default=False)
+    canManageMaintenance: bool = Field(default=False)
+    canManageAttendance: bool = Field(default=False)
 
 
 # --- DTOs para Autenticación (Login) ---

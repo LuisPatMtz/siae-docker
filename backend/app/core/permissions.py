@@ -189,5 +189,8 @@ AVAILABLE_PERMISSIONS = {
     
     # Dashboard
     "canViewDashboard": "Puede ver estadísticas y dashboard",
-    "canViewReports": "Puede generar reportes"
+    "canViewReports": "Puede generar reportes",
+    
+    # Mantenimiento
+    "canManageMaintenance": "Puede realizar respaldos y mantenimiento del sistema"
 }
