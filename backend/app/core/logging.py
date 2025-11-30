@@ -15,6 +15,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response
 
 from app.core.config import settings
+from app.core import timezone_manager
 
 
 # Crear directorio de logs si no existe
@@ -23,7 +24,6 @@ LOGS_DIR.mkdir(exist_ok=True)
 
 # Configurar formato de logs
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-MEXICO_TZ = pytz.timezone('America/Mexico_City')
 
 
 # Configurar logger principal
@@ -58,8 +58,8 @@ def setup_logger(name: str, log_file: str, level=logging.INFO) -> logging.Logger
 
 # Loggers específicos
 api_logger = setup_logger("siae.api", "api.log")
-security_logger = setup_logger("siae.security", "security.log")
 error_logger = setup_logger("siae.error", "errors.log", level=logging.ERROR)
+# Security logger removido - los eventos de seguridad van a api.log
 
 
 def log_api_request(
@@ -84,7 +84,7 @@ def log_api_request(
         error: Mensaje de error si hubo uno
     """
     log_data = {
-        "timestamp": datetime.now(MEXICO_TZ).isoformat(),
+        "timestamp": timezone_manager.now().isoformat(),
         "usuario": username or "anónimo",
         "method": method,
         "endpoint": endpoint,
@@ -115,7 +115,8 @@ def log_security_event(
     success: bool = True
 ):
     """
-    Registra un evento de seguridad (login, logout, cambio de permisos, etc.).
+    Registra un evento de seguridad (login, logout, cambio de permisos, etc.)
+    ahora en api.log en lugar de security.log separado.
     
     Args:
         event_type: Tipo de evento (login, logout, permission_denied, etc.)
@@ -125,7 +126,7 @@ def log_security_event(
         success: Si el evento fue exitoso
     """
     log_data = {
-        "timestamp": datetime.now(MEXICO_TZ).isoformat(),
+        "timestamp": timezone_manager.now().isoformat(),
         "event_type": event_type,
         "usuario": username or "anónimo",
         "ip": ip,
@@ -133,10 +134,11 @@ def log_security_event(
         "success": success
     }
     
+    # Log a api.log con nivel apropiado
     if success:
-        security_logger.info(json.dumps(log_data, ensure_ascii=False))
+        api_logger.info(f"[SECURITY] {json.dumps(log_data, ensure_ascii=False)}")
     else:
-        security_logger.warning(json.dumps(log_data, ensure_ascii=False))
+        api_logger.warning(f"[SECURITY] {json.dumps(log_data, ensure_ascii=False)}")
 
 
 def log_error(
@@ -157,7 +159,7 @@ def log_error(
         traceback: Stack trace completo (opcional)
     """
     log_data = {
-        "timestamp": datetime.now(MEXICO_TZ).isoformat(),
+        "timestamp": timezone_manager.now().isoformat(),
         "error_type": error_type,
         "endpoint": endpoint,
         "usuario": username or "anónimo",
@@ -254,7 +256,7 @@ def log_action(
         success: Si la acción fue exitosa
     """
     log_data = {
-        "timestamp": datetime.now(MEXICO_TZ).isoformat(),
+        "timestamp": timezone_manager.now().isoformat(),
         "action": action,
         "usuario": username,
         "details": details,

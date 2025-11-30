@@ -8,11 +8,13 @@ from pydantic import BaseModel
 import logging
 import glob
 import shutil
+import pytz
 
 from app.core.permissions import require_permission
 from app.core.config import settings
 from app.db.database import engine
 from sqlalchemy import text
+from app.core import timezone_manager
 
 logger = logging.getLogger("siae.maintenance")
 
@@ -39,11 +41,40 @@ class SystemStats(BaseModel):
     total_absences: int
     database_size: str
     backup_count: int
+
+class TimezoneConfig(BaseModel):
+    timezone: str
+
+class TimezoneInfo(BaseModel):
+    timezone: str
+    offset: str
+    offset_hours: float
+    abbreviation: str
+    current_time: str
+    available_timezones: List[str]
     
 class CleanupResult(BaseModel):
     deleted_files: int
     freed_space: int
     message: str
+
+class LogEntry(BaseModel):
+    timestamp: str
+    level: str
+    logger: str
+    message: str
+    line_number: int
+
+class LogFileInfo(BaseModel):
+    filename: str
+    size: int
+    modified: str
+    line_count: int
+
+class LogsResponse(BaseModel):
+    entries: List[LogEntry]
+    total_lines: int
+    filtered_lines: int
 
 @router.post("/backup", response_model=BackupInfo)
 async def create_backup():
@@ -51,7 +82,7 @@ async def create_backup():
     Creates a database backup using pg_dump.
     """
     try:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = timezone_manager.now().strftime("%Y%m%d_%H%M%S")
         filename = f"backup_{timestamp}.dump"
         # Ensure backups directory exists
         backup_dir = "backups"
@@ -93,7 +124,7 @@ async def create_backup():
         logger.info(f"Backup created successfully: {filepath}")
         
         size = os.path.getsize(filepath)
-        created = datetime.fromtimestamp(os.path.getctime(filepath)).isoformat()
+        created = timezone_manager.from_timestamp(os.path.getctime(filepath)).isoformat()
         
         return {
             "filename": filename,
@@ -141,7 +172,7 @@ async def list_backups():
              files.append({
                  "filename": f,
                  "size": size,
-                 "created": datetime.fromtimestamp(created).isoformat()
+                 "created": timezone_manager.from_timestamp(created).isoformat()
              })
              
     # Sort by created desc
@@ -269,12 +300,12 @@ async def cleanup_old_logs(days: int = 30):
         return CleanupResult(deleted_files=0, freed_space=0, message="No logs directory found")
     
     try:
-        cutoff_date = datetime.now() - timedelta(days=days)
+        cutoff_date = timezone_manager.now() - timedelta(days=days)
         deleted_count = 0
         freed_space = 0
         
         for log_file in glob.glob(os.path.join(log_dir, "*.log*")):
-            file_time = datetime.fromtimestamp(os.path.getmtime(log_file))
+            file_time = timezone_manager.from_timestamp(os.path.getmtime(log_file))
             
             if file_time < cutoff_date:
                 file_size = os.path.getsize(log_file)
@@ -297,6 +328,132 @@ async def cleanup_old_logs(days: int = 30):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error cleaning up logs: {str(e)}"
+        )
+
+@router.get("/log-files", response_model=List[LogFileInfo])
+async def get_log_files():
+    """
+    Get list of all log files with metadata.
+    """
+    log_dir = "logs"
+    if not os.path.exists(log_dir):
+        return []
+    
+    try:
+        log_files = []
+        for log_file in sorted(glob.glob(os.path.join(log_dir, "*.log*")), 
+                              key=os.path.getmtime, reverse=True):
+            stat = os.stat(log_file)
+            
+            # Count lines in file
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                line_count = sum(1 for _ in f)
+            
+            log_files.append(LogFileInfo(
+                filename=os.path.basename(log_file),
+                size=stat.st_size,
+                modified=timezone_manager.from_timestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                line_count=line_count
+            ))
+        
+        return log_files
+    except Exception as e:
+        logger.error(f"Error listing log files: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error listing log files: {str(e)}"
+        )
+
+@router.get("/logs", response_model=LogsResponse)
+async def get_logs(
+    filename: Optional[str] = None,
+    level: Optional[str] = None,
+    logger_name: Optional[str] = None,
+    limit: int = 100,
+    search: Optional[str] = None
+):
+    """
+    Get logs with optional filtering by filename, level, logger, and search term.
+    Supported levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    """
+    log_dir = "logs"
+    
+    if not os.path.exists(log_dir):
+        return LogsResponse(entries=[], total_lines=0, filtered_lines=0)
+    
+    try:
+        # Determine which file to read
+        if filename:
+            log_file = os.path.join(log_dir, filename)
+            if not os.path.exists(log_file):
+                raise HTTPException(status_code=404, detail="Log file not found")
+            log_files = [log_file]
+        else:
+            # Read from most recent log file
+            log_files = sorted(glob.glob(os.path.join(log_dir, "*.log")), 
+                             key=os.path.getmtime, reverse=True)
+            if not log_files:
+                return LogsResponse(entries=[], total_lines=0, filtered_lines=0)
+            log_files = log_files[:1]  # Only most recent
+        
+        entries = []
+        total_lines = 0
+        
+        import re
+        # Pattern to match log lines: 2025-11-27 21:39:07,958 - siae.api - INFO - message
+        log_pattern = re.compile(
+            r'^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2},\d{3})\s+-\s+'  # timestamp
+            r'([\w\.]+)\s+-\s+'  # logger name
+            r'(\w+)\s+-\s+'  # level
+            r'(.+)$',  # message
+            re.MULTILINE
+        )
+        
+        for log_file in log_files:
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+                total_lines += len(lines)
+                
+                for line_num, line in enumerate(lines, 1):
+                    match = log_pattern.match(line.strip())
+                    if not match:
+                        continue
+                    
+                    timestamp, log_logger, log_level, message = match.groups()
+                    
+                    # Apply filters
+                    if level and log_level != level:
+                        continue
+                    if logger_name and logger_name not in log_logger:
+                        continue
+                    if search and search.lower() not in message.lower():
+                        continue
+                    
+                    entries.append(LogEntry(
+                        timestamp=timestamp,
+                        level=log_level,
+                        logger=log_logger,
+                        message=message.strip(),
+                        line_number=line_num
+                    ))
+        
+        # Get last N entries
+        entries = entries[-limit:] if len(entries) > limit else entries
+        entries.reverse()  # Most recent first
+        
+        return LogsResponse(
+            entries=entries,
+            total_lines=total_lines,
+            filtered_lines=len(entries)
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error reading logs: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error reading logs: {str(e)}"
         )
 
 @router.get("/database-stats", response_model=SystemStats)
@@ -383,4 +540,57 @@ async def get_table_stats():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting table stats: {str(e)}"
         )
+
+# ============================================
+# ENDPOINTS DE CONFIGURACIÓN DE ZONA HORARIA
+# ============================================
+
+@router.get("/timezone", response_model=TimezoneInfo)
+async def get_timezone_info():
+    """
+    Obtiene información de la zona horaria configurada actualmente.
+    """
+    try:
+        info = timezone_manager.get_timezone_info()
+        info['available_timezones'] = timezone_manager.get_available_timezones()
+        return info
+    except Exception as e:
+        logger.error(f"Error getting timezone info: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting timezone info: {str(e)}"
+        )
+
+@router.put("/timezone", response_model=TimezoneInfo)
+async def update_timezone(config: TimezoneConfig):
+    """
+    Actualiza la zona horaria del sistema.
+    Todos los módulos usarán esta zona horaria automáticamente.
+    """
+    try:
+        timezone_manager.set_timezone_config(config.timezone)
+        logger.info(f"Timezone updated to: {config.timezone}")
+        
+        # Retornar la nueva información
+        info = timezone_manager.get_timezone_info()
+        info['available_timezones'] = timezone_manager.get_available_timezones()
+        return info
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Error updating timezone: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating timezone: {str(e)}"
+        )
+
+@router.get("/timezones", response_model=List[str])
+async def list_available_timezones():
+    """
+    Lista todas las zonas horarias disponibles para configuración.
+    """
+    return timezone_manager.get_available_timezones()
 

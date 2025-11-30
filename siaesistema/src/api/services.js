@@ -549,6 +549,25 @@ export const maintenanceService = {
         return response.data;
     },
 
+    getLogFiles: async () => {
+        const response = await apiClient.get('/maintenance/log-files');
+        return response.data;
+    },
+
+    getLogs: async (filters = {}) => {
+        const { filename, level, logger_name, limit = 100, search } = filters;
+        const params = new URLSearchParams();
+        
+        if (filename) params.append('filename', filename);
+        if (level) params.append('level', level);
+        if (logger_name) params.append('logger_name', logger_name);
+        if (limit) params.append('limit', limit);
+        if (search) params.append('search', search);
+        
+        const response = await apiClient.get(`/maintenance/logs?${params.toString()}`);
+        return response.data;
+    },
+
     getDatabaseStats: async () => {
         const response = await apiClient.get('/maintenance/database-stats');
         return response.data;
@@ -556,6 +575,21 @@ export const maintenanceService = {
 
     getTableStats: async () => {
         const response = await apiClient.get('/maintenance/table-stats');
+        return response.data;
+    },
+
+    getTimezoneInfo: async () => {
+        const response = await apiClient.get('/maintenance/timezone');
+        return response.data;
+    },
+
+    updateTimezone: async (timezone) => {
+        const response = await apiClient.put('/maintenance/timezone', { timezone });
+        return response.data;
+    },
+
+    getAvailableTimezones: async () => {
+        const response = await apiClient.get('/maintenance/timezones');
         return response.data;
     }
 };

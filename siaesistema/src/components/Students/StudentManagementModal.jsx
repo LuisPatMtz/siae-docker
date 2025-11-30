@@ -77,16 +77,35 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validación: asegurar que grupo y ciclo tengan valores válidos
+    if (!formData.id_grupo || formData.id_grupo === '') {
+      onSuccess('Por favor selecciona un grupo válido', 'error');
+      return;
+    }
+    
+    if (!formData.id_ciclo || formData.id_ciclo === '') {
+      onSuccess('Por favor selecciona un ciclo escolar válido', 'error');
+      return;
+    }
+
     try {
       setLoading(true);
 
+      // Asegurar que los valores sean números enteros
+      const dataToSend = {
+        ...formData,
+        id_grupo: parseInt(formData.id_grupo, 10),
+        id_ciclo: parseInt(formData.id_ciclo, 10)
+      };
+
       if (editingStudent) {
         // Actualizar estudiante - usar matrícula en lugar de id
-        await axiosInstance.put(`/estudiantes/${editingStudent.matricula}`, formData);
+        await axiosInstance.put(`/estudiantes/${editingStudent.matricula}`, dataToSend);
         onSuccess('Estudiante actualizado correctamente', 'success');
       } else {
         // Crear estudiante
-        await axiosInstance.post('/estudiantes', formData);
+        await axiosInstance.post('/estudiantes', dataToSend);
         onSuccess('Estudiante creado correctamente', 'success');
       }
 
@@ -482,11 +501,13 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="modal-input-group">
-                <label htmlFor="grupo">Grupo</label>
+                <label htmlFor="grupo">Grupo <span style={{ color: 'red' }}>*</span></label>
                 <select
                   id="grupo"
                   value={formData.id_grupo}
                   onChange={(e) => setFormData({ ...formData, id_grupo: e.target.value })}
+                  required
+                  style={{ borderColor: !formData.id_grupo ? '#ff4444' : undefined }}
                 >
                   <option value="">Seleccionar grupo</option>
                   {groups.map(group => (
@@ -495,14 +516,21 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                     </option>
                   ))}
                 </select>
+                {!formData.id_grupo && (
+                  <small style={{ color: '#ff4444', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                    Este campo es obligatorio
+                  </small>
+                )}
               </div>
 
               <div className="modal-input-group">
-                <label htmlFor="ciclo">Ciclo Escolar</label>
+                <label htmlFor="ciclo">Ciclo Escolar <span style={{ color: 'red' }}>*</span></label>
                 <select
                   id="ciclo"
                   value={formData.id_ciclo}
                   onChange={(e) => setFormData({ ...formData, id_ciclo: e.target.value })}
+                  required
+                  style={{ borderColor: !formData.id_ciclo ? '#ff4444' : undefined }}
                 >
                   <option value="">Seleccionar ciclo</option>
                   {cycles.map(cycle => (
@@ -511,6 +539,11 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
                     </option>
                   ))}
                 </select>
+                {!formData.id_ciclo && (
+                  <small style={{ color: '#ff4444', fontSize: '0.85rem', marginTop: '4px', display: 'block' }}>
+                    Este campo es obligatorio
+                  </small>
+                )}
               </div>
             </div>
 
