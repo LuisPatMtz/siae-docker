@@ -11,7 +11,7 @@ export const studentsApi = {
      * @returns {Promise<Array>}
      */
     getAll: async () => {
-        const response = await apiClient.get('/estudiantes');
+        const response = await apiClient.get('/api/estudiantes');
         return response.data;
     },
     
@@ -21,7 +21,7 @@ export const studentsApi = {
      * @returns {Promise<object>}
      */
     getByMatricula: async (matricula) => {
-        const response = await apiClient.get(`/estudiantes/${matricula}`);
+        const response = await apiClient.get(`/api/estudiantes/${matricula}`);
         return response.data;
     },
     
@@ -31,7 +31,7 @@ export const studentsApi = {
      * @returns {Promise<Array>}
      */
     getByGrupo: async (grupoId) => {
-        const response = await apiClient.get(`/estudiantes/grupo/${grupoId}`);
+        const response = await apiClient.get(`/api/estudiantes/grupo/${grupoId}`);
         return response.data;
     },
     
@@ -41,7 +41,7 @@ export const studentsApi = {
      * @returns {Promise<Array>}
      */
     getByCiclo: async (cicloId) => {
-        const response = await apiClient.get(`/estudiantes/ciclo/${cicloId}`);
+        const response = await apiClient.get(`/api/estudiantes/ciclo/${cicloId}`);
         return response.data;
     },
     
@@ -51,7 +51,7 @@ export const studentsApi = {
      * @returns {Promise<object>}
      */
     create: async (estudianteData) => {
-        const response = await apiClient.post('/estudiantes', estudianteData);
+        const response = await apiClient.post('/api/estudiantes', estudianteData);
         return response.data;
     },
     
@@ -62,7 +62,7 @@ export const studentsApi = {
      * @returns {Promise<object>}
      */
     update: async (matricula, estudianteData) => {
-        const response = await apiClient.put(`/estudiantes/${matricula}`, estudianteData);
+        const response = await apiClient.put(`/api/estudiantes/${matricula}`, estudianteData);
         return response.data;
     },
     
@@ -74,7 +74,7 @@ export const studentsApi = {
     uploadCSV: async (file) => {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await apiClient.post('/estudiantes/upload-csv', formData, {
+        const response = await apiClient.post('/api/estudiantes/upload-csv', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -89,7 +89,7 @@ export const studentsApi = {
      * @returns {Promise<{actualizados: number}>}
      */
     bulkMoveGroup: async (matriculas, nuevoIdGrupo) => {
-        const response = await apiClient.patch('/estudiantes/bulk-move-group', {
+        const response = await apiClient.patch('/api/estudiantes/bulk-move-group', {
             matriculas,
             nuevo_id_grupo: nuevoIdGrupo
         });
@@ -102,7 +102,7 @@ export const studentsApi = {
      * @returns {Promise<object>}
      */
     delete: async (matricula) => {
-        const response = await apiClient.delete(`/estudiantes/${matricula}`);
+        const response = await apiClient.delete(`/api/estudiantes/${matricula}`);
         return response.data;
     }
 };

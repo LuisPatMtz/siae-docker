@@ -38,10 +38,12 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchGroups = async () => {
     setLoading(true);
     try {
-      const response = await axiosInstance.get('/grupos');
+      const response = await axiosInstance.get('/api/grupos');
+      console.log('Response from /api/grupos:', response.data);
       setGroups(response.data || []);
     } catch (error) {
       console.error('Error al cargar grupos:', error);
+      console.error('Error response:', error.response);
       setGroups([]);
     } finally {
       setLoading(false);
@@ -50,7 +52,7 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
   const fetchStudents = async () => {
     try {
-      const response = await axiosInstance.get('/estudiantes');
+      const response = await axiosInstance.get('/api/estudiantes');
       setStudents(response.data || []);
     } catch (error) {
       console.error('Error al cargar estudiantes:', error);
@@ -125,10 +127,10 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (editingGroup) {
         // Actualizar grupo existente
-        await axiosInstance.put(`/grupos/${editingGroup.id}`, dataToSend);
+        await axiosInstance.put(`/api/grupos/${editingGroup.id}`, dataToSend);
       } else {
         // Crear nuevo grupo
-        await axiosInstance.post('/grupos', dataToSend);
+        await axiosInstance.post('/api/grupos', dataToSend);
       }
 
       // Limpiar formulario
@@ -181,7 +183,7 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
     setIsSubmitting(true);
     try {
-      await axiosInstance.delete(`/grupos/${deletingGroupId}`);
+      await axiosInstance.delete(`/api/grupos/${deletingGroupId}`);
 
       // Recargar datos
       await fetchGroups();

@@ -12,7 +12,7 @@ export const dashboardApi = {
      * @returns {Promise<object>}
      */
     getTurnoData: async (modo = 'general') => {
-        const response = await apiClient.get('/dashboard/turno', {
+        const response = await apiClient.get('/api/dashboard/turno', {
             params: { modo }
         });
         return response.data;
@@ -25,7 +25,7 @@ export const dashboardApi = {
      * @returns {Promise<object>}
      */
     getGrupoData: async (grupoId, periodo = 'semester') => {
-        const response = await apiClient.get(`/dashboard/grupo/${grupoId}`, {
+        const response = await apiClient.get(`/api/dashboard/grupo/${grupoId}`, {
             params: { periodo }
         });
         return response.data;
@@ -36,7 +36,7 @@ export const dashboardApi = {
      * @returns {Promise<{total_estudiantes: number, total_grupos: number, ciclo_activo: string}>}
      */
     getEstadisticasResumen: async () => {
-        const response = await apiClient.get('/dashboard/estadisticas/resumen');
+        const response = await apiClient.get('/api/dashboard/estadisticas/resumen');
         return response.data;
     },
     
@@ -51,7 +51,7 @@ export const dashboardApi = {
         if (turno) params.turno = turno;
         if (grupoId) params.grupo_id = grupoId;
         
-        const response = await apiClient.get('/dashboard/estadisticas/periodos', { params });
+        const response = await apiClient.get('/api/dashboard/estadisticas/periodos', { params });
         return response.data;
     }
 };

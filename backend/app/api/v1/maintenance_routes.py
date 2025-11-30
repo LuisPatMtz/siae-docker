@@ -82,10 +82,17 @@ async def create_backup():
     Creates a database backup using pg_dump.
     """
     try:
+        # Log current working directory and permissions
+        backup_dir = "backups"
+        logger.info(f"Current working directory: {os.getcwd()}")
+        if os.path.exists(backup_dir):
+            logger.info(f"Permissions for '{backup_dir}' directory: {oct(os.stat(backup_dir).st_mode)}")
+        else:
+            logger.info(f"'{backup_dir}' directory does not exist, creating it.")
+
         timestamp = timezone_manager.now().strftime("%Y%m%d_%H%M%S")
         filename = f"backup_{timestamp}.dump"
         # Ensure backups directory exists
-        backup_dir = "backups"
         if not os.path.exists(backup_dir):
             os.makedirs(backup_dir)
         
@@ -464,7 +471,7 @@ async def get_database_stats():
     try:
         with engine.connect() as conn:
             # Get total students
-            result = conn.execute(text("SELECT COUNT(*) FROM public.estudiantes"))
+            result = conn.execute(text("SELECT COUNT(*) FROM public.estudiante"))
             total_students = result.scalar()
             
             # Get total users

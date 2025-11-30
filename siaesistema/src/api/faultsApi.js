@@ -12,7 +12,7 @@ export const faultsApi = {
      * @returns {Promise<Array>}
      */
     getAll: async (filtros = {}) => {
-        const response = await apiClient.get('/faltas', {
+        const response = await apiClient.get('/api/faltas', {
             params: filtros
         });
         return response.data;
@@ -24,7 +24,7 @@ export const faultsApi = {
      * @returns {Promise<object>}
      */
     getById: async (faltaId) => {
-        const response = await apiClient.get(`/faltas/${faltaId}`);
+        const response = await apiClient.get(`/api/faltas/${faltaId}`);
         return response.data;
     },
     
@@ -36,7 +36,7 @@ export const faultsApi = {
      */
     getByEstudiante: async (matricula, cicloId = null) => {
         const params = cicloId ? { id_ciclo: cicloId } : {};
-        const response = await apiClient.get(`/faltas/estudiante/${matricula}`, {
+        const response = await apiClient.get(`/api/faltas/estudiante/${matricula}`, {
             params
         });
         return response.data;
@@ -50,7 +50,7 @@ export const faultsApi = {
      */
     getByFecha: async (fecha, cicloId = null) => {
         const params = cicloId ? { id_ciclo: cicloId } : {};
-        const response = await apiClient.get(`/faltas/fecha/${fecha}`, {
+        const response = await apiClient.get(`/api/faltas/fecha/${fecha}`, {
             params
         });
         return response.data;
@@ -62,7 +62,7 @@ export const faultsApi = {
      * @returns {Promise<object>}
      */
     create: async (faltaData) => {
-        const response = await apiClient.post('/faltas', faltaData);
+        const response = await apiClient.post('/api/faltas', faltaData);
         return response.data;
     },
     
@@ -73,7 +73,7 @@ export const faultsApi = {
      * @returns {Promise<object>}
      */
     update: async (faltaId, faltaData) => {
-        const response = await apiClient.put(`/faltas/${faltaId}`, faltaData);
+        const response = await apiClient.put(`/api/faltas/${faltaId}`, faltaData);
         return response.data;
     },
     
@@ -84,7 +84,7 @@ export const faultsApi = {
      * @returns {Promise<object>}
      */
     justificar: async (faltaId, justificacion) => {
-        const response = await apiClient.patch(`/faltas/${faltaId}/justificar`, null, {
+        const response = await apiClient.patch(`/api/faltas/${faltaId}/justificar`, null, {
             params: { justificacion }
         });
         return response.data;
@@ -96,7 +96,7 @@ export const faultsApi = {
      * @returns {Promise<object>}
      */
     delete: async (faltaId) => {
-        const response = await apiClient.delete(`/faltas/${faltaId}`);
+        const response = await apiClient.delete(`/api/faltas/${faltaId}`);
         return response.data;
     },
 
@@ -107,7 +107,7 @@ export const faultsApi = {
      * @returns {Promise<object>} - {dias_habiles: number}
      */
     calcularDiasHabiles: async (fechaInicio, fechaFin) => {
-        const response = await apiClient.get('/faltas/dias-habiles', {
+        const response = await apiClient.get('/api/faltas/dias-habiles', {
             params: {
                 fecha_inicio: fechaInicio,
                 fecha_fin: fechaFin
@@ -124,7 +124,7 @@ export const faultsApi = {
      * @returns {Promise<Array>}
      */
     obtenerReporteAsistencias: async (cicloId, fechaInicio, fechaFin) => {
-        const response = await apiClient.get('/faltas/reporte-asistencias', {
+        const response = await apiClient.get('/api/faltas/reporte-asistencias', {
             params: {
                 ciclo_id: cicloId,
                 fecha_inicio: fechaInicio,
@@ -142,7 +142,7 @@ export const faultsApi = {
      * @returns {Promise<object>} - {dias_procesados, estudiantes_procesados, faltas_registradas, detalles}
      */
     procesarCorte: async (cicloId, fechaInicio, fechaFin) => {
-        const response = await apiClient.post('/faltas/corte', null, {
+        const response = await apiClient.post('/api/faltas/corte', null, {
             params: {
                 ciclo_id: cicloId,
                 fecha_inicio: fechaInicio,

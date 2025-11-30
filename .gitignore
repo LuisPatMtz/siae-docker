@@ -10,4 +10,4 @@ node_modules/
 
 # Archivos de 'build' del frontend (Vite/React)
 dist/
-build/
+build/certs/

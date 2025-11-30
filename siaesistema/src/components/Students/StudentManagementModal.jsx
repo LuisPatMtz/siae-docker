@@ -47,7 +47,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('/estudiantes');
+      const response = await axiosInstance.get('/api/estudiantes');
       setStudents(response.data);
     } catch (error) {
       console.error('Error loading students:', error);
@@ -59,7 +59,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
   const loadGroups = async () => {
     try {
-      const response = await axiosInstance.get('/grupos');
+      const response = await axiosInstance.get('/api/grupos');
       setGroups(response.data);
     } catch (error) {
       console.error('Error loading groups:', error);
@@ -68,7 +68,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
   const loadCycles = async () => {
     try {
-      const response = await axiosInstance.get('/ciclos');
+      const response = await axiosInstance.get('/api/ciclos');
       setCycles(response.data);
     } catch (error) {
       console.error('Error loading cycles:', error);
@@ -101,11 +101,11 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (editingStudent) {
         // Actualizar estudiante - usar matrícula en lugar de id
-        await axiosInstance.put(`/estudiantes/${editingStudent.matricula}`, dataToSend);
+        await axiosInstance.put(`/api/estudiantes/${editingStudent.matricula}`, dataToSend);
         onSuccess('Estudiante actualizado correctamente', 'success');
       } else {
         // Crear estudiante
-        await axiosInstance.post('/estudiantes', dataToSend);
+        await axiosInstance.post('/api/estudiantes', dataToSend);
         onSuccess('Estudiante creado correctamente', 'success');
       }
 
@@ -132,7 +132,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       setIsDeleting(true);
-      await axiosInstance.delete(`/estudiantes/${studentToDelete.matricula}`);
+      await axiosInstance.delete(`/api/estudiantes/${studentToDelete.matricula}`);
       onSuccess('Estudiante eliminado correctamente', 'success');
       loadStudents();
       setShowDeleteModal(false);
@@ -211,7 +211,7 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
         nuevo_id_grupo: parseInt(groupId)
       };
 
-      const response = await axiosInstance.patch('/estudiantes/bulk-move-group', payload);
+      const response = await axiosInstance.patch('/api/estudiantes/bulk-move-group', payload);
 
       onSuccess(`¡${response.data.estudiantes_afectados} estudiante(s) actualizado(s) correctamente!`, 'success');
 

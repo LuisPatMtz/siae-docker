@@ -11,11 +11,10 @@ export function AuthProvider({ children }) {
 
     const fetchUserData = async () => {
         try {
-            const userResponse = await apiClient.get('/users/me');
+            const userResponse = await apiClient.get('/api/users/me');
             setUser(userResponse.data);
             setIsAuthenticated(true);
         } catch (error) {
-            console.error("Error al cargar datos del usuario (fetchUserData):", error.response || error);
             localStorage.removeItem('token');
             setIsAuthenticated(false);
             setUser(null);
@@ -27,33 +26,24 @@ export function AuthProvider({ children }) {
         setIsLoading(true);
 
         try {
-            console.log('[AuthContext] Starting login for:', username);
             const formData = new URLSearchParams();
             formData.append('username', username);
             formData.append('password', password);
 
-            console.log('[AuthContext] Sending login request to /login');
-            const response = await apiClient.post('/login', formData, {
+            const response = await apiClient.post('/api/login', formData, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             });
 
-            console.log('[AuthContext] Login response:', response.status);
             const { access_token } = response.data;
             if (!access_token) {
                 throw new Error("La API no devolvió un access_token");
             }
 
-            console.log('[AuthContext] Token received, saving to localStorage');
             localStorage.setItem('token', access_token);
 
-            console.log('[AuthContext] Fetching user data from /users/me');
             await fetchUserData();
 
-            console.log('[AuthContext] Login completed successfully');
-
         } catch (error) {
-            console.error("[AuthContext] Login failed:", error);
-            console.error("[AuthContext] Error response:", error.response);
             localStorage.removeItem('token');
             setIsAuthenticated(false);
             setUser(null);
@@ -72,26 +62,18 @@ export function AuthProvider({ children }) {
 
     useEffect(() => {
         const checkTokenOnLoad = async () => {
-            console.log('[AuthContext] Checking token on load...');
             const token = localStorage.getItem('token');
 
             if (token) {
-                console.log('[AuthContext] Token found in localStorage');
                 try {
                     await fetchUserData();
-                    console.log('[AuthContext] Token valid, user authenticated');
                 } catch (error) {
-                    console.error('[AuthContext] Token invalid or expired:', error);
                     localStorage.removeItem('token');
                     setIsAuthenticated(false);
                     setUser(null);
                 }
-            } else {
-                console.log('[AuthContext] No token found in localStorage');
             }
-
             setIsAuthLoading(false);
-            console.log('[AuthContext] Initial auth check complete');
         };
 
         checkTokenOnLoad();

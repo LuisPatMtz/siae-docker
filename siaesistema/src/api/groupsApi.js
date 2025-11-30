@@ -11,7 +11,7 @@ export const groupsApi = {
      * @returns {Promise<Array>}
      */
     getAll: async () => {
-        const response = await apiClient.get('/grupos');
+        const response = await apiClient.get('/api/grupos');
         return response.data;
     },
     
@@ -21,7 +21,7 @@ export const groupsApi = {
      * @returns {Promise<object>}
      */
     getById: async (grupoId) => {
-        const response = await apiClient.get(`/grupos/${grupoId}`);
+        const response = await apiClient.get(`/api/grupos/${grupoId}`);
         return response.data;
     },
     
@@ -31,7 +31,7 @@ export const groupsApi = {
      * @returns {Promise<object>}
      */
     create: async (grupoData) => {
-        const response = await apiClient.post('/grupos', grupoData);
+        const response = await apiClient.post('/api/grupos', grupoData);
         return response.data;
     },
     
@@ -42,7 +42,7 @@ export const groupsApi = {
      * @returns {Promise<object>}
      */
     update: async (grupoId, grupoData) => {
-        const response = await apiClient.put(`/grupos/${grupoId}`, grupoData);
+        const response = await apiClient.put(`/api/grupos/${grupoId}`, grupoData);
         return response.data;
     },
     
@@ -52,7 +52,7 @@ export const groupsApi = {
      * @returns {Promise<object>}
      */
     delete: async (grupoId) => {
-        const response = await apiClient.delete(`/grupos/${grupoId}`);
+        const response = await apiClient.delete(`/api/grupos/${grupoId}`);
         return response.data;
     }
 };

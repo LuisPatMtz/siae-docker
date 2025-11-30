@@ -165,8 +165,8 @@ const GestionEstudiantesPage = () => {
                 // we might need to fetch explicitly here if those views aren't open.
                 // Or we can just use apiClient here as before to be safe and simple.
                 const [gruposResponse, ciclosResponse] = await Promise.all([
-                    apiClient.get('/grupos'),
-                    apiClient.get('/ciclos/')
+                    apiClient.get('/api/grupos'),
+                    apiClient.get('/api/ciclos/')
                 ]);
 
                 setGruposDisponibles(gruposResponse.data);

@@ -15,7 +15,7 @@ export const authService = {
         const formData = new FormData();
         formData.append('username', username);
         formData.append('password', password);
-        const response = await apiClient.post('/login', formData);
+        const response = await apiClient.post('/api/login', formData);
         return response.data;
     },
     
@@ -24,7 +24,7 @@ export const authService = {
      * @returns {Promise<Object>} Usuario autenticado
      */
     getMe: async () => {
-        const response = await apiClient.get('/users/me');
+        const response = await apiClient.get('/api/users/me');
         return response.data;
     }
 };

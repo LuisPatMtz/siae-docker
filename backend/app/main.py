@@ -49,8 +49,19 @@ async def lifespan(app: FastAPI):
     
     try:
         with Session(engine) as session:
-            # 1. Crear Usuario Admin
+            # 1. Crear o Actualizar Usuario Admin
             admin = session.exec(select(Usuario).where(Usuario.username == "admin")).first()
+            
+            default_permissions = {
+                "all": True,
+                "canViewDashboard": True,
+                "canManageAlerts": True,
+                "canEditStudents": True,
+                "canManageUsers": True,
+                "canManageMaintenance": True,
+                "canManageAttendance": True
+            }
+
             if not admin:
                 api_logger.info("Creando usuario admin por defecto...")
                 admin = Usuario(
@@ -58,19 +69,17 @@ async def lifespan(app: FastAPI):
                     hashed_password=get_password_hash("admin123"),
                     full_name="Administrador Sistema",
                     role="Admin",
-                    permissions={
-                        "all": True,
-                        "canViewDashboard": True,
-                        "canManageAlerts": True,
-                        "canEditStudents": True,
-                        "canManageUsers": True,
-                        "canManageMaintenance": True,
-                        "canManageAttendance": True
-                    }
+                    permissions=default_permissions
                 )
                 session.add(admin)
                 session.commit()
-                api_logger.info("Usuario admin creado.")
+                api_logger.info("Usuario admin creado con permisos completos.")
+            else:
+                api_logger.info("Verificando y actualizando permisos del usuario admin...")
+                admin.permissions = default_permissions
+                session.add(admin)
+                session.commit()
+                api_logger.info("Permisos de admin actualizados.")
             
             # 2. Crear Ciclo Escolar
             ciclo = session.exec(select(CicloEscolar).where(CicloEscolar.nombre == "2025-A")).first()

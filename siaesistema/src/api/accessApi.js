@@ -13,7 +13,7 @@ export const accessApi = {
      * @returns {Promise<Array>}
      */
     getAllNFC: async () => {
-        const response = await apiClient.get('/nfc');
+        const response = await apiClient.get('/api/nfc');
         return response.data;
     },
 
@@ -23,7 +23,7 @@ export const accessApi = {
      * @returns {Promise<object>}
      */
     getNFCByUID: async (nfcUid) => {
-        const response = await apiClient.get(`/nfc/${nfcUid}`);
+        const response = await apiClient.get(`/api/nfc/${nfcUid}`);
         return response.data;
     },
 
@@ -33,7 +33,7 @@ export const accessApi = {
      * @returns {Promise<object>}
      */
     getNFCByEstudiante: async (matricula) => {
-        const response = await apiClient.get(`/nfc/estudiante/${matricula}`);
+        const response = await apiClient.get(`/api/nfc/estudiante/${matricula}`);
         return response.data;
     },
 
@@ -43,7 +43,7 @@ export const accessApi = {
      * @returns {Promise<object>}
      */
     vincularNFC: async (nfcData) => {
-        const response = await apiClient.post('/nfc', nfcData);
+        const response = await apiClient.post('/api/nfc', nfcData);
         return response.data;
     },
 
@@ -53,7 +53,7 @@ export const accessApi = {
      * @returns {Promise<object>}
      */
     createNFC: async (nfcData) => {
-        const response = await apiClient.post('/nfc', nfcData);
+        const response = await apiClient.post('/api/nfc', nfcData);
         return response.data;
     },
 
@@ -63,7 +63,7 @@ export const accessApi = {
      * @returns {Promise<object>}
      */
     deleteNFC: async (nfcUid) => {
-        const response = await apiClient.delete(`/nfc/${nfcUid}`);
+        const response = await apiClient.delete(`/api/nfc/${nfcUid}`);
         return response.data;
     },
 
@@ -73,7 +73,7 @@ export const accessApi = {
      * @returns {Promise<object>}
      */
     deleteNFCByEstudiante: async (matricula) => {
-        const response = await apiClient.delete(`/nfc/estudiante/${matricula}`);
+        const response = await apiClient.delete(`/api/nfc/estudiante/${matricula}`);
         return response.data;
     },
 
@@ -90,7 +90,7 @@ export const accessApi = {
         if (fechaRegistro) {
             payload.fecha_registro = fechaRegistro;
         }
-        const response = await apiClient.post('/asistencia/registrar-nfc', payload);
+        const response = await apiClient.post('/api/asistencia/registrar-nfc', payload);
         return response.data;
     },
 
@@ -100,7 +100,7 @@ export const accessApi = {
      * @returns {Promise<Array>}
      */
     getAccesosByMatricula: async (matricula) => {
-        const response = await apiClient.get(`/acceso/${matricula}`);
+        const response = await apiClient.get(`/api/acceso/${matricula}`);
         return response.data;
     },
 
@@ -110,7 +110,7 @@ export const accessApi = {
      * @returns {Promise<Array>}
      */
     getAccesosByCiclo: async (cicloId) => {
-        const response = await apiClient.get(`/acceso/ciclo/${cicloId}`);
+        const response = await apiClient.get(`/api/acceso/ciclo/${cicloId}`);
         return response.data;
     },
 
@@ -122,7 +122,7 @@ export const accessApi = {
      */
     verificarAccesoHoy: async (nfcUid, cicloId) => {
         try {
-            const accesos = await apiClient.get(`/acceso/ciclo/${cicloId}`);
+            const accesos = await apiClient.get(`/api/acceso/ciclo/${cicloId}`);
             const hoy = new Date().toISOString().split('T')[0];
 
             return accesos.data.find(acceso => {

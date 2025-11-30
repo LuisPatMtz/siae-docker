@@ -10,7 +10,7 @@ export const usersService = {
      * @returns {Promise<Array>} Lista de usuarios
      */
     getAll: async () => {
-        const response = await apiClient.get('/users');
+        const response = await apiClient.get('/api/users');
         return response.data;
     },
     
@@ -20,7 +20,7 @@ export const usersService = {
      * @returns {Promise<Object>} Datos del usuario
      */
     getById: async (userId) => {
-        const response = await apiClient.get(`/users/${userId}`);
+        const response = await apiClient.get(`/api/users/${userId}`);
         return response.data;
     },
     
@@ -30,7 +30,7 @@ export const usersService = {
      * @returns {Promise<Object>} Usuario creado
      */
     create: async (userData) => {
-        const response = await apiClient.post('/users', userData);
+        const response = await apiClient.post('/api/users', userData);
         return response.data;
     },
     
@@ -41,7 +41,7 @@ export const usersService = {
      * @returns {Promise<Object>} Usuario actualizado
      */
     update: async (userId, userData) => {
-        const response = await apiClient.put(`/users/${userId}`, userData);
+        const response = await apiClient.put(`/api/users/${userId}`, userData);
         return response.data;
     },
     
@@ -52,7 +52,7 @@ export const usersService = {
      * @returns {Promise<Object>} Usuario actualizado
      */
     updatePermissions: async (userId, permissions) => {
-        const response = await apiClient.patch(`/users/${userId}/permissions`, {
+        const response = await apiClient.patch(`/api/users/${userId}/permissions`, {
             permissions
         });
         return response.data;
@@ -64,7 +64,7 @@ export const usersService = {
      * @returns {Promise<void>}
      */
     delete: async (userId) => {
-        const response = await apiClient.delete(`/users/${userId}`);
+        const response = await apiClient.delete(`/api/users/${userId}`);
         return response.data;
     }
 };

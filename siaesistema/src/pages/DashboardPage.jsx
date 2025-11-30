@@ -49,7 +49,7 @@ const DashboardPage = () => {
         try {
           // periodos: day, week, month, semester
           const period = barPeriod === 'day' ? 'week' : barPeriod; // backend no tiene 'day', usamos 'week' como aproximación
-          const res = await apiClient.get(`/dashboard/grupo/${g.id}?periodo=${period}`);
+          const res = await apiClient.get(`/api/dashboard/grupo/${g.id}?periodo=${period}`);
           return { name: g.name, attendance: res.data.attendance[period] || 0 };
         } catch {
           return { name: g.name, attendance: 0 };
@@ -69,10 +69,10 @@ const DashboardPage = () => {
     setIsLoadingGroups(true);
     try {
       // 1. Obtener grupos por turno
-      const response = await apiClient.get(`/dashboard/turno?modo=${activeMode}`);
+      const response = await apiClient.get(`/api/dashboard/turno?modo=${activeMode}`);
       const apiData = response.data;
       // 2. Obtener todos los grupos (con id y nombre)
-      const gruposResponse = await apiClient.get('/grupos');
+      const gruposResponse = await apiClient.get('/api/grupos');
       const gruposList = gruposResponse.data;
       setGrupos(gruposList);
       // 3. Filtrar grupos por turno activo
@@ -90,7 +90,7 @@ const DashboardPage = () => {
       // 5. Para cada grupo, obtener el número de integrantes
       const statsPromises = gruposFiltrados.map(async grupo => {
         try {
-          const res = await apiClient.get(`/dashboard/grupo/${grupo.id}`);
+          const res = await apiClient.get(`/api/dashboard/grupo/${grupo.id}`);
           return { ...grupo, name: grupo.nombre || `Grupo ${grupo.id}`, value: res.data.totalStudents };
         } catch {
           return { ...grupo, name: grupo.nombre || `Grupo ${grupo.id}`, value: 0 };
@@ -126,7 +126,7 @@ const DashboardPage = () => {
       const turnoParam = activeMode === 'general' ? '' : `turno=${activeMode}`;
       const grupoParam = selectedGroup ? `grupo_id=${selectedGroup}` : '';
       const params = [turnoParam, grupoParam].filter(p => p).join('&');
-      const url = `/dashboard/estadisticas/periodos${params ? '?' + params : ''}`;
+      const url = `/api/dashboard/estadisticas/periodos${params ? '?' + params : ''}`;
 
       const response = await apiClient.get(url);
       setPeriodStatsData(response.data);
@@ -159,7 +159,7 @@ const DashboardPage = () => {
     setIsTurnLoading(true);
     const fetchTurnData = async () => {
       try {
-        const response = await apiClient.get(`/dashboard/turno?modo=${activeMode}`);
+        const response = await apiClient.get(`/api/dashboard/turno?modo=${activeMode}`);
         const apiData = response.data;
         setStatsData(apiData.stats);
         setSelectedGroup(null);
@@ -187,7 +187,7 @@ const DashboardPage = () => {
     const fetchGroupData = async () => {
       try {
         const response = await apiClient.get(
-          `/dashboard/grupo/${selectedGroup}?periodo=${attendancePeriod}`
+          `/api/dashboard/grupo/${selectedGroup}?periodo=${attendancePeriod}`
         );
         const data = response.data;
         setGroupAttendanceData(data);

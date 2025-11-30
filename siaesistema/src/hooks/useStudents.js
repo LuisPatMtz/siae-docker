@@ -22,7 +22,7 @@ const useStudents = (isLinkListViewVisible) => {
 
         setIsLoading(true);
         try {
-            const response = await apiClient.get('/estudiantes');
+            const response = await apiClient.get('/api/estudiantes');
             const estudiantesConSemestre = response.data.map(estudiante => ({
                 ...estudiante,
                 semestre: estudiante.grupo?.semestre || null,
@@ -95,7 +95,7 @@ const useStudents = (isLinkListViewVisible) => {
     const saveStudent = async (studentData) => {
         setIsSaving(true);
         try {
-            const response = await apiClient.post('/estudiantes', studentData);
+            const response = await apiClient.post('/api/estudiantes', studentData);
             const savedStudent = response.data;
             showSuccess(`¡Estudiante ${savedStudent.nombre} ${savedStudent.apellido} guardado correctamente!`);
             return true;
@@ -130,7 +130,7 @@ const useStudents = (isLinkListViewVisible) => {
         };
 
         try {
-            const response = await apiClient.post('/nfc', linkData);
+            const response = await apiClient.post('/api/nfc', linkData);
             const linkedCard = response.data;
 
             showSuccess(`¡NFC vinculado a ${studentToLink.nombre} ${studentToLink.apellido} correctamente!`);
@@ -164,7 +164,7 @@ const useStudents = (isLinkListViewVisible) => {
                 nuevo_id_grupo: parseInt(nuevoIdGrupo)
             };
 
-            const response = await apiClient.patch('/estudiantes/bulk-move-group', payload);
+            const response = await apiClient.patch('/api/estudiantes/bulk-move-group', payload);
 
             // Refresh students
             await fetchStudents();

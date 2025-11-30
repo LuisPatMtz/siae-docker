@@ -8,11 +8,9 @@ const useCycles = (isSchoolCycleVisible) => {
     const { showSuccess, showError } = useToast();
 
     const fetchCycles = useCallback(async () => {
-        if (!isSchoolCycleVisible) return;
-
         try {
             setIsLoadingCycles(true);
-            const response = await apiClient.get('/ciclos/');
+            const response = await apiClient.get('/api/ciclos/');
             setCiclosEscolares(response.data);
         } catch (error) {
             console.error('Error loading ciclos escolares:', error);
@@ -20,7 +18,7 @@ const useCycles = (isSchoolCycleVisible) => {
         } finally {
             setIsLoadingCycles(false);
         }
-    }, [isSchoolCycleVisible, showError]);
+    }, [showError]);
 
     useEffect(() => {
         fetchCycles();
@@ -28,7 +26,7 @@ const useCycles = (isSchoolCycleVisible) => {
 
     const createCycle = async (cycleData) => {
         try {
-            const response = await apiClient.post('/ciclos/', cycleData);
+            const response = await apiClient.post('/api/ciclos/', cycleData);
             setCiclosEscolares(prev => [...prev, response.data]);
             showSuccess('Ciclo escolar creado correctamente');
             return true;
@@ -41,7 +39,7 @@ const useCycles = (isSchoolCycleVisible) => {
 
     const updateCycle = async (id, cycleData) => {
         try {
-            const response = await apiClient.put(`/ciclos/${id}`, cycleData);
+            const response = await apiClient.put(`/api/ciclos/${id}`, cycleData);
             setCiclosEscolares(prev => prev.map(cycle =>
                 cycle.id === id ? response.data : cycle
             ));
@@ -56,7 +54,7 @@ const useCycles = (isSchoolCycleVisible) => {
 
     const deleteCycle = async (id) => {
         try {
-            await apiClient.delete(`/ciclos/${id}`);
+            await apiClient.delete(`/api/ciclos/${id}`);
             setCiclosEscolares(prev => prev.filter(cycle => cycle.id !== id));
             showSuccess('Ciclo escolar eliminado correctamente');
             return true;
@@ -69,17 +67,8 @@ const useCycles = (isSchoolCycleVisible) => {
 
     const toggleCycleStatus = async (id) => {
         try {
-            const response = await apiClient.patch(`/ciclos/${id}/toggle-active`);
+            const response = await apiClient.post(`/api/ciclos/${id}/activar`);
             const updatedCycle = response.data;
-
-            // Update local state: if one becomes active, others might become inactive depending on backend logic,
-            // but usually backend handles ensuring only one is active if that's the rule.
-            // Assuming we just need to update the list with the new state.
-            // If the backend returns the updated cycle, we update it.
-            // If the backend logic enforces single active cycle, we might need to re-fetch or update all.
-            // For now, let's assume we update the specific one or re-fetch if needed.
-            // Actually, usually toggling active status might affect others, so re-fetching or careful update is best.
-            // Let's update the specific one first.
 
             setCiclosEscolares(prev => prev.map(c =>
                 c.id === id ? updatedCycle : (updatedCycle.activo ? { ...c, activo: false } : c)

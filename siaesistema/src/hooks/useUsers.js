@@ -11,7 +11,7 @@ const useUsers = () => {
     const fetchUsers = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await apiClient.get('/users');
+            const response = await apiClient.get('/api/users');
             setUsers(response.data);
         } catch (error) {
             console.error("Error al obtener usuarios:", error);
@@ -27,7 +27,7 @@ const useUsers = () => {
 
     const createUser = async (newUserData) => {
         try {
-            const response = await apiClient.post('/users', newUserData);
+            const response = await apiClient.post('/api/users', newUserData);
             const createdUser = response.data;
             setUsers(currentUsers => [...currentUsers, createdUser]);
             showSuccess(`Usuario "${createdUser.full_name || createdUser.username}" creado exitosamente`);
@@ -44,7 +44,7 @@ const useUsers = () => {
 
     const updateUser = async (userId, updatedUserData) => {
         try {
-            const response = await apiClient.put(`/users/${userId}`, updatedUserData);
+            const response = await apiClient.put(`/api/users/${userId}`, updatedUserData);
             const updatedUser = response.data;
             setUsers(currentUsers =>
                 currentUsers.map(user =>
@@ -63,7 +63,7 @@ const useUsers = () => {
 
     const deleteUser = async (userId, userName) => {
         try {
-            await apiClient.delete(`/users/${userId}`);
+            await apiClient.delete(`/api/users/${userId}`);
             setUsers(currentUsers => currentUsers.filter(user => user.id !== userId));
             showSuccess(`Usuario "${userName}" eliminado correctamente`);
             return true;
@@ -106,7 +106,7 @@ const useUsers = () => {
                 ...targetUser.permissions,
                 [permissionKey]: newValue
             };
-            await apiClient.patch(`/users/${userId}/permissions`, {
+            await apiClient.patch(`/api/users/${userId}/permissions`, {
                 permissions: updatedPermissions
             });
             

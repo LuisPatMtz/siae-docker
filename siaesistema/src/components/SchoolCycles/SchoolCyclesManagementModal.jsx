@@ -35,10 +35,12 @@ const SchoolCyclesManagementModal = ({ isOpen, onClose, onSuccess }) => {
     const fetchCycles = async () => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get('/ciclos/');
+            const response = await axiosInstance.get('/api/ciclos/');
+            console.log('Response from /api/ciclos/:', response.data);
             setCycles(response.data || []);
         } catch (error) {
             console.error('Error al cargar ciclos:', error);
+            console.error('Error response:', error.response);
             setCycles([]);
         } finally {
             setLoading(false);
@@ -113,10 +115,10 @@ const SchoolCyclesManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
             if (editingCycle) {
                 // Actualizar ciclo existente
-                await axiosInstance.put(`/ciclos/${editingCycle.id}`, dataToSend);
+                await axiosInstance.put(`/api/ciclos/${editingCycle.id}`, dataToSend);
             } else {
                 // Crear nuevo ciclo
-                await axiosInstance.post('/ciclos/', dataToSend);
+                await axiosInstance.post('/api/ciclos/', dataToSend);
             }
 
             // Limpiar formulario
@@ -169,7 +171,7 @@ const SchoolCyclesManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
         setIsSubmitting(true);
         try {
-            await axiosInstance.delete(`/ciclos/${deletingCycleId}`);
+            await axiosInstance.delete(`/api/ciclos/${deletingCycleId}`);
 
             // Recargar datos
             await fetchCycles();
@@ -194,7 +196,7 @@ const SchoolCyclesManagementModal = ({ isOpen, onClose, onSuccess }) => {
     // Activar ciclo
     const handleActivate = async (cycleId) => {
         try {
-            await axiosInstance.post(`/ciclos/${cycleId}/activar`, {});
+            await axiosInstance.post(`/api/ciclos/${cycleId}/activar`, {});
 
             // Recargar datos
             await fetchCycles();

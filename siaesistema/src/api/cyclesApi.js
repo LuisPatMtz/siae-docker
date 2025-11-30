@@ -12,7 +12,7 @@ export const cyclesApi = {
      * @returns {Promise<Array>}
      */
     getAll: async (activoSolo = false) => {
-        const response = await apiClient.get('/ciclos', {
+        const response = await apiClient.get('/api/ciclos', {
             params: { activo_solo: activoSolo }
         });
         return response.data;
@@ -23,7 +23,7 @@ export const cyclesApi = {
      * @returns {Promise<object>}
      */
     getActivo: async () => {
-        const response = await apiClient.get('/ciclos/activo');
+        const response = await apiClient.get('/api/ciclos/activo');
         return response.data;
     },
     
@@ -33,7 +33,7 @@ export const cyclesApi = {
      * @returns {Promise<object>}
      */
     getById: async (cicloId) => {
-        const response = await apiClient.get(`/ciclos/${cicloId}`);
+        const response = await apiClient.get(`/api/ciclos/${cicloId}`);
         return response.data;
     },
     
@@ -43,7 +43,7 @@ export const cyclesApi = {
      * @returns {Promise<object>}
      */
     create: async (cicloData) => {
-        const response = await apiClient.post('/ciclos', cicloData);
+        const response = await apiClient.post('/api/ciclos', cicloData);
         return response.data;
     },
     
@@ -54,7 +54,7 @@ export const cyclesApi = {
      * @returns {Promise<object>}
      */
     update: async (cicloId, cicloData) => {
-        const response = await apiClient.put(`/ciclos/${cicloId}`, cicloData);
+        const response = await apiClient.put(`/api/ciclos/${cicloId}`, cicloData);
         return response.data;
     },
     
@@ -64,7 +64,7 @@ export const cyclesApi = {
      * @returns {Promise<object>}
      */
     activar: async (cicloId) => {
-        const response = await apiClient.post(`/ciclos/${cicloId}/activar`);
+        const response = await apiClient.post(`/api/ciclos/${cicloId}/activar`);
         return response.data;
     },
     
@@ -74,7 +74,7 @@ export const cyclesApi = {
      * @returns {Promise<object>}
      */
     delete: async (cicloId) => {
-        const response = await apiClient.delete(`/ciclos/${cicloId}`);
+        const response = await apiClient.delete(`/api/ciclos/${cicloId}`);
         return response.data;
     }
 };

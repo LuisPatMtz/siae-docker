@@ -79,6 +79,14 @@ def get_grupo_por_id(
     Obtiene un grupo específico por su ID.
     """
     repo = GrupoRepository(session)
+    db_grupo = repo.get_by_id(id_grupo)
+    if not db_grupo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Grupo con ID {id_grupo} no encontrado."
+        )
+    return db_grupo
+
 @router.put("/{id_grupo}", response_model=GrupoRead)
 def update_grupo(
     *,

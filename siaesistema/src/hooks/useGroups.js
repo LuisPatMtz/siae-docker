@@ -12,7 +12,7 @@ const useGroups = (isGroupManagementVisible) => {
 
         setIsLoadingGroups(true);
         try {
-            const response = await apiClient.get('/grupos');
+            const response = await apiClient.get('/api/grupos');
             setGrupos(response.data);
 
             // Stats logic (optional to keep here or move to UI, keeping here for now as per original)
@@ -69,7 +69,7 @@ const useGroups = (isGroupManagementVisible) => {
 
     const createGroup = async (groupData) => {
         try {
-            const response = await apiClient.post('/grupos', groupData);
+            const response = await apiClient.post('/api/grupos', groupData);
             const newGroup = response.data;
             showSuccess(`¡Grupo "${newGroup.nombre}" creado exitosamente!`);
             setGrupos(prevGroups => [...prevGroups, newGroup]);
@@ -94,7 +94,7 @@ const useGroups = (isGroupManagementVisible) => {
 
     const updateGroup = async (id, groupData) => {
         try {
-            const response = await apiClient.put(`/grupos/${id}`, groupData);
+            const response = await apiClient.put(`/api/grupos/${id}`, groupData);
             const updatedGroup = response.data;
             showSuccess(`¡Grupo "${updatedGroup.nombre}" actualizado exitosamente!`);
             setGrupos(prevGroups =>
@@ -124,7 +124,7 @@ const useGroups = (isGroupManagementVisible) => {
 
     const deleteGroup = async (id, groupName) => {
         try {
-            await apiClient.delete(`/grupos/${id}`);
+            await apiClient.delete(`/api/grupos/${id}`);
             showSuccess(`¡Grupo "${groupName || `ID: ${id}`}" eliminado exitosamente!`);
             setGrupos(prevGroups =>
                 prevGroups.filter(grupo => grupo.id !== id)
