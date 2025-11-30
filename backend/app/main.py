@@ -5,6 +5,7 @@ Aplicación principal FastAPI para el Sistema SIAE.
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import date
 
 # Importar base para registrar modelos
 from app.db import base  # noqa: F401
@@ -57,7 +58,15 @@ async def lifespan(app: FastAPI):
                     hashed_password=get_password_hash("admin123"),
                     full_name="Administrador Sistema",
                     role="Admin",
-                    permissions={"all": True}
+                    permissions={
+                        "all": True,
+                        "canViewDashboard": True,
+                        "canManageAlerts": True,
+                        "canEditStudents": True,
+                        "canManageUsers": True,
+                        "canManageMaintenance": True,
+                        "canManageAttendance": True
+                    }
                 )
                 session.add(admin)
                 session.commit()
@@ -66,7 +75,12 @@ async def lifespan(app: FastAPI):
             # 2. Crear Ciclo Escolar
             ciclo = session.exec(select(CicloEscolar).where(CicloEscolar.nombre == "2025-A")).first()
             if not ciclo:
-                ciclo = CicloEscolar(nombre="2025-A", activo=True)
+                ciclo = CicloEscolar(
+                    nombre="2025-B", 
+                    activo=True,
+                    fecha_inicio=date(2025, 6, 1),
+                    fecha_fin=date(2025, 12, 31)
+                )
                 session.add(ciclo)
                 session.commit()
                 session.refresh(ciclo)
@@ -74,7 +88,7 @@ async def lifespan(app: FastAPI):
             # 3. Crear Grupo
             grupo = session.exec(select(Grupo).where(Grupo.nombre == "1-A")).first()
             if not grupo:
-                grupo = Grupo(nombre="1-A", semestre=1, turno="matutino")
+                grupo = Grupo(nombre="101", semestre=1, turno="matutino")
                 session.add(grupo)
                 session.commit()
                 session.refresh(grupo)

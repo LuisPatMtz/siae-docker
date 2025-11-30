@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     # CORS
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost",
+        "https://siae.site",
         "http://localhost:80",
         "http://localhost:3000",
         "http://localhost:5173",

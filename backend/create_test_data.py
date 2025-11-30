@@ -2,6 +2,7 @@
 Script to populate test data in SQLite database.
 """
 from sqlmodel import Session, select
+from datetime import date
 from app.db.database import engine
 from app.models import Estudiante, Grupo, CicloEscolar
 
@@ -10,7 +11,12 @@ def create_test_data():
         # 1. Create Ciclo Escolar
         ciclo = session.exec(select(CicloEscolar).where(CicloEscolar.nombre == "2025-A")).first()
         if not ciclo:
-            ciclo = CicloEscolar(nombre="2025-A", activo=True)
+            ciclo = CicloEscolar(
+                nombre="2025-A", 
+                activo=True,
+                fecha_inicio=date(2025, 1, 1),
+                fecha_fin=date(2025, 12, 31)
+            )
             session.add(ciclo)
             session.commit()
             session.refresh(ciclo)
