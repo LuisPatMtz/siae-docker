@@ -456,16 +456,18 @@ export const alertasService = {
             
             // Obtener todas las justificaciones
             const justificacionesResponse = await apiClient.get('/api/justificaciones');
-            const justificaciones = justificacionesResponse.data;
+            const justificaciones = Array.isArray(justificacionesResponse.data) ? justificacionesResponse.data : [];
             
             // Obtener estudiantes para mapear nombres
-            const estudiantes = await estudiantesService.getAll();
+            const estudiantesData = await estudiantesService.getAll();
+            const estudiantes = Array.isArray(estudiantesData) ? estudiantesData : [];
             
             // Obtener faltas justificadas SOLO del ciclo activo
-            const faltasResponse = await faltasService.getAll({
+            const faltasData = await faltasService.getAll({
                 estado: 'Justificado',
                 id_ciclo: cicloId
             });
+            const faltasResponse = Array.isArray(faltasData) ? faltasData : [];
             
             // Crear historial con una entrada por cada estudiante
             const historial = [];

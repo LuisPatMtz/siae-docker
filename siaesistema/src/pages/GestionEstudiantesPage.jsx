@@ -166,7 +166,7 @@ const GestionEstudiantesPage = () => {
                 // Or we can just use apiClient here as before to be safe and simple.
                 const [gruposResponse, ciclosResponse] = await Promise.all([
                     apiClient.get('/api/grupos'),
-                    apiClient.get('/api/ciclos/')
+                    apiClient.get('/api/ciclos')
                 ]);
 
                 setGruposDisponibles(gruposResponse.data);

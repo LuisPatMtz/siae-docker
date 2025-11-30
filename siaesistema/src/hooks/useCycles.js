@@ -10,7 +10,7 @@ const useCycles = (isSchoolCycleVisible) => {
     const fetchCycles = useCallback(async () => {
         try {
             setIsLoadingCycles(true);
-            const response = await apiClient.get('/api/ciclos/');
+            const response = await apiClient.get('/api/ciclos');
             setCiclosEscolares(response.data);
         } catch (error) {
             console.error('Error loading ciclos escolares:', error);
@@ -26,7 +26,7 @@ const useCycles = (isSchoolCycleVisible) => {
 
     const createCycle = async (cycleData) => {
         try {
-            const response = await apiClient.post('/api/ciclos/', cycleData);
+            const response = await apiClient.post('/api/ciclos', cycleData);
             setCiclosEscolares(prev => [...prev, response.data]);
             showSuccess('Ciclo escolar creado correctamente');
             return true;

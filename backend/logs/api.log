@@ -1,0 +1,17 @@
+2025-11-30 01:00:49,552 - siae.api - INFO - === Iniciando SIAE API ===
+2025-11-30 01:00:49,553 - siae.api - INFO - Creando tablas de base de datos si no existen...
+2025-11-30 01:00:51,583 - siae.api - INFO - Base de datos inicializada correctamente
+2025-11-30 01:00:51,707 - siae.api - INFO - Creando usuario admin por defecto...
+2025-11-30 01:00:52,276 - siae.api - INFO - Usuario admin creado.
+2025-11-30 01:00:52,289 - siae.api - ERROR - Error al inicializar datos: (psycopg2.errors.NotNullViolation) null value in column "fecha_inicio" of relation "ciclo_escolar" violates not-null constraint
+DETAIL:  Failing row contains (1, 2025-A, null, null, t).
+
+[SQL: INSERT INTO ciclo_escolar (nombre, fecha_inicio, fecha_fin, activo) VALUES (%(nombre)s, %(fecha_inicio)s, %(fecha_fin)s, %(activo)s) RETURNING ciclo_escolar.id]
+[parameters: {'nombre': '2025-A', 'fecha_inicio': None, 'fecha_fin': None, 'activo': True}]
+(Background on this error at: https://sqlalche.me/e/20/gkpj)
+2025-11-30 02:38:51,395 - siae.api - INFO - === Apagando SIAE API ===
+2025-11-30 02:38:53,547 - siae.api - INFO - === Iniciando SIAE API ===
+2025-11-30 02:38:53,547 - siae.api - INFO - Creando tablas de base de datos si no existen...
+2025-11-30 02:38:53,629 - siae.api - INFO - Base de datos inicializada correctamente
+2025-11-30 02:38:53,982 - siae.api - INFO - Estudiante de prueba creado: 2025002
+2025-11-30 02:39:06,747 - siae.api - INFO - === Apagando SIAE API ===
