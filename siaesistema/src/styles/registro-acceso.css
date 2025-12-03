@@ -132,6 +132,60 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Hora selector styles */
+.hora-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.hora-selector label {
+    font-weight: 600;
+    color: #475569;
+    font-size: 0.875rem;
+}
+
+.input-hora {
+    padding: 0.5rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.625rem;
+    font-size: 0.9375rem;
+    color: #334155;
+    background: white;
+    transition: all 0.3s ease;
+    outline: none;
+    min-width: 140px;
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.input-hora:focus {
+    border-color: var(--siae-primary-blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-hora:hover {
+    border-color: #cbd5e1;
+}
+
+.hora-hint {
+    font-size: 0.8125rem;
+    color: #64748b;
+    font-style: italic;
+    padding: 0.25rem 0.75rem;
+    background: rgba(226, 232, 240, 0.3);
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hora-hint::before {
+    content: '⏰';
+    font-size: 1rem;
+}
+
 /* ====================================
    MATRICULA REGISTRATION SECTION
    ==================================== */

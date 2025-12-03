@@ -1,9 +1,12 @@
 import React from 'react';
 // --- 1. Importa los iconos ---
 import { X, Trash2, AlertCircle } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 // --- 2. Acepta 'isSaving' para deshabilitar botones ---
 const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, userName, isSaving }) => {
+    useEscapeKey(isOpen, onClose);
+    
     if (!isOpen) {
         return null;
     }

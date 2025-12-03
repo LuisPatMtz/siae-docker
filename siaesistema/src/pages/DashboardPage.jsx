@@ -8,8 +8,19 @@ import Modal from '../components/UI/Modal.jsx';
 import StudentGroupsNav from '../components/Dashboard/StudentGroupsNav.jsx';
 import GroupAttendanceCard from '../components/Dashboard/GroupAttendanceCard.jsx';
 import PeriodStatsCard from '../components/Dashboard/PeriodStatsCard.jsx';
+import AttendanceMetricsChart from '../components/Dashboard/AttendanceMetricsChart.jsx';
+import PageContainer from '../components/Common/PageContainer.jsx';
+import SetupWizard from '../components/SetupWizard/SetupWizard.jsx';
 
 const DashboardPage = () => {
+  // Estados para detectar configuración del sistema
+  const [hasCycle, setHasCycle] = useState(null); // null = cargando, true/false = estado
+  const [hasGroups, setHasGroups] = useState(null);
+  const [hasStudents, setHasStudents] = useState(null);
+  const [isCheckingSystem, setIsCheckingSystem] = useState(true);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [setupStep, setSetupStep] = useState(null);
+  
   // Estado para filtro de período de barra
   const [barPeriod, setBarPeriod] = useState('week');
   const PERIOD_OPTIONS = [
@@ -32,11 +43,15 @@ const DashboardPage = () => {
   const [activeMode, setActiveMode] = useState('general');
   const [statsData, setStatsData] = useState({ totalStudents: 0, averageAttendance: 0.0 });
   const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedGroupName, setSelectedGroupName] = useState('');
   const [attendancePeriod, setAttendancePeriod] = useState('semester');
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [groupAttendanceData, setGroupAttendanceData] = useState(null);
   const [isTurnLoading, setIsTurnLoading] = useState(true);
   const [isGroupLoading, setIsGroupLoading] = useState(false);
   const [isLoadingPeriodStats, setIsLoadingPeriodStats] = useState(false);
+  const [metricsData, setMetricsData] = useState(null);
+  const [isLoadingMetrics, setIsLoadingMetrics] = useState(false);
 
   // Cargar datos de asistencia para la gráfica de barras cuando cambie el período o los grupos
   useEffect(() => {
@@ -48,9 +63,8 @@ const DashboardPage = () => {
       const promises = groupStats.map(async g => {
         try {
           // periodos: day, week, month, semester
-          const period = barPeriod === 'day' ? 'week' : barPeriod; // backend no tiene 'day', usamos 'week' como aproximación
-          const res = await apiClient.get(`/api/dashboard/grupo/${g.id}?periodo=${period}`);
-          return { name: g.name, attendance: res.data.attendance[period] || 0 };
+          const res = await apiClient.get(`/api/dashboard/grupo/${g.id}?periodo=${barPeriod}`);
+          return { name: g.name, attendance: res.data.attendance[barPeriod] || 0 };
         } catch {
           return { name: g.name, attendance: 0 };
         }
@@ -105,7 +119,7 @@ const DashboardPage = () => {
       gruposOrganizados = stats.reduce((acc, grupo) => {
         const semestreKey = `${grupo.semestre}er Semestre`;
         if (!acc[semestreKey]) acc[semestreKey] = [];
-        acc[semestreKey].push(grupo.nombre || `Grupo ${grupo.id}`);
+        acc[semestreKey].push({ id: grupo.id, nombre: grupo.nombre || `Grupo ${grupo.id}` });
         return acc;
       }, {});
       setSemestersData(gruposOrganizados);
@@ -142,6 +156,62 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchGroupsAndStats();
   }, [activeMode]);
+
+  // *** VERIFICACIÓN INICIAL: Comprobar estado del sistema ***
+  useEffect(() => {
+    const checkSystemStatus = async () => {
+      setIsCheckingSystem(true);
+      try {
+        // 1. Verificar si existe ciclo escolar activo
+        const cycleResponse = await apiClient.get('/api/ciclos-escolares');
+        const hasCycleData = cycleResponse.data && cycleResponse.data.length > 0;
+        setHasCycle(hasCycleData);
+
+        if (!hasCycleData) {
+          setIsCheckingSystem(false);
+          setSetupStep('create-cycle');
+          setShowSetupWizard(true);
+          return; // No continuar si no hay ciclo
+        }
+
+        // 2. Verificar si existen grupos
+        const groupsResponse = await apiClient.get('/api/grupos');
+        const hasGroupsData = groupsResponse.data && groupsResponse.data.length > 0;
+        setHasGroups(hasGroupsData);
+
+        if (!hasGroupsData) {
+          setIsCheckingSystem(false);
+          setSetupStep('create-groups');
+          setShowSetupWizard(true);
+          return; // No continuar si no hay grupos
+        }
+
+        // 3. Verificar si existen estudiantes
+        const studentsResponse = await apiClient.get('/api/estudiantes');
+        const hasStudentsData = studentsResponse.data && studentsResponse.data.length > 0;
+        setHasStudents(hasStudentsData);
+
+      } catch (error) {
+        console.error('Error al verificar estado del sistema:', error);
+        // En caso de error, asumir que no hay datos
+        setHasCycle(false);
+        setHasGroups(false);
+        setHasStudents(false);
+      } finally {
+        setIsCheckingSystem(false);
+      }
+    };
+
+    checkSystemStatus();
+  }, []); // Solo ejecutar al montar
+
+  // Cargar grupos y stats al montar el componente y cuando cambie el modo
+  useEffect(() => {
+    // Solo cargar datos si el sistema está configurado
+    if (hasCycle && hasGroups && hasStudents) {
+      fetchGroupsAndStats();
+    }
+  }, [activeMode, hasCycle, hasGroups, hasStudents]);
 
   // Cargar estadísticas de períodos cuando cambie el turno o grupo seleccionado
   useEffect(() => {
@@ -182,13 +252,25 @@ const DashboardPage = () => {
       return;
     }
 
+    // Si es custom pero no hay fechas, no hacer el request
+    if (attendancePeriod === 'custom' && (!customDateRange.start || !customDateRange.end)) {
+      console.log('Periodo custom sin fechas, esperando...');
+      return;
+    }
+
     setIsGroupLoading(true);
 
     const fetchGroupData = async () => {
       try {
-        const response = await apiClient.get(
-          `/api/dashboard/grupo/${selectedGroup}?periodo=${attendancePeriod}`
-        );
+        let url = `/api/dashboard/grupo/${selectedGroup}?periodo=${attendancePeriod}`;
+        
+        // Si el periodo es custom, agregar fechas
+        if (attendancePeriod === 'custom' && customDateRange.start && customDateRange.end) {
+          url += `&fecha_inicio=${customDateRange.start}&fecha_fin=${customDateRange.end}`;
+          console.log('URL de grupo con custom:', url);
+        }
+        
+        const response = await apiClient.get(url);
         const data = response.data;
         setGroupAttendanceData(data);
 
@@ -202,30 +284,101 @@ const DashboardPage = () => {
 
     fetchGroupData();
 
-  }, [selectedGroup, attendancePeriod]);
+  }, [selectedGroup, attendancePeriod, customDateRange]);
 
+  // *** INTERRUPTOR #3: Cargar datos de MÉTRICAS DIARIAS ***
+  useEffect(() => {
+    if (!selectedGroup) {
+      setMetricsData(null);
+      return;
+    }
+
+    // Si es custom pero no hay fechas, no hacer el request
+    if (attendancePeriod === 'custom' && (!customDateRange.start || !customDateRange.end)) {
+      console.log('Periodo custom sin fechas en métricas, esperando...');
+      return;
+    }
+
+    setIsLoadingMetrics(true);
+
+    const fetchMetricsData = async () => {
+      try {
+        let url = `/api/dashboard/grupo/${selectedGroup}/grafica-diaria?periodo=${attendancePeriod}`;
+        
+        // Si el periodo es custom, agregar fechas
+        if (attendancePeriod === 'custom' && customDateRange.start && customDateRange.end) {
+          url += `&fecha_inicio=${customDateRange.start}&fecha_fin=${customDateRange.end}`;
+          console.log('URL de métricas con custom:', url);
+        }
+        
+        console.log('Fetching metrics with periodo:', attendancePeriod, 'dates:', customDateRange);
+        const response = await apiClient.get(url);
+        setMetricsData(response.data);
+      } catch (error) {
+        console.error("Error al obtener métricas diarias:", error);
+        setMetricsData(null);
+      } finally {
+        setIsLoadingMetrics(false);
+      }
+    };
+
+    fetchMetricsData();
+
+  }, [selectedGroup, attendancePeriod, customDateRange]);
+
+
+  // Manejar cambio de rango personalizado
+  const handleCustomDateChange = (startDate, endDate) => {
+    console.log('handleCustomDateChange llamado con:', startDate, endDate);
+    setCustomDateRange({ start: startDate, end: endDate });
+  };
 
   // Wrapper para el selector de grupo que resetea el período
-  const handleSelectGroup = (group) => {
-    setSelectedGroup(group);
+  const handleSelectGroup = (grupoId) => {
+    setSelectedGroup(grupoId);
+    // Encontrar el nombre del grupo
+    const grupo = grupos.find(g => g.id === grupoId);
+    setSelectedGroupName(grupo ? grupo.nombre : grupoId);
     setAttendancePeriod('semester'); // Resetea el filtro a 'Total Semestre'
     setAttendanceModalOpen(true);
   };
 
 
   return (
-    <main className="dashboard-main">
-      <div className="page-title-container">
-        <h1 className="page-title">Dashboard</h1>
-      </div>
-      {(isTurnLoading || isLoadingGroups) ? (
+    <PageContainer>
+      {/* Modal de configuración del sistema */}
+      {showSetupWizard && (
+        <SetupWizard
+          step={setupStep}
+          onComplete={() => {
+            setShowSetupWizard(false);
+            window.location.reload(); // Recargar para actualizar estado
+          }}
+          onClose={() => setShowSetupWizard(false)}
+        />
+      )}
+
+      <main className="dashboard-main">
+        <div className="page-title-container">
+          <h1 className="page-title">Dashboard</h1>
+        </div>
+
+      {/* Mostrar loading mientras verifica el sistema */}
+      {isCheckingSystem ? (
         <div className="loading-message">
-          {isTurnLoading && isLoadingGroups ? 'Cargando datos del dashboard...' :
-            isTurnLoading ? 'Cargando datos del turno...' :
-              'Cargando grupos...'}
+          Verificando configuración del sistema...
         </div>
       ) : (
         <>
+          {/* Mostrar dashboard completo siempre (el modal guía al usuario) */}
+          {(isTurnLoading || isLoadingGroups) ? (
+            <div className="loading-message">
+              {isTurnLoading && isLoadingGroups ? 'Cargando datos del dashboard...' :
+                isTurnLoading ? 'Cargando datos del turno...' :
+                  'Cargando grupos...'}
+            </div>
+          ) : (
+                <>
           <div className="dashboard-controls-modes-bar dashboard-card-header">
             <DashboardControls
               activeMode={activeMode}
@@ -275,30 +428,50 @@ const DashboardPage = () => {
           {/* Modal para asistencia de grupo */}
           <Modal
             isOpen={isAttendanceModalOpen && !!selectedGroup}
-            onClose={() => { setAttendanceModalOpen(false); setSelectedGroup(null); }}
-            title={`Asistencia del Grupo ${selectedGroup || ''}`}
-            size="md"
+            onClose={() => { setAttendanceModalOpen(false); setSelectedGroup(null); setSelectedGroupName(''); }}
+            title={`Asistencia del Grupo ${selectedGroupName || selectedGroup}`}
+            size="xl"
           >
             <div className="group-attendance-section-modal">
-              {/* Mostrar estadísticas por período si hay un grupo seleccionado */}
-              {selectedGroup && !isLoadingPeriodStats && periodStatsData && (
-                <PeriodStatsCard
-                  periodData={periodStatsData}
-                  selectedPeriod={attendancePeriod}
-                />
-              )}
+              {/* Selector de período */}
               <GroupAttendanceCard
-                groupName={selectedGroup}
+                groupName={selectedGroupName || selectedGroup}
                 attendanceData={groupAttendanceData}
                 selectedPeriod={attendancePeriod}
                 onPeriodChange={setAttendancePeriod}
                 isLoading={isGroupLoading}
+                onCustomDateChange={handleCustomDateChange}
               />
+
+              {/* Gráfica de métricas estilo Facebook */}
+              {isLoadingMetrics && (
+                <div className="loading-message" style={{ padding: '40px', textAlign: 'center' }}>
+                  Cargando métricas diarias...
+                </div>
+              )}
+
+              {!isLoadingMetrics && metricsData && metricsData.datos && metricsData.datos.length > 0 && (
+                <AttendanceMetricsChart
+                  datos={metricsData.datos}
+                  promedio={metricsData.promedio}
+                  periodo={attendancePeriod}
+                  totalEstudiantes={metricsData.total_estudiantes}
+                />
+              )}
+
+              {!isLoadingMetrics && (!metricsData || !metricsData.datos || metricsData.datos.length === 0) && (
+                <div className="metrics-chart-empty" style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}>
+                  <p>No hay datos de asistencia disponibles para el periodo seleccionado</p>
+                </div>
+              )}
             </div>
           </Modal>
+            </>
+          )}
         </>
       )}
-    </main>
+      </main>
+    </PageContainer>
   );
 };
 

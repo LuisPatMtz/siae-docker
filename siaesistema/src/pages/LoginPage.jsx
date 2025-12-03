@@ -1,15 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/Auth/AuthContext';
+import SetupWizard from '../components/SetupWizard/SetupWizard';
+import apiClient from '../api/axios';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [isCheckingSystem, setIsCheckingSystem] = useState(true);
   const navigate = useNavigate();
 
   const { login, isLoading } = useAuth();
+
+  useEffect(() => {
+    checkSystemStatus();
+  }, []);
+
+  const checkSystemStatus = async () => {
+    try {
+      const response = await apiClient.get('/api/auth/check-system');
+      if (response.data.needs_setup) {
+        setShowSetupWizard(true);
+      }
+    } catch (error) {
+      console.error('Error al verificar el sistema:', error);
+    } finally {
+      setIsCheckingSystem(false);
+    }
+  };
+
+  const handleSetupComplete = () => {
+    setShowSetupWizard(false);
+    window.location.reload();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +57,14 @@ const LoginPage = () => {
 
   return (
     <div className="login-container">
+      {/* Setup Wizard Modal */}
+      {showSetupWizard && (
+        <SetupWizard 
+          step="create-admin" 
+          onComplete={handleSetupComplete}
+        />
+      )}
+
       <div className="login-card">
         <span className="login-logo">SIAE</span>
         <h1 className="login-title">Ingreso al panel general del sistema</h1>

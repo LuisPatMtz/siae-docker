@@ -1,0 +1,431 @@
+/* src/styles/metrics.css */
+
+.attendance-metrics-container {
+  padding: 20px;
+  background: #fff;
+}
+
+/* Tarjetas de métricas principales */
+.metrics-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.metric-card.metric-primary {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  color: white;
+  border: none;
+}
+
+.metric-card.metric-success {
+  border-left: 3px solid #10B981;
+}
+
+.metric-card.metric-warning {
+  border-left: 3px solid #F59E0B;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+.metric-primary .metric-value {
+  color: white;
+}
+
+.metric-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 3px;
+}
+
+.metric-primary .metric-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.metric-sublabel {
+  font-size: 11px;
+  color: #9CA3AF;
+}
+
+.metric-primary .metric-sublabel {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Layout compacto para selector de periodo */
+.layout-compact {
+  margin-bottom: 16px;
+}
+
+.attendance-compact-container {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.period-selectors-compact {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.period-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4F46E5;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.period-btn-compact {
+  padding: 8px 16px;
+  border: 1px solid #E5E7EB;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.period-btn-compact:hover {
+  border-color: #4F46E5;
+  color: #4F46E5;
+}
+
+.period-btn-compact.active {
+  background: #4F46E5;
+  border-color: #4F46E5;
+  color: white;
+}
+
+.attendance-summary-compact {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.card-title-compact {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin: 0;
+}
+
+.percentage-display-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 20px;
+  border-left: 2px solid #E5E7EB;
+  border-right: 2px solid #E5E7EB;
+}
+
+.percentage-number-compact {
+  font-size: 32px;
+  font-weight: 700;
+  color: #4F46E5;
+  line-height: 1;
+}
+
+.percentage-label-compact {
+  font-size: 11px;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.students-count-compact {
+  font-size: 14px;
+  color: #6B7280;
+  margin: 0;
+}
+
+.students-count-compact strong {
+  color: #1F2937;
+  font-size: 18px;
+}
+
+/* Selector de rango personalizado */
+.period-buttons-wrapper {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-date-picker {
+  margin-top: 12px;
+  padding: 16px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.date-input-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.date-input {
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1F2937;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #4F46E5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.apply-custom-btn {
+  padding: 8px 16px;
+  background: #4F46E5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.apply-custom-btn:hover {
+  background: #4338CA;
+}
+
+.apply-custom-btn:disabled {
+  background: #D1D5DB;
+  cursor: not-allowed;
+}
+
+/* Gráfico */
+.metrics-chart-wrapper {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 16px;
+}
+
+.metrics-chart-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9CA3AF;
+}
+
+/* Tooltip personalizado */
+.custom-tooltip-metrics {
+  background: rgba(0, 0, 0, 0.9);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip-date {
+  font-size: 12px;
+  color: #D1D5DB;
+  margin-bottom: 4px;
+}
+
+.tooltip-percentage {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.tooltip-detail {
+  font-size: 13px;
+  color: #9CA3AF;
+}
+
+/* Tabla de datos diarios */
+.metrics-daily-table {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.table-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 12px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 350px;
+}
+
+.daily-data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.daily-data-table thead th {
+  position: sticky;
+  top: 0;
+  background: #F9FAFB;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #E5E7EB;
+  z-index: 10;
+}
+
+.daily-data-table tbody tr {
+  border-bottom: 1px solid #F3F4F6;
+  transition: background-color 0.2s;
+}
+
+.daily-data-table tbody tr:hover {
+  background-color: #F9FAFB;
+}
+
+.daily-data-table tbody tr.row-empty {
+  opacity: 0.5;
+}
+
+.daily-data-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.percentage-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.percentage-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: center;
+}
+
+.badge-success {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-warning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-danger {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.mini-progress {
+  flex: 1;
+  height: 6px;
+  background: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4F46E5 0%, #6366F1 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .metrics-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .metrics-summary-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .attendance-compact-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .period-selectors-compact {
+    flex-wrap: wrap;
+  }
+  
+  .attendance-summary-compact {
+    margin-left: 0;
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .metrics-chart-wrapper {
+    padding: 16px;
+  }
+  
+  .metric-value {
+    font-size: 24px;
+  }
+  
+  .table-scroll {
+    max-height: 300px;
+  }
+}

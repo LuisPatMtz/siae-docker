@@ -3,6 +3,7 @@
 Servicio de lógica de negocio para Dashboard y estadísticas.
 """
 import calendar
+import logging
 from datetime import datetime, timedelta, date
 from typing import Dict, List, Optional
 from sqlmodel import Session, select, func, distinct
@@ -13,6 +14,8 @@ from app.models import (
     Estudiante, Asistencia, NFC, Grupo, CicloEscolar,
     StatsData, TurnoDataResponse, GrupoAsistenciaResponse
 )
+
+logger = logging.getLogger("siae.dashboard")
 
 
 class DashboardService:
@@ -45,47 +48,63 @@ class DashboardService:
         """
         Calcula el porcentaje de asistencia para una lista de estudiantes en un rango de fechas.
         """
+        logger.info(f"[DEBUG] get_asistencia_porcentaje called with {len(estudiantes_ids)} estudiantes")
+        logger.info(f"[DEBUG] Fecha range: {start_date} to {end_date}")
+        
         if not estudiantes_ids:
+            logger.info("[DEBUG] No estudiantes_ids, returning 0.0")
             return 0.0
 
         total_estudiantes = len(estudiantes_ids)
         dias_habiles = self.get_dias_habiles(start_date, end_date)
         
+        logger.info(f"[DEBUG] Dias habiles: {dias_habiles}")
+        
         # Si no hay días hábiles, la asistencia es 0
         if dias_habiles == 0:
+            logger.info("[DEBUG] Dias habiles = 0, returning 0.0")
             return 0.0
 
         # Asistencias totales posibles
         asistencias_posibles = total_estudiantes * dias_habiles
 
         if asistencias_posibles == 0:
+            logger.info("[DEBUG] Asistencias posibles = 0, returning 0.0")
             return 0.0
 
-        # Contar las asistencias reales
+        logger.info(f"[DEBUG] Asistencias posibles: {asistencias_posibles}")
+
+        # Contar las asistencias reales (días distintos con entrada válida)
+        # La tabla asistencias ya tiene matricula_estudiante, tipo y timestamp directamente
         subquery = (
             select(
-                NFC.matricula_estudiante, 
+                Asistencia.matricula_estudiante, 
                 func.count(distinct(func.date(Asistencia.timestamp))).label("dias_asistidos")
             )
-            .join(Asistencia, NFC.nfc_uid == Asistencia.nfc_uid)
             .where(
-                NFC.matricula_estudiante.in_(estudiantes_ids),
+                Asistencia.matricula_estudiante.in_(estudiantes_ids),
                 Asistencia.tipo == "entrada",
+                Asistencia.es_valida == True,
                 func.date(Asistencia.timestamp) >= start_date,
                 func.date(Asistencia.timestamp) <= end_date
             )
-            .group_by(NFC.matricula_estudiante)
+            .group_by(Asistencia.matricula_estudiante)
         ).subquery()
 
+        logger.info("[DEBUG] Executing subquery...")
+        
         # Sumamos el total de días asistidos por todos los estudiantes
         total_asistencias_reales_result = self.session.exec(
             select(func.sum(subquery.c.dias_asistidos))
         ).first()
 
         total_asistencias_reales = total_asistencias_reales_result or 0.0
+        
+        logger.info(f"[DEBUG] Total asistencias reales: {total_asistencias_reales}")
 
         # Calcular el porcentaje
         porcentaje = (total_asistencias_reales / asistencias_posibles) * 100
+        logger.info(f"[DEBUG] Porcentaje calculado: {porcentaje}")
         return round(porcentaje, 1)
     
     def get_ciclo_activo(self) -> CicloEscolar:
@@ -126,13 +145,22 @@ class DashboardService:
         total_estudiantes = len(estudiantes)
         estudiantes_ids = [e.matricula for e in estudiantes]
 
-        # Calcular asistencia de hoy
-        hoy = datetime.now(self.MEXICO_TZ).date()
-        asistencia_hoy = self.get_asistencia_porcentaje(estudiantes_ids, hoy, hoy)
+        logger.info(f"[DEBUG get_turno_data] Total estudiantes: {total_estudiantes}")
+        logger.info(f"[DEBUG get_turno_data] IDs: {estudiantes_ids}")
+        logger.info(f"[DEBUG get_turno_data] Ciclo: {ciclo_activo.fecha_inicio} to {ciclo_activo.fecha_fin}")
+
+        # Calcular asistencia promedio del ciclo completo
+        asistencia_promedio = self.get_asistencia_porcentaje(
+            estudiantes_ids, 
+            ciclo_activo.fecha_inicio, 
+            ciclo_activo.fecha_fin
+        )
+        
+        logger.info(f"[DEBUG get_turno_data] Asistencia promedio result: {asistencia_promedio}")
         
         stats = StatsData(
             totalStudents=total_estudiantes, 
-            averageAttendance=asistencia_hoy
+            averageAttendance=asistencia_promedio
         )
 
         # Agrupar por turnos

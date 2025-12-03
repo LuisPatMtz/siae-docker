@@ -19,7 +19,7 @@ import {
   Database
 } from 'lucide-react';
 
-const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
+const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse, isMobile }) => {
   const { hasPermission, user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -28,16 +28,20 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
     navigate('/login');
   };
 
-  // Debug: verificar datos del usuario
-  console.log('User data in Sidebar:', user);
+  // Cerrar sidebar al hacer click en un link en móvil
+  const handleLinkClick = () => {
+    if (isMobile) {
+      onClose();
+    }
+  };
 
   return (
     <>
       {/* Overlay para cerrar el sidebar en móvil */}
-      {isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
+      {isMobile && isOpen && <div className="sidebar-overlay" onClick={onClose}></div>}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed ? 'collapsed' : ''}`}>
+      <aside className={`sidebar ${isOpen ? 'open' : ''} ${isCollapsed && !isMobile ? 'collapsed' : ''}`}>
         {/* Logo Section */}
         <div className="sidebar-logo-section">
           <span className="sidebar-logo">SIAE</span>
@@ -47,13 +51,17 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
           <h2 className="sidebar-title">{!isCollapsed && 'Menú'}</h2>
           <div className="sidebar-header-buttons">
             {/* Botón toggle para colapsar/expandir (solo visible en desktop) */}
-            <button className="sidebar-toggle desktop-only" onClick={toggleCollapse} title={isCollapsed ? 'Expandir' : 'Colapsar'}>
-              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-            </button>
+            {!isMobile && (
+              <button className="sidebar-toggle" onClick={toggleCollapse} title={isCollapsed ? 'Expandir' : 'Colapsar'}>
+                {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+              </button>
+            )}
             {/* Botón cerrar (solo visible en móvil) */}
-            <button className="sidebar-close mobile-only" onClick={onClose}>
-              <X size={24} />
-            </button>
+            {isMobile && (
+              <button className="sidebar-close" onClick={onClose}>
+                <X size={24} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -63,7 +71,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Dashboard"
             >
               <LayoutDashboard size={20} />
@@ -76,7 +84,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/alertas"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Gestión de Alertas"
             >
               <AlertTriangle size={20} />
@@ -89,7 +97,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/gestion-usuarios"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Gestión de Usuarios"
             >
               <Users size={20} />
@@ -102,7 +110,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/gestion-estudiantes"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Gestión de Estudiantes"
             >
               <GraduationCap size={20} />
@@ -115,7 +123,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/registro-acceso"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Registro de Accesos"
             >
               <ClipboardList size={20} />
@@ -128,7 +136,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/historial-asistencias"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Historial de Asistencias"
             >
               <History size={20} />
@@ -141,7 +149,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/corte-faltas"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Corte de Faltas"
             >
               <Scissors size={20} />
@@ -154,7 +162,7 @@ const Sidebar = ({ isOpen, onClose, isCollapsed, toggleCollapse }) => {
             <NavLink
               to="/mantenimiento"
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-              onClick={onClose}
+              onClick={handleLinkClick}
               title="Mantenimiento"
             >
               <Database size={20} />

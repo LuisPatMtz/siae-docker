@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Trash2, X } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const DeleteUserConfirmModal = ({ isOpen, onClose, onConfirm, userName, isDeleting }) => {
+    useEscapeKey(isOpen, onClose);
+    
     if (!isOpen) return null;
 
     return (

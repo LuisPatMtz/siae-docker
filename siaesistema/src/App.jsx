@@ -5,8 +5,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // Importamos componentes de Layout y Auth
 import MainLayout from './components/Layout/MainLayout.jsx';
 import ProtectedRoute from './components/Auth/ProtectedRoute.jsx';
-import PermissionRoute from './components/Auth/PermissionRoute.jsx';
-import { useAuth } from './components/Auth/AuthContext.jsx';
 
 // Importamos las Páginas dinámicamente
 const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));

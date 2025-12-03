@@ -18,6 +18,7 @@ import CreateGroupModal from '../components/Groups/CreateGroupModal.jsx';
 import EditGroupModal from '../components/Groups/EditGroupModal.jsx';
 import DeleteGroupModal from '../components/Groups/DeleteGroupModal.jsx';
 import CreateCycleModal from '../components/SchoolCycles/CreateCycleModal.jsx';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import EditCycleModal from '../components/SchoolCycles/EditCycleModal.jsx';
 import DeleteCycleModal from '../components/SchoolCycles/DeleteCycleModal.jsx';
 import StudentManagementModal from '../components/Students/StudentManagementModal.jsx';
@@ -379,14 +380,15 @@ const GestionEstudiantesPage = () => {
     };
 
     return (
-        <main className="dashboard-main">
-            {/* Breadcrumbs */}
-            {/* Page Header - Only show when no forms active */}
-            {!formActive && (
-                <div className="page-title-container">
-                    <h1 className="page-title">Gestión de Estudiantes</h1>
-                </div>
-            )}
+        <PageContainer>
+            <main className="dashboard-main">
+                {/* Breadcrumbs */}
+                {/* Page Header - Only show when no forms active */}
+                {!formActive && (
+                    <div className="page-title-container">
+                        <h1 className="page-title">Gestión de Estudiantes</h1>
+                    </div>
+                )}
 
             {formActive && (
                 <div className="breadcrumbs-nav">
@@ -989,7 +991,8 @@ const GestionEstudiantesPage = () => {
                 onClose={() => setIsSchoolCyclesManagementModalOpen(false)}
                 onSuccess={addToast}
             />
-        </main>
+            </main>
+        </PageContainer>
     );
 };
 

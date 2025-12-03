@@ -7,6 +7,7 @@ import AlertsTable from '../components/Alerts/AlertsTable.jsx';
 import JustifyModal from '../components/Alerts/JustifyModal.jsx';
 import JustificationHistoryModal from '../components/Alerts/JustificationHistoryModal.jsx';
 import ContactModal from '../components/Alerts/ContactModal.jsx';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import '../styles/alertas.css';
 
 const AlertasPage = () => {
@@ -130,11 +131,12 @@ const AlertasPage = () => {
     };
 
     return (
-        <div className="alertas-container">
-            {/* Header */}
-            <div className="page-title-container">
-                <h1 className="page-title">Gestión de Alertas</h1>
-            </div>
+        <PageContainer>
+            <div className="alertas-container">
+                {/* Header */}
+                <div className="page-title-container">
+                    <h1 className="page-title">Gestión de Alertas</h1>
+                </div>
 
             {/* Controls */}
             <div className="alertas-controls">
@@ -216,7 +218,8 @@ const AlertasPage = () => {
                 onClose={closeContactModal}
                 student={contactModalState.student}
             />
-        </div>
+            </div>
+        </PageContainer>
     );
 };
 

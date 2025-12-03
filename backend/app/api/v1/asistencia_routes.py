@@ -51,6 +51,7 @@ def get_time_window_config(session: Session) -> tuple[int, int]:
 @router.post("/registrar", response_model=dict, status_code=status.HTTP_201_CREATED)
 def registrar_asistencia(
     matricula: str,
+    timestamp_programado: str = None,  # Nuevo parámetro para modo prueba
     session: Session = Depends(get_session)
 ):
     """
@@ -63,6 +64,11 @@ def registrar_asistencia(
         * Si < mínimo: ERROR "Debes permanecer al menos X minutos"
         * Si > máximo: ERROR "Tiempo máximo excedido (X minutos)"
         * Si dentro del rango: registra SALIDA (es_valida=True) y actualiza entrada
+    
+    Args:
+        matricula: Matrícula del estudiante
+        timestamp_programado: (Opcional) Timestamp en formato ISO para modo prueba
+                             Ejemplo: "2025-11-30T14:30:00"
     
     Returns:
         dict con información del registro: tipo, estudiante, timestamp, es_valida
@@ -90,8 +96,25 @@ def registrar_asistencia(
                 detail="No hay un ciclo escolar activo. Por favor activa un ciclo."
             )
         
-        # 3. Obtener la hora actual en zona horaria de México
-        ahora = datetime.now(MEXICO_TZ)
+        # 3. Determinar el timestamp a usar (modo prueba o tiempo actual)
+        if timestamp_programado:
+            try:
+                # Parsear el timestamp programado
+                ahora = datetime.fromisoformat(timestamp_programado.replace('Z', '+00:00'))
+                # Convertir a zona horaria de México si tiene timezone
+                if ahora.tzinfo:
+                    ahora = ahora.astimezone(MEXICO_TZ)
+                else:
+                    # Si no tiene timezone, asumimos que ya está en hora de México
+                    ahora = MEXICO_TZ.localize(ahora)
+            except (ValueError, AttributeError) as e:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Formato de timestamp inválido. Use formato ISO: YYYY-MM-DDTHH:MM:SS"
+                )
+        else:
+            # Obtener la hora actual en zona horaria de México
+            ahora = datetime.now(MEXICO_TZ)
         
         # Convertir a naive para comparación con la base de datos
         ahora_naive = ahora.replace(tzinfo=None)
@@ -122,8 +145,8 @@ def registrar_asistencia(
         
         # 5. Determinar si es entrada o salida
         if not ultima_entrada:
-            # Validar que haya pasado al menos 1 hora desde la última salida
-            if ultima_salida:
+            # Solo validar tiempos si NO es modo prueba (sin timestamp programado)
+            if not timestamp_programado and ultima_salida:
                 tiempo_desde_salida = ahora_naive - ultima_salida.timestamp
                 minutos_desde_salida = tiempo_desde_salida.total_seconds() / 60
                 
@@ -142,7 +165,8 @@ def registrar_asistencia(
             
             horas_max = minutos_maximos // 60
             minutos_max = minutos_maximos % 60
-            mensaje = f"Entrada registrada exitosamente. Recuerda registrar tu salida (entre {minutos_minimos} min y {horas_max}h {minutos_max}min)."
+            mensaje_modo = " (Modo prueba)" if timestamp_programado else ""
+            mensaje = f"Entrada registrada exitosamente{mensaje_modo}. Recuerda registrar tu salida (entre {minutos_minimos} min y {horas_max}h {minutos_max}min)."
             
             nueva_asistencia = Asistencia(
                 matricula_estudiante=matricula,
@@ -163,38 +187,46 @@ def registrar_asistencia(
             tiempo_transcurrido = ahora_naive - ultima_entrada.timestamp
             minutos_transcurridos = tiempo_transcurrido.total_seconds() / 60
             
-            # Validar rango de tiempo usando configuración
-            if minutos_transcurridos < minutos_minimos:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Debes permanecer al menos {minutos_minimos} minutos antes de registrar tu salida. "
-                           f"Tiempo transcurrido: {int(minutos_transcurridos)} minutos."
-                )
-            
-            if minutos_transcurridos > minutos_maximos:
-                # Marcar entrada como inválida y permitir nueva entrada
-                ultima_entrada.es_valida = False
-                session.add(ultima_entrada)
-                session.commit()
+            # Validar rango de tiempo solo si NO es modo prueba
+            if not timestamp_programado:
+                if minutos_transcurridos < minutos_minimos:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Debes permanecer al menos {minutos_minimos} minutos antes de registrar tu salida. "
+                               f"Tiempo transcurrido: {int(minutos_transcurridos)} minutos."
+                    )
                 
-                horas_max = minutos_maximos // 60
-                minutos_max = minutos_maximos % 60
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Tiempo máximo excedido ({horas_max}h {minutos_max}min). "
-                           f"Tu entrada anterior ha sido marcada como inválida. "
-                           f"Por favor registra una nueva entrada."
-                )
+                if minutos_transcurridos > minutos_maximos:
+                    # Marcar entrada como inválida y permitir nueva entrada
+                    ultima_entrada.es_valida = False
+                    session.add(ultima_entrada)
+                    session.commit()
+                    
+                    horas_max = minutos_maximos // 60
+                    minutos_max = minutos_maximos % 60
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Tiempo máximo excedido ({horas_max}h {minutos_max}min). "
+                               f"Tu entrada anterior ha sido marcada como inválida. "
+                               f"Por favor registra una nueva entrada."
+                    )
             
-            # Rango válido -> Registrar SALIDA
+            # Rango válido o modo prueba -> Registrar SALIDA
             tipo_registro = "salida"
-            es_valida = True
+            
+            # En modo prueba, determinar es_valida basado en el rango de tiempo
+            if timestamp_programado:
+                es_valida = minutos_minimos <= minutos_transcurridos <= minutos_maximos
+            else:
+                es_valida = True
+            
             entrada_relacionada_id = ultima_entrada.id
             
             # Calcular tiempo de permanencia legible
             horas = int(minutos_transcurridos // 60)
             minutos = int(minutos_transcurridos % 60)
-            mensaje = f"Salida registrada exitosamente. Tiempo de permanencia: {horas} horas y {minutos} minutos."
+            mensaje_modo = " (Modo prueba)" if timestamp_programado else ""
+            mensaje = f"Salida registrada exitosamente{mensaje_modo}. Tiempo de permanencia: {horas} horas y {minutos} minutos."
             
             # Crear salida
             nueva_asistencia = Asistencia(
@@ -287,16 +319,27 @@ def obtener_historial_estudiante(
 @router.get("/hoy", response_model=List[dict])
 def obtener_asistencias_hoy(session: Session = Depends(get_session)):
     """
-    Obtiene todas las asistencias registradas hoy.
+    Obtiene todas las asistencias registradas hoy del ciclo escolar activo.
     Incluye información del estudiante.
     """
+    # Obtener ciclo activo
+    ciclo_activo = session.exec(
+        select(CicloEscolar).where(CicloEscolar.activo == True)
+    ).first()
+    
+    if not ciclo_activo:
+        return []
+    
     # Obtener fecha de hoy en zona horaria de México
     hoy = datetime.now(MEXICO_TZ).date()
     
-    # Buscar todas las asistencias de hoy
+    # Buscar todas las asistencias de hoy del ciclo activo
     asistencias = session.exec(
         select(Asistencia)
-        .where(func.date(Asistencia.timestamp) == hoy)
+        .where(
+            func.date(Asistencia.timestamp) == hoy,
+            Asistencia.id_ciclo == ciclo_activo.id
+        )
         .order_by(Asistencia.timestamp.desc())
     ).all()
     
@@ -329,12 +372,20 @@ def obtener_todas_entradas(
     session: Session = Depends(get_session)
 ):
     """
-    Obtiene TODOS los registros de asistencias (entradas y salidas).
+    Obtiene TODOS los registros de asistencias (entradas y salidas) del ciclo activo.
     Opcionalmente filtradas por rango de fechas.
     Incluye información del estudiante.
     """
-    # Construir query base - ahora incluye tanto entradas como salidas
-    query = select(Asistencia)
+    # Obtener ciclo activo
+    ciclo_activo = session.exec(
+        select(CicloEscolar).where(CicloEscolar.activo == True)
+    ).first()
+    
+    if not ciclo_activo:
+        return []
+    
+    # Construir query base - ahora incluye tanto entradas como salidas del ciclo activo
+    query = select(Asistencia).where(Asistencia.id_ciclo == ciclo_activo.id)
     
     # Aplicar filtros de fecha si se proporcionan
     if fecha_inicio:
@@ -383,17 +434,32 @@ def obtener_todas_entradas(
 @router.get("/estadisticas/hoy", response_model=dict)
 def obtener_estadisticas_hoy(session: Session = Depends(get_session)):
     """
-    Obtiene estadísticas de asistencia del día actual.
+    Obtiene estadísticas de asistencia del día actual del ciclo activo.
     Incluye asistencias válidas, inválidas y pendientes.
     """
+    # Obtener ciclo activo
+    ciclo_activo = session.exec(
+        select(CicloEscolar).where(CicloEscolar.activo == True)
+    ).first()
+    
+    if not ciclo_activo:
+        return {
+            "total_entradas": 0,
+            "total_salidas": 0,
+            "asistencias_validas": 0,
+            "asistencias_invalidas": 0,
+            "entradas_pendientes": 0
+        }
+    
     hoy = datetime.now(MEXICO_TZ).date()
     
-    # Contar entradas y salidas de hoy
+    # Contar entradas y salidas de hoy del ciclo activo
     total_entradas = session.exec(
         select(func.count(Asistencia.id))
         .where(
             func.date(Asistencia.timestamp) == hoy,
-            Asistencia.tipo == "entrada"
+            Asistencia.tipo == "entrada",
+            Asistencia.id_ciclo == ciclo_activo.id
         )
     ).one()
     
@@ -401,7 +467,8 @@ def obtener_estadisticas_hoy(session: Session = Depends(get_session)):
         select(func.count(Asistencia.id))
         .where(
             func.date(Asistencia.timestamp) == hoy,
-            Asistencia.tipo == "salida"
+            Asistencia.tipo == "salida",
+            Asistencia.id_ciclo == ciclo_activo.id
         )
     ).one()
     
@@ -411,7 +478,8 @@ def obtener_estadisticas_hoy(session: Session = Depends(get_session)):
         .where(
             func.date(Asistencia.timestamp) == hoy,
             Asistencia.tipo == "salida",
-            Asistencia.es_valida == True
+            Asistencia.es_valida == True,
+            Asistencia.id_ciclo == ciclo_activo.id
         )
     ).one()
     
@@ -420,7 +488,8 @@ def obtener_estadisticas_hoy(session: Session = Depends(get_session)):
         select(func.count(Asistencia.id))
         .where(
             func.date(Asistencia.timestamp) == hoy,
-            Asistencia.es_valida == False
+            Asistencia.es_valida == False,
+            Asistencia.id_ciclo == ciclo_activo.id
         )
     ).one()
     
@@ -429,6 +498,7 @@ def obtener_estadisticas_hoy(session: Session = Depends(get_session)):
         select(func.count(Asistencia.id))
         .where(
             func.date(Asistencia.timestamp) == hoy,
+            Asistencia.id_ciclo == ciclo_activo.id,
             Asistencia.tipo == "entrada",
             Asistencia.es_valida == None
         )

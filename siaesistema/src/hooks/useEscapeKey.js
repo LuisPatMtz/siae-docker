@@ -4,13 +4,16 @@ import { useEffect } from 'react';
 /**
  * Hook personalizado para cerrar modales con la tecla ESC
  * Optimizado para evitar múltiples listeners y mejorar performance
+ * @param {boolean} isOpen - Si el modal está abierto
+ * @param {Function} onClose - Función para cerrar el modal
  */
 const useEscapeKey = (isOpen, onClose) => {
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === 'Escape' && isOpen && onClose) {
         // Prevenir propagación para evitar conflictos
         event.stopPropagation();
+        event.preventDefault();
         onClose();
       }
     };

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Download, Filter, LogIn, LogOut, Clock } from 'lucide-react';
 import { asistenciaService, estudiantesService, gruposService } from '../api/services';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import '../styles/historial-asistencias.css';
 
 const HistorialAsistenciasPage = () => {
@@ -165,10 +166,11 @@ const HistorialAsistenciasPage = () => {
     const sinSalida = registrosFiltrados.filter(r => r.salida === null).length;
 
     return (
-        <div className="historial-container">
-            <div className="page-title-container">
-                <h1 className="page-title">Historial de Asistencias</h1>
-            </div>
+        <PageContainer>
+            <div className="historial-container">
+                <div className="page-title-container">
+                    <h1 className="page-title">Historial de Asistencias</h1>
+                </div>
 
             {/* Estadísticas */}
             <div className="historial-stats-grid">
@@ -363,7 +365,8 @@ const HistorialAsistenciasPage = () => {
                     </div>
                 )}
             </div>
-        </div>
+            </div>
+        </PageContainer>
     );
 };
 

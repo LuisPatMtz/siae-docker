@@ -20,6 +20,7 @@ router = APIRouter(
 )
 
 @router.post("", response_model=CicloEscolarRead, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CicloEscolarRead, status_code=status.HTTP_201_CREATED)
 def create_ciclo_escolar(
     *, 
     session: Session = Depends(get_session), 

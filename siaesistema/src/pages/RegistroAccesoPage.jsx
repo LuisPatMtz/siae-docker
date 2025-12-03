@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle, XCircle, Clock, User, Calendar, Hash } from 'lucide-react';
 import { accesosService, ciclosService, estudiantesService, asistenciaService } from '../api/services';
+import { useAuth } from '../components/Auth/AuthContext';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import '../styles/registro-acceso.css';
 
 // Helper: El backend envía timestamps sin timezone (ya en hora de México)
@@ -15,6 +17,7 @@ const parseLocalTimestamp = (isoString) => {
 };
 
 const RegistroAccesoPage = () => {
+    const { hasPermission } = useAuth();
     const [nfcInput, setNfcInput] = useState('');
     const [ultimoAcceso, setUltimoAcceso] = useState(null);
     const [estado, setEstado] = useState('esperando'); // esperando, exito, error, duplicado
@@ -24,6 +27,7 @@ const RegistroAccesoPage = () => {
     const [fechaSeleccionada, setFechaSeleccionada] = useState(
         new Date().toISOString().split('T')[0]
     );
+    const [horaSeleccionada, setHoraSeleccionada] = useState(''); // Hora específica HH:MM:SS
 
     // Estados para registro por matrícula
     const [matriculaInput, setMatriculaInput] = useState('');
@@ -32,6 +36,9 @@ const RegistroAccesoPage = () => {
     const inputRef = useRef(null);
     const matriculaInputRef = useRef(null);
     const timeoutRef = useRef(null);
+
+    // Verificar si el usuario tiene permiso de mantenimiento
+    const tienePermisoMantenimiento = hasPermission('canManageMaintenance');
 
     // Mantener el foco en el input NFC solo cuando no se está usando el input de matrícula
     useEffect(() => {
@@ -69,6 +76,44 @@ const RegistroAccesoPage = () => {
         try {
             setEstado('procesando');
             setMensaje('Registrando acceso...');
+
+            // Si está en modo prueba y hay una hora programada, esperar hasta esa hora
+            if (modoManual && horaSeleccionada) {
+                const ahora = new Date();
+                const [horas, minutos, segundos] = horaSeleccionada.split(':').map(Number);
+                
+                const horaObjetivo = new Date();
+                horaObjetivo.setHours(horas, minutos, segundos || 0, 0);
+                
+                const diferenciaMilisegundos = horaObjetivo.getTime() - ahora.getTime();
+                
+                if (diferenciaMilisegundos > 0) {
+                    const segundosRestantes = Math.ceil(diferenciaMilisegundos / 1000);
+                    setMensaje(`Esperando hasta las ${horaSeleccionada} (${segundosRestantes}s restantes)...`);
+                    
+                    // Actualizar countdown cada segundo
+                    const intervalo = setInterval(() => {
+                        const tiempoRestante = horaObjetivo.getTime() - new Date().getTime();
+                        const segsRestantes = Math.ceil(tiempoRestante / 1000);
+                        if (segsRestantes > 0) {
+                            setMensaje(`Esperando hasta las ${horaSeleccionada} (${segsRestantes}s restantes)...`);
+                        }
+                    }, 1000);
+                    
+                    await new Promise(resolve => setTimeout(resolve, diferenciaMilisegundos));
+                    clearInterval(intervalo);
+                    setMensaje('Registrando acceso...');
+                } else if (diferenciaMilisegundos < -5000) {
+                    // Si la hora ya pasó por más de 5 segundos, mostrar advertencia
+                    setEstado('error');
+                    setMensaje('La hora programada ya pasó. Ajusta la hora o desactiva el modo prueba.');
+                    setTimeout(() => {
+                        setEstado('esperando');
+                        setMensaje('Acerque la tarjeta NFC al lector...');
+                    }, 4000);
+                    return;
+                }
+            }
 
             // Usar la fecha seleccionada si está en modo manual
             const fechaParaRegistro = modoManual ? fechaSeleccionada : null;
@@ -153,7 +198,57 @@ const RegistroAccesoPage = () => {
         setMensaje('Registrando asistencia...');
 
         try {
-            const resultado = await asistenciaService.registrarPorMatricula(matriculaInput.trim());
+            // Construir timestamp programado si está en modo prueba
+            let timestampProgramado = null;
+            if (modoManual && (fechaSeleccionada || horaSeleccionada)) {
+                const fecha = fechaSeleccionada || new Date().toISOString().split('T')[0];
+                const hora = horaSeleccionada || new Date().toTimeString().slice(0, 8);
+                timestampProgramado = `${fecha}T${hora}`;
+                
+                // En modo prueba, registrar directamente con el timestamp programado
+                // sin esperar, ya que puede ser una fecha/hora pasada
+                setMensaje(`Registrando con fecha/hora: ${fecha} ${hora}...`);
+            } else if (horaSeleccionada && !modoManual) {
+                // Si solo hay hora programada pero NO está en modo prueba, esperar
+                const ahora = new Date();
+                const [horas, minutos, segundos] = horaSeleccionada.split(':').map(Number);
+                
+                const horaObjetivo = new Date();
+                horaObjetivo.setHours(horas, minutos, segundos || 0, 0);
+                
+                const diferenciaMilisegundos = horaObjetivo.getTime() - ahora.getTime();
+                
+                if (diferenciaMilisegundos > 0) {
+                    const segundosRestantes = Math.ceil(diferenciaMilisegundos / 1000);
+                    setMensaje(`Esperando hasta las ${horaSeleccionada} (${segundosRestantes}s restantes)...`);
+                    
+                    const intervalo = setInterval(() => {
+                        const tiempoRestante = horaObjetivo.getTime() - new Date().getTime();
+                        const segsRestantes = Math.ceil(tiempoRestante / 1000);
+                        if (segsRestantes > 0) {
+                            setMensaje(`Esperando hasta las ${horaSeleccionada} (${segsRestantes}s restantes)...`);
+                        }
+                    }, 1000);
+                    
+                    await new Promise(resolve => setTimeout(resolve, diferenciaMilisegundos));
+                    clearInterval(intervalo);
+                    setMensaje('Registrando asistencia...');
+                } else if (diferenciaMilisegundos < -5000) {
+                    setEstado('error');
+                    setMensaje('La hora programada ya pasó. Ajusta la hora o desactiva el modo prueba.');
+                    setIsRegistrandoMatricula(false);
+                    setTimeout(() => {
+                        setEstado('esperando');
+                        setMensaje('Acerque la tarjeta NFC al lector...');
+                    }, 4000);
+                    return;
+                }
+            }
+
+            const resultado = await asistenciaService.registrarPorMatricula(
+                matriculaInput.trim(),
+                timestampProgramado
+            );
 
             setEstado('exito');
             setUltimoAcceso({
@@ -224,40 +319,65 @@ const RegistroAccesoPage = () => {
     };
 
     return (
-        <div className="registro-acceso-container">
-            <div className="registro-acceso-main">
-                <h1 className="page-title">Registro de Accesos</h1>
+        <PageContainer>
+            <div className="registro-acceso-container">
+                <div className="registro-acceso-main">
+                    <h1 className="page-title">Registro de Accesos</h1>
 
-                {/* Panel de configuración de modo prueba */}
-                <div className="modo-prueba-panel">
-                    <div className="modo-toggle">
-                        <label className="toggle-label">
-                            <input
-                                type="checkbox"
-                                checked={modoManual}
-                                onChange={(e) => setModoManual(e.target.checked)}
-                            />
-                            <span className="toggle-text">
-                                {modoManual ? 'Modo de pruebas' : 'Modo normal'}
-                            </span>
-                        </label>
-                    </div>
-
-                    {modoManual && (
-                        <div className="fecha-selector">
-                            <label htmlFor="fecha-registro">
-                                Fecha para registro:
+                {/* Panel de configuración de modo prueba - Solo visible para personal de mantenimiento */}
+                {tienePermisoMantenimiento && (
+                    <div className="modo-prueba-panel">
+                        <div className="modo-toggle">
+                            <label className="toggle-label">
+                                <input
+                                    type="checkbox"
+                                    checked={modoManual}
+                                    onChange={(e) => setModoManual(e.target.checked)}
+                                />
+                                <span className="toggle-text">
+                                    {modoManual ? 'Modo de pruebas' : 'Modo normal'}
+                                </span>
                             </label>
-                            <input
-                                type="date"
-                                id="fecha-registro"
-                                value={fechaSeleccionada}
-                                onChange={(e) => setFechaSeleccionada(e.target.value)}
-                                className="input-fecha"
-                            />
                         </div>
-                    )}
-                </div>
+
+                        {modoManual && (
+                            <>
+                                <div className="fecha-selector">
+                                    <label htmlFor="fecha-registro">
+                                        Fecha para registro:
+                                    </label>
+                                    <input
+                                        type="date"
+                                        id="fecha-registro"
+                                        value={fechaSeleccionada}
+                                        onChange={(e) => setFechaSeleccionada(e.target.value)}
+                                        className="input-fecha"
+                                    />
+                                </div>
+                                
+                                <div className="hora-selector">
+                                    <label htmlFor="hora-registro">
+                                        Hora programada (HH:MM:SS):
+                                    </label>
+                                    <input
+                                        type="time"
+                                        id="hora-registro"
+                                        value={horaSeleccionada}
+                                        onChange={(e) => setHoraSeleccionada(e.target.value)}
+                                        step="1"
+                                        className="input-hora"
+                                        placeholder="HH:MM:SS"
+                                    />
+                                    <span className="hora-hint">
+                                        {horaSeleccionada 
+                                            ? `Se registrará a las ${horaSeleccionada}` 
+                                            : 'Sin hora programada (registro inmediato)'}
+                                    </span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
 
                 {/* Sección de registro por matrícula */}
                 <div className="matricula-registro-section">
@@ -376,7 +496,8 @@ const RegistroAccesoPage = () => {
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
+        </PageContainer>
     );
 };
 

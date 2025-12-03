@@ -5,6 +5,7 @@ import AddUserModal from '../components/Users/AddUserModal.jsx';
 import EditUserModal from '../components/Users/EditUserModal.jsx';
 import DeleteUserSelectModal from '../components/Users/DeleteUserSelectModal.jsx';
 import DeleteConfirmModal from '../components/Users/DeleteConfirmModal.jsx';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import useUsers from '../hooks/useUsers';
 
 const GestionUsuariosPage = () => {
@@ -103,11 +104,12 @@ const GestionUsuariosPage = () => {
     };
 
     return (
-        <main className="dashboard-main">
-            {/* Page Header */}
-            <div className="page-title-container">
-                <h1 className="page-title">Gestión de Usuarios</h1>
-            </div>
+        <PageContainer>
+            <main className="dashboard-main">
+                {/* Page Header */}
+                <div className="page-title-container">
+                    <h1 className="page-title">Gestión de Usuarios</h1>
+                </div>
             
             {/* Premium Toolbar */}
             <div className="users-toolbar">
@@ -185,7 +187,8 @@ const GestionUsuariosPage = () => {
                 onConfirm={confirmDeleteUser}
                 userName={userToDelete.name}
             />
-        </main>
+            </main>
+        </PageContainer>
     );
 };
 

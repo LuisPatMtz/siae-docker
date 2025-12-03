@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Database, Download, RefreshCw, HardDrive, Trash2, RotateCcw, FileText, BarChart3, AlertCircle, X, TrendingUp, Package, Filter, Search, Clock, Globe, Settings, Upload } from 'lucide-react';
+import { Database, Download, RefreshCw, HardDrive, Trash2, RotateCcw, FileText, BarChart3, AlertCircle, X, TrendingUp, Package, Filter, Search, Clock, Globe, Settings, Upload, Calendar } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { maintenanceService } from '../api/services';
 import { useToast } from '../contexts/ToastContext.jsx';
 import ConfirmModal from '../components/Common/ConfirmModal.jsx';
+import DeleteAllDataModal from '../components/Maintenance/DeleteAllDataModal.jsx';
+import { useEscapeKey } from '../hooks/useEscapeKey';
+import PageContainer from '../components/Common/PageContainer.jsx';
+import apiClient from '../api/axios';
 
 const MaintenancePage = () => {
     const [backups, setBackups] = useState([]);
     const [stats, setStats] = useState(null);
+    const [cycleStats, setCycleStats] = useState(null); // Estadísticas del ciclo actual
+    const [currentCycle, setCurrentCycle] = useState(null); // Ciclo actual
     const [tableStats, setTableStats] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
@@ -21,6 +27,8 @@ const MaintenancePage = () => {
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+    const [isDeletingAll, setIsDeletingAll] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [cleanupDays, setCleanupDays] = useState(30);
@@ -53,6 +61,16 @@ const MaintenancePage = () => {
     const [isLoadingLogs, setIsLoadingLogs] = useState(false);
     
     const { showSuccess, showError } = useToast();
+    
+    // ESC key handlers para todos los modales
+    useEscapeKey(showStatsModal, () => setShowStatsModal(false));
+    useEscapeKey(showLogsModal, () => setShowLogsModal(false));
+    useEscapeKey(showTimezoneModal, () => setShowTimezoneModal(false));
+    useEscapeKey(showConfigModal, () => setShowConfigModal(false));
+    useEscapeKey(showUploadModal, () => {
+        setShowUploadModal(false);
+        setSelectedFile(null);
+    });
 
     const fetchBackups = async () => {
         setIsLoading(true);
@@ -71,6 +89,28 @@ const MaintenancePage = () => {
         try {
             const data = await maintenanceService.getDatabaseStats();
             setStats(data);
+            
+            // Obtener ciclo actual
+            const cyclesResponse = await fetch('/api/ciclos');
+            const cycles = await cyclesResponse.json();
+            const activeCycle = cycles.find(c => c.activo) || cycles[0];
+            setCurrentCycle(activeCycle);
+            
+            // Si hay ciclo activo, obtener sus estadísticas
+            if (activeCycle) {
+                const cycleStatsResponse = await fetch(`/api/maintenance/stats/cycle/${activeCycle.id}`);
+                if (cycleStatsResponse.ok) {
+                    const cycleData = await cycleStatsResponse.json();
+                    setCycleStats(cycleData);
+                } else {
+                    // Si el endpoint no existe, calcular stats básicas del ciclo
+                    setCycleStats({
+                        cycle_name: activeCycle.nombre,
+                        cycle_start: activeCycle.fecha_inicio,
+                        cycle_end: activeCycle.fecha_fin
+                    });
+                }
+            }
         } catch (error) {
             console.error("Error fetching stats:", error);
         }
@@ -211,6 +251,31 @@ const MaintenancePage = () => {
             showError(error.response?.data?.detail || "Error al subir el respaldo");
         } finally {
             setIsUploading(false);
+        }
+    };
+
+    const handleDeleteAllData = async (password) => {
+        setIsDeletingAll(true);
+        try {
+            const response = await apiClient.post('/api/reset/delete-all-data', {
+                password: password
+            });
+            
+            showSuccess("Todos los datos han sido eliminados. Redirigiendo al inicio...");
+            setShowDeleteAllModal(false);
+            
+            // Limpiar el localStorage (elimina el token)
+            localStorage.clear();
+            
+            // Redirigir a la página de login después de 2 segundos
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 2000);
+        } catch (error) {
+            console.error("Error deleting all data:", error);
+            const errorMessage = error.response?.data?.detail || "Error al eliminar los datos";
+            showError(errorMessage);
+            setIsDeletingAll(false);
         }
     };
 
@@ -395,10 +460,33 @@ const MaintenancePage = () => {
         }).replace(',', ' •');
     };
 
+    // Convertir timestamp UTC a hora de México (UTC-6)
+    const convertUTCtoMexicoTime = (timestamp) => {
+        if (!timestamp) return '';
+        try {
+            // El timestamp viene en formato ISO o similar desde el backend
+            const utcDate = new Date(timestamp);
+            // Convertir a hora de México (UTC-6)
+            const mexicoTime = new Date(utcDate.getTime() - (6 * 60 * 60 * 1000));
+            return mexicoTime.toLocaleString('es-MX', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        } catch (error) {
+            return timestamp;
+        }
+    };
+
     return (
-        <main className="dashboard-main">
-            <div className="page-title-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h1 className="page-title" style={{ margin: 0 }}>Mantenimiento y Respaldos</h1>
+        <PageContainer>
+            <main className="dashboard-main">
+                <div className="page-title-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h1 className="page-title" style={{ margin: 0 }}>Mantenimiento y Respaldos</h1>
                 
                 {/* Reloj del sistema */}
                 <div style={{
@@ -435,45 +523,138 @@ const MaintenancePage = () => {
                 </div>
             </div>
 
-            {/* Estadísticas rápidas */}
+            {/* Estadísticas en dos secciones: Ciclo Actual y Totales Históricos */}
             {stats && (
-                <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                    gap: '16px', 
-                    marginBottom: '24px' 
-                }}>
-                    <div className="stat-card">
-                        <div className="stat-value">{stats.total_students}</div>
-                        <div className="stat-label">Estudiantes</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value">{stats.total_users}</div>
-                        <div className="stat-label">Usuarios</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value">{stats.total_attendances}</div>
-                        <div className="stat-label">Asistencias</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value">{stats.total_absences}</div>
-                        <div className="stat-label">Faltas</div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value">{stats.database_size}</div>
-                        <div className="stat-label">Tamaño BD Completa</div>
-                        <div style={{ 
-                            fontSize: '0.7rem', 
-                            color: '#6b7280', 
-                            marginTop: '4px',
-                            fontStyle: 'italic'
-                        }}>
-                            Los backups pesan menos (comprimidos)
+                <div style={{ marginBottom: '16px' }}>
+                    {/* Sección: Estadísticas del Ciclo Actual */}
+                    {currentCycle && (
+                        <div style={{ marginBottom: '16px' }}>
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '12px',
+                                marginBottom: '16px',
+                                paddingBottom: '12px',
+                                borderBottom: '2px solid #e5e7eb'
+                            }}>
+                                <Calendar size={24} style={{ color: '#3b82f6' }} />
+                                <div>
+                                    <h3 style={{ 
+                                        fontSize: '1.125rem', 
+                                        fontWeight: '600', 
+                                        color: '#1f2937',
+                                        margin: 0 
+                                    }}>
+                                        Ciclo Actual: {currentCycle.nombre}
+                                    </h3>
+                                    <p style={{ 
+                                        fontSize: '0.875rem', 
+                                        color: '#6b7280',
+                                        margin: '4px 0 0 0'
+                                    }}>
+                                        {new Date(currentCycle.fecha_inicio).toLocaleDateString('es-MX')} - {new Date(currentCycle.fecha_fin).toLocaleDateString('es-MX')}
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                                gap: '16px'
+                            }}>
+                                <div className="stat-card" style={{ 
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    color: 'white'
+                                }}>
+                                    <div className="stat-value">{cycleStats?.total_students || stats.total_students}</div>
+                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>Estudiantes Activos</div>
+                                </div>
+                                <div className="stat-card" style={{ 
+                                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                                    color: 'white'
+                                }}>
+                                    <div className="stat-value">{cycleStats?.total_attendances || stats.total_attendances}</div>
+                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>Asistencias</div>
+                                </div>
+                                <div className="stat-card" style={{ 
+                                    background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                                    color: 'white'
+                                }}>
+                                    <div className="stat-value">{cycleStats?.total_absences || stats.total_absences}</div>
+                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>Faltas</div>
+                                </div>
+                                <div className="stat-card" style={{ 
+                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                                    color: 'white'
+                                }}>
+                                    <div className="stat-value">
+                                        {cycleStats?.total_attendances && cycleStats?.total_absences 
+                                            ? ((cycleStats.total_attendances / (cycleStats.total_attendances + cycleStats.total_absences)) * 100).toFixed(1) + '%'
+                                            : 'N/A'}
+                                    </div>
+                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>% Asistencia</div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-value">{stats.backup_count}</div>
-                        <div className="stat-label">Respaldos</div>
+                    )}
+
+                    {/* Sección: Estadísticas Totales (Histórico) */}
+                    <div>
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '12px',
+                            marginBottom: '16px',
+                            paddingBottom: '12px',
+                            borderBottom: '2px solid #e5e7eb'
+                        }}>
+                            <TrendingUp size={24} style={{ color: '#10b981' }} />
+                            <h3 style={{ 
+                                fontSize: '1.125rem', 
+                                fontWeight: '600', 
+                                color: '#1f2937',
+                                margin: 0 
+                            }}>
+                                Estadísticas Totales (Histórico)
+                            </h3>
+                        </div>
+                        <div style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                            gap: '16px'
+                        }}>
+                            <div className="stat-card">
+                                <div className="stat-value">{stats.total_students}</div>
+                                <div className="stat-label">Total Estudiantes</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-value">{stats.total_users}</div>
+                                <div className="stat-label">Total Usuarios</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-value">{stats.total_attendances}</div>
+                                <div className="stat-label">Total Asistencias</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-value">{stats.total_absences}</div>
+                                <div className="stat-label">Total Faltas</div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-value">{stats.database_size}</div>
+                                <div className="stat-label">Tamaño BD Completa</div>
+                                <div style={{ 
+                                    fontSize: '0.7rem', 
+                                    color: '#6b7280', 
+                                    marginTop: '4px',
+                                    fontStyle: 'italic'
+                                }}>
+                                    Los backups pesan menos (comprimidos)
+                                </div>
+                            </div>
+                            <div className="stat-card">
+                                <div className="stat-value">{stats.backup_count}</div>
+                                <div className="stat-label">Respaldos</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -498,6 +679,19 @@ const MaintenancePage = () => {
                     </button>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        className="users-btn"
+                        onClick={() => setShowDeleteAllModal(true)}
+                        style={{
+                            background: 'linear-gradient(135deg, #ff4757 0%, #dc143c 100%)',
+                            color: 'white',
+                            border: 'none',
+                            boxShadow: '0 4px 12px rgba(220, 20, 60, 0.3)'
+                        }}
+                    >
+                        <Trash2 size={18} />
+                        Eliminar Todos los Datos
+                    </button>
                     <button
                         className="users-btn users-btn-secondary"
                         onClick={() => setShowUploadModal(true)}
@@ -1268,7 +1462,7 @@ const MaintenancePage = () => {
                                                     fontSize: '0.75rem',
                                                     fontWeight: '500'
                                                 }}>
-                                                    {log.timestamp.split(' ')[1]}
+                                                    {convertUTCtoMexicoTime(log.timestamp).split(' ')[1] || log.timestamp.split(' ')[1]}
                                                 </span>
 
                                                 {/* Nivel con badge */}
@@ -1752,7 +1946,16 @@ const MaintenancePage = () => {
                     </div>
                 </div>
             )}
-        </main>
+
+            {/* Modal de Eliminar Todos los Datos */}
+            <DeleteAllDataModal
+                isOpen={showDeleteAllModal}
+                onClose={() => setShowDeleteAllModal(false)}
+                onConfirm={handleDeleteAllData}
+                isDeleting={isDeletingAll}
+            />
+            </main>
+        </PageContainer>
     );
 };
 

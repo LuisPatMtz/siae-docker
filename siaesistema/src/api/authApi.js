@@ -15,7 +15,7 @@ export const authService = {
         const formData = new FormData();
         formData.append('username', username);
         formData.append('password', password);
-        const response = await apiClient.post('/api/login', formData);
+        const response = await apiClient.post('/api/auth/login', formData);
         return response.data;
     },
     

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Download, User, Clock, LogIn, LogOut } from 'lucide-react';
 import { asistenciaService, estudiantesService, gruposService } from '../api/services';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import '../styles/asistencias.css';
 
 const AsistenciasPage = () => {
@@ -127,11 +128,12 @@ const AsistenciasPage = () => {
     const diasRegistrados = new Set(asistenciasFiltradas.map(a => a.fecha)).size;
 
     return (
-        <div className="asistencias-container">
-            <div className="asistencias-page-header">
-                <h1 className="asistencias-page-title">Asistencias Completas (Entrada + Salida)</h1>
-                <p className="asistencias-page-subtitle">Solo asistencias validadas con entrada y salida (1-8 horas)</p>
-            </div>
+        <PageContainer>
+            <div className="asistencias-container">
+                <div className="asistencias-page-header">
+                    <h1 className="asistencias-page-title">Asistencias Completas (Entrada + Salida)</h1>
+                    <p className="asistencias-page-subtitle">Solo asistencias validadas con entrada y salida (1-8 horas)</p>
+                </div>
 
             {/* Filtros */}
             <div className="asistencias-filters-card">
@@ -295,7 +297,8 @@ const AsistenciasPage = () => {
                     )}
                 </div>
             </div>
-        </div>
+            </div>
+        </PageContainer>
     );
 };
 

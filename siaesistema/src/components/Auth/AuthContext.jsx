@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
 
     const fetchUserData = async () => {
         try {
-            const userResponse = await apiClient.get('/api/users/me');
+            const userResponse = await apiClient.get('/api/auth/users/me');
             setUser(userResponse.data);
             setIsAuthenticated(true);
         } catch (error) {
@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
             formData.append('username', username);
             formData.append('password', password);
 
-            const response = await apiClient.post('/api/login', formData, {
+            const response = await apiClient.post('/api/auth/login', formData, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             });
 

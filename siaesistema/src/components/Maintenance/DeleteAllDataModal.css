@@ -1,0 +1,357 @@
+/* DeleteAllDataModal.css */
+
+.delete-all-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: delete-all-fadeIn 0.2s ease-out;
+}
+
+.delete-all-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: delete-all-slideUp 0.3s ease-out;
+}
+
+.delete-all-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  z-index: 1;
+}
+
+.delete-all-modal-close:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.delete-all-modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.delete-all-modal-header {
+  padding: 40px 40px 20px;
+  text-align: center;
+}
+
+.delete-all-modal-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.delete-all-modal-icon.danger {
+  background: linear-gradient(135deg, #ff4757 0%, #dc143c 100%);
+  color: white;
+  animation: delete-all-pulse 2s infinite;
+}
+
+.delete-all-modal-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+}
+
+.delete-all-modal-body {
+  padding: 0 40px 20px;
+}
+
+.delete-all-warning-box {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+  border: 2px solid #ff4757;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.delete-all-warning-box h3 {
+  color: #dc143c;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.delete-all-warning-box p {
+  color: #2d3748;
+  font-size: 15px;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.delete-all-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+}
+
+.delete-all-list li {
+  color: #dc143c;
+  font-size: 14px;
+  padding: 8px 0;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(220, 20, 60, 0.1);
+}
+
+.delete-all-list li:last-child {
+  border-bottom: none;
+}
+
+.delete-all-preserved {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid #22c55e;
+  border-radius: 8px;
+  padding: 12px;
+  color: #15803d;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.delete-all-warning-critical {
+  background: rgba(220, 20, 60, 0.1);
+  border: 2px solid #dc143c;
+  border-radius: 8px;
+  padding: 12px;
+  color: #dc143c;
+  font-size: 14px;
+  margin-top: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.delete-all-warning-message {
+  background: #fff9e6;
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #92400e;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.delete-all-warning-message svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.delete-all-confirmation-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.delete-all-confirmation-text {
+  color: #2d3748;
+  font-size: 15px;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+.delete-all-form-group {
+  margin-bottom: 20px;
+}
+
+.delete-all-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.delete-all-form-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.delete-all-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.delete-all-input:focus {
+  outline: none;
+  border-color: #dc143c;
+  box-shadow: 0 0 0 3px rgba(220, 20, 60, 0.1);
+}
+
+.delete-all-input:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.delete-all-error-message {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c00;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.delete-all-modal-footer {
+  padding: 20px 40px 40px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.delete-all-btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  font-family: inherit;
+}
+
+.delete-all-btn-secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.delete-all-btn-secondary:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.delete-all-btn-danger {
+  background: linear-gradient(135deg, #ff4757 0%, #dc143c 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 20, 60, 0.3);
+}
+
+.delete-all-btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220, 20, 60, 0.4);
+}
+
+.delete-all-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.delete-all-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: delete-all-spin 0.6s linear infinite;
+}
+
+@keyframes delete-all-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes delete-all-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes delete-all-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes delete-all-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .delete-all-modal {
+    margin: 20px;
+    max-height: calc(100vh - 40px);
+  }
+
+  .delete-all-modal-header {
+    padding: 30px 20px 15px;
+  }
+
+  .delete-all-modal-body {
+    padding: 0 20px 15px;
+  }
+
+  .delete-all-modal-footer {
+    padding: 15px 20px 30px;
+    flex-direction: column;
+  }
+
+  .delete-all-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .delete-all-modal-title {
+    font-size: 24px;
+  }
+
+  .delete-all-warning-box,
+  .delete-all-confirmation-box {
+    padding: 16px;
+  }
+}

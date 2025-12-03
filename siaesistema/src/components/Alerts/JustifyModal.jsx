@@ -1,23 +1,14 @@
 // src/components/Alerts/JustifyModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, AlertCircle, CheckCircle } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const JustifyModal = ({ isOpen, onClose, studentName, onSubmit }) => {
   const [reason, setReason] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState('');
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
-        handleClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen]);
+  // Cerrar con ESC
+  useEscapeKey(isOpen, onClose);
 
   if (!isOpen) return null;
 

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const ConfirmModal = ({ 
     isOpen, 
@@ -15,6 +16,9 @@ const ConfirmModal = ({
     isLoading = false,
     children
 }) => {
+    // Cerrar con ESC
+    useEscapeKey(isOpen, onClose);
+
     if (!isOpen) return null;
 
     const renderMessage = () => {

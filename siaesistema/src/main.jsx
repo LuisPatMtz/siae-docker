@@ -5,8 +5,11 @@ import App from './App.jsx'
 
 // Estilos modularizados
 import './styles/variables.css'    // Variables globales y reset
+import './styles/animations.css'   // Sistema unificado de animaciones
 import './styles/layout.css'       // Header, nav, containers
+import './styles/modals.css'       // Sistema unificado de modales
 import './styles/components.css'   // Componentes reutilizables
+import './styles/metrics.css'      // Métricas estilo Facebook
 import './styles/dashboard.css'    // Dashboard y páginas específicas
 import './styles/students.css'     // Gestión de estudiantes y breadcrumbs
 import './styles/UsersManagement.css' // Gestión de usuarios (Premium)

@@ -11,7 +11,7 @@ export const authService = {
         const formData = new FormData();
         formData.append('username', username);
         formData.append('password', password);
-        const response = await apiClient.post('/api/login', formData);
+        const response = await apiClient.post('/api/auth/login', formData);
         return response.data;
     },
 
@@ -361,9 +361,13 @@ export const dashboardService = {
 // SERVICIOS DE ASISTENCIA
 // ============================================
 export const asistenciaService = {
-    registrarPorMatricula: async (matricula) => {
+    registrarPorMatricula: async (matricula, timestampProgramado = null) => {
+        const params = { matricula };
+        if (timestampProgramado) {
+            params.timestamp_programado = timestampProgramado;
+        }
         const response = await apiClient.post('/api/asistencia/registrar', null, {
-            params: { matricula }
+            params
         });
         return response.data;
     },

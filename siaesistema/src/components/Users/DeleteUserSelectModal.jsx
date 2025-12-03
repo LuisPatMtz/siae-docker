@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { X, AlertCircle } from 'lucide-react';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const DeleteUserSelectModal = ({ isOpen, onClose, users, onConfirmSelection }) => {
     const [selectedUserId, setSelectedUserId] = useState('');
     const [error, setError] = useState('');
+    
+    useEscapeKey(isOpen, onClose);
 
     if (!isOpen) return null;
 

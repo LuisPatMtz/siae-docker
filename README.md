@@ -41,6 +41,60 @@ docker-compose up --build
 
 ---
 
+## 🚀 Gestión de Despliegue
+
+### Script Interactivo de Despliegue
+
+Usa el script `deploy.sh` para gestionar los servicios de forma interactiva:
+
+```bash
+./deploy.sh
+```
+
+El script ofrece las siguientes opciones:
+
+- **[1]** 🔄 Reconstruir TODO (Full rebuild)
+- **[2]** 🎨 Reconstruir solo FRONTEND + Nginx
+- **[3]** ⚙️  Reconstruir solo BACKEND
+- **[4]** 🗄️  Reconstruir solo PostgreSQL
+- **[5]** 🌐 Reiniciar solo NGINX (sin rebuild)
+- **[6]** 📊 Ver estado de contenedores
+- **[7]** 📋 Ver logs
+- **[8]** 🧹 Limpiar sistema Docker
+- **[9]** 🔌 Detener todo
+
+### Actualización Automática (Producción)
+
+Para servidores de producción, usa `quick-deploy.sh` que detecta automáticamente qué servicios actualizar:
+
+```bash
+./quick-deploy.sh
+```
+
+Este script:
+- ✅ Hace `git pull` automáticamente
+- ✅ Detecta qué archivos cambiaron
+- ✅ Reconstruye solo los servicios necesarios
+- ✅ Verifica el estado final
+
+### Comandos Manuales Rápidos
+
+```bash
+# Reconstruir solo frontend (después de cambios en React/Vite)
+docker-compose up -d --build --no-deps frontend
+
+# Reconstruir solo backend (después de cambios en FastAPI)
+docker-compose up -d --build --no-deps backend
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Ver estado de servicios
+docker-compose ps
+```
+
+---
+
 ## Insertar admin
 
 Ejecuta el script [crear_admin.py]

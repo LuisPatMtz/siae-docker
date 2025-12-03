@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, User, FileText, Clock, Filter, Eye } from 'lucide-react';
 import { faltasService } from '../../api/services';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
   const [filterMonth, setFilterMonth] = useState('all');
@@ -10,30 +11,16 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
   const [selectedJustification, setSelectedJustification] = useState(null);
   const [showDaysModal, setShowDaysModal] = useState(false);
 
+  // Manejar tecla ESC para ambos modales
+  useEscapeKey(showDaysModal, () => setShowDaysModal(false));
+  useEscapeKey(isOpen && !showDaysModal, onClose);
+
   // Cargar las faltas para obtener las fechas justificadas
   useEffect(() => {
     if (isOpen && history.length > 0) {
       cargarFaltasJustificadas();
     }
   }, [isOpen, history]);
-
-  // Manejar tecla ESC para cerrar modales
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        if (showDaysModal) {
-          setShowDaysModal(false);
-        } else if (isOpen) {
-          onClose();
-        }
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isOpen, showDaysModal, onClose]);
 
   const cargarFaltasJustificadas = async () => {
     setLoadingFaltas(true);

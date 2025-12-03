@@ -11,6 +11,7 @@ from sqlmodel import Session, select, func, distinct
 from app.db.database import get_session
 from app.models import (
     Estudiante,
+    Asistencia,
     NFC,
     Grupo,
     CicloEscolar,
@@ -32,7 +33,8 @@ def get_dias_habiles(start_date: date, end_date: date) -> int:
     current_date = start_date
     while current_date <= end_date:
         # weekday() devuelve 0 para lunes y 6 para domingo
-        if current_date.weekday() < 5: 
+        # Lunes=0, Martes=1, Miércoles=2, Jueves=3, Viernes=4
+        if current_date.weekday() <= 4:  # Incluir viernes (0-4)
             dias_habiles += 1
         current_date += timedelta(days=1)
     return dias_habiles
@@ -45,9 +47,6 @@ def get_asistencia_porcentaje(
 ) -> float:
     """
     Calcula el porcentaje de asistencia para una lista de estudiantes en un rango de fechas.
-    
-    NOTA: Esta función necesita ser actualizada para usar el nuevo sistema de asistencia.
-    Por ahora retorna 0.0 hasta que se implemente el nuevo modelo.
     """
     if not estudiantes_ids:
         return 0.0
@@ -55,13 +54,43 @@ def get_asistencia_porcentaje(
     total_estudiantes = len(estudiantes_ids)
     dias_habiles = get_dias_habiles(start_date, end_date)
     
-    # Si no hay días hábiles (ej. un fin de semana), la asistencia es 0 o indefinida.
+    # Si no hay días hábiles, la asistencia es 0
     if dias_habiles == 0:
         return 0.0
 
-    # TODO: Implementar cálculo de asistencia con el nuevo modelo
-    # Por ahora retornamos 0.0
-    return 0.0
+    # Asistencias totales posibles
+    asistencias_posibles = total_estudiantes * dias_habiles
+
+    if asistencias_posibles == 0:
+        return 0.0
+
+    # Contar las asistencias reales (días distintos con entrada válida)
+    # La tabla asistencias ya tiene matricula_estudiante, tipo y timestamp directamente
+    subquery = (
+        select(
+            Asistencia.matricula_estudiante, 
+            func.count(distinct(func.date(Asistencia.timestamp))).label("dias_asistidos")
+        )
+        .where(
+            Asistencia.matricula_estudiante.in_(estudiantes_ids),
+            Asistencia.tipo == "entrada",
+            Asistencia.es_valida == True,
+            func.date(Asistencia.timestamp) >= start_date,
+            func.date(Asistencia.timestamp) <= end_date
+        )
+        .group_by(Asistencia.matricula_estudiante)
+    ).subquery()
+
+    # Sumamos el total de días asistidos por todos los estudiantes
+    total_asistencias_reales_result = session.exec(
+        select(func.sum(subquery.c.dias_asistidos))
+    ).first()
+
+    total_asistencias_reales = total_asistencias_reales_result or 0.0
+
+    # Calcular el porcentaje
+    porcentaje = (total_asistencias_reales / asistencias_posibles) * 100
+    return round(porcentaje, 1)
 
 # --- ENDPOINTS DEL ROUTER ---
 
@@ -145,11 +174,17 @@ def get_turno_data(
 )
 def get_grupo_data(
     grupo_id: int,
-    periodo: str = Query(default="semester", enum=["week", "month", "semester"]),
+    periodo: str = Query(default="semester", enum=["week", "month", "semester", "custom"]),
+    fecha_inicio: Optional[str] = Query(default=None, description="Fecha inicio para rango personalizado (YYYY-MM-DD)"),
+    fecha_fin: Optional[str] = Query(default=None, description="Fecha fin para rango personalizado (YYYY-MM-DD)"),
     session: Session = Depends(get_session)
 ):
     """
     Obtiene las estadísticas de asistencia para un grupo específico.
+    - week: Últimos 5 días hábiles desde hoy
+    - month: Últimos 30 días desde hoy
+    - semester: Desde inicio de ciclo hasta hoy
+    - custom: Rango personalizado con fecha_inicio y fecha_fin
     """
     import pytz
     
@@ -198,22 +233,42 @@ def get_grupo_data(
     end_date = today
 
     if periodo == "week":
-        # Lunes de esta semana
-        start_date = today - timedelta(days=today.weekday())
-        # Domingo de esta semana
-        end_date = start_date + timedelta(days=6)
+        # Últimos 5 días hábiles (retrocediendo desde hoy)
+        dias_contados = 0
+        current = today
+        while dias_contados < 5:
+            if current.weekday() <= 4:  # Lunes a Viernes (0-4)
+                dias_contados += 1
+            if dias_contados < 5:
+                current -= timedelta(days=1)
+        start_date = current
+        end_date = today
     
     elif periodo == "month":
-        # Primer día de este mes
-        start_date = today.replace(day=1)
-        # Último día de este mes
-        last_day_of_month = calendar.monthrange(today.year, today.month)[1]
-        end_date = today.replace(day=last_day_of_month)
+        # Últimos 30 días desde hoy
+        start_date = today - timedelta(days=30)
+        end_date = today
     
     elif periodo == "semester":
-        # Usar las fechas del ciclo activo
+        # Desde inicio de ciclo hasta hoy
         start_date = ciclo_activo.fecha_inicio
-        end_date = ciclo_activo.fecha_fin
+        end_date = today
+    
+    elif periodo == "custom":
+        # Validar que se proporcionaron ambas fechas
+        if not fecha_inicio or not fecha_fin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Para período 'custom' se requieren fecha_inicio y fecha_fin"
+            )
+        try:
+            start_date = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+            end_date = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formato de fecha inválido. Use YYYY-MM-DD"
+            )
             
     # Calcular la asistencia para ese rango
     porcentaje_asistencia = get_asistencia_porcentaje(
@@ -367,4 +422,149 @@ def get_estadisticas_periodos(
             "fin": str(fin_ciclo),
             "dias_habiles": get_dias_habiles(inicio_ciclo, fin_ciclo)
         }
+    }
+
+@router.get("/grupo/{grupo_id}/grafica-diaria")
+def get_grupo_grafica_diaria(
+    grupo_id: int,
+    periodo: str = Query(default="month", enum=["week", "month", "semester", "custom"]),
+    fecha_inicio: Optional[str] = Query(default=None, description="Fecha inicio para rango personalizado (YYYY-MM-DD)"),
+    fecha_fin: Optional[str] = Query(default=None, description="Fecha fin para rango personalizado (YYYY-MM-DD)"),
+    session: Session = Depends(get_session)
+):
+    """
+    Obtiene datos diarios de asistencia para graficar estilo métricas de Facebook.
+    Retorna porcentaje de asistencia por cada día en el periodo seleccionado.
+    - week: Últimos 5 días hábiles desde hoy
+    - month: Últimos 30 días desde hoy  
+    - semester: Desde inicio de ciclo hasta hoy
+    - custom: Rango personalizado con fecha_inicio y fecha_fin
+    """
+    import pytz
+    
+    MEXICO_TZ = pytz.timezone('America/Mexico_City')
+    today = datetime.now(MEXICO_TZ).date()
+    
+    # Verificar que el grupo existe
+    grupo = session.get(Grupo, grupo_id)
+    if not grupo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Grupo con ID {grupo_id} no encontrado."
+        )
+    
+    # Obtener el ciclo activo
+    ciclo_activo = session.exec(
+        select(CicloEscolar).where(CicloEscolar.activo == True)
+    ).first()
+    
+    if not ciclo_activo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No hay un ciclo escolar activo."
+        )
+    
+    # Obtener estudiantes del grupo
+    estudiantes = session.exec(
+        select(Estudiante).where(
+            Estudiante.id_grupo == grupo_id,
+            Estudiante.id_ciclo == ciclo_activo.id
+        )
+    ).all()
+    
+    if not estudiantes:
+        return {
+            "periodo": periodo,
+            "total_estudiantes": 0,
+            "datos": [],
+            "promedio": 0.0
+        }
+    
+    estudiantes_ids = [e.matricula for e in estudiantes]
+    total_estudiantes = len(estudiantes_ids)
+    
+    # Definir rango de fechas
+    start_date = today
+    end_date = today
+    
+    if periodo == "week":
+        # Últimos 5 días hábiles desde hoy
+        dias_contados = 0
+        current = today
+        while dias_contados < 5:
+            if current.weekday() <= 4:  # Lunes a Viernes (0-4)
+                dias_contados += 1
+            if dias_contados < 5:
+                current -= timedelta(days=1)
+        start_date = current
+        end_date = today
+    elif periodo == "month":
+        # Últimos 30 días desde hoy
+        start_date = today - timedelta(days=30)
+        end_date = today
+    elif periodo == "semester":
+        # Desde inicio de ciclo hasta hoy
+        start_date = ciclo_activo.fecha_inicio
+        end_date = today
+    elif periodo == "custom":
+        # Validar que se proporcionaron ambas fechas
+        if not fecha_inicio or not fecha_fin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Para período 'custom' se requieren fecha_inicio y fecha_fin"
+            )
+        try:
+            start_date = datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+            end_date = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formato de fecha inválido. Use YYYY-MM-DD"
+            )
+    
+    # Obtener asistencias diarias
+    datos_diarios = []
+    current_date = start_date
+    total_porcentaje = 0
+    dias_contados = 0
+    
+    while current_date <= end_date:
+        # Solo contar días hábiles (lunes a viernes)
+        # Lunes=0, Martes=1, Miércoles=2, Jueves=3, Viernes=4
+        if current_date.weekday() <= 4:  # 0-4 incluye lunes a viernes
+            # Contar estudiantes que asistieron este día
+            asistencias_del_dia = session.exec(
+                select(func.count(distinct(Asistencia.matricula_estudiante)))
+                .where(
+                    Asistencia.matricula_estudiante.in_(estudiantes_ids),
+                    Asistencia.tipo == "entrada",
+                    Asistencia.es_valida == True,
+                    func.date(Asistencia.timestamp) == current_date
+                )
+            ).first() or 0
+            
+            porcentaje = (asistencias_del_dia / total_estudiantes * 100) if total_estudiantes > 0 else 0
+            
+            datos_diarios.append({
+                "fecha": current_date.isoformat(),
+                "dia_semana": current_date.strftime("%a"),
+                "porcentaje": round(porcentaje, 1),
+                "asistieron": asistencias_del_dia,
+                "total": total_estudiantes
+            })
+            
+            total_porcentaje += porcentaje
+            dias_contados += 1
+        
+        current_date += timedelta(days=1)
+    
+    promedio = round(total_porcentaje / dias_contados, 1) if dias_contados > 0 else 0.0
+    
+    return {
+        "periodo": periodo,
+        "total_estudiantes": total_estudiantes,
+        "datos": datos_diarios,
+        "promedio": promedio,
+        "fecha_inicio": start_date.isoformat(),
+        "fecha_fin": end_date.isoformat()
     }

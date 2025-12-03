@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Search, Download, Filter, User, Clock } from 'lucide-react';
 import { asistenciaService, estudiantesService, gruposService } from '../api/services';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import '../styles/historial-accesos.css';
 
 const HistorialAccesosPage = () => {
@@ -141,11 +142,12 @@ const HistorialAccesosPage = () => {
     const accesosFiltrados = filtrarAccesos();
 
     return (
-        <div className="historial-accesos-container">
-            <div className="historial-page-header">
-                <h1 className="historial-page-title">Historial de Accesos (Entradas)</h1>
-                <p className="historial-page-subtitle">Todos los registros de entrada (NFC y Matrícula)</p>
-            </div>
+        <PageContainer>
+            <div className="historial-accesos-container">
+                <div className="historial-page-header">
+                    <h1 className="historial-page-title">Historial de Accesos (Entradas)</h1>
+                    <p className="historial-page-subtitle">Todos los registros de entrada (NFC y Matrícula)</p>
+                </div>
 
             {/* Filtros */}
             <div className="historial-filters-card">
@@ -303,7 +305,8 @@ const HistorialAccesosPage = () => {
                     )}
                 </div>
             </div>
-        </div>
+            </div>
+        </PageContainer>
     );
 };
 

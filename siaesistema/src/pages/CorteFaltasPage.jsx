@@ -5,6 +5,7 @@ import { faultsApi } from '../api/faultsApi';
 import { Calendar, CheckCircle, AlertTriangle, FileText, Play } from 'lucide-react';
 import Modal from '../components/UI/Modal';
 import { useToast } from '../contexts/ToastContext.jsx';
+import PageContainer from '../components/Common/PageContainer.jsx';
 import '../styles/corte-faltas.css';
 
 const CorteFaltasPage = () => {
@@ -157,13 +158,14 @@ const CorteFaltasPage = () => {
   };
 
   return (
-    <div className="corte-faltas-container">
-      <div className="page-title-container">
-        <h1 className="page-title">Corte de Faltas</h1>
-        <div className="corte-counter-badge">
-          Corte #{conteoCortes}
+    <PageContainer>
+      <div className="corte-faltas-container">
+        <div className="page-title-container">
+          <h1 className="page-title">Corte de Faltas</h1>
+          <div className="corte-counter-badge">
+            Corte #{conteoCortes}
+          </div>
         </div>
-      </div>
 
       <div className="corte-info-card">
         <h3>¿Qué hace el corte de faltas?</h3>
@@ -347,7 +349,8 @@ const CorteFaltasPage = () => {
           </button>
         </div>
       </Modal>
-    </div>
+      </div>
+    </PageContainer>
   );
 };
 

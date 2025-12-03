@@ -27,7 +27,8 @@ from app.api.v1 import (
     asistencia_router,
     justificaciones_router,
     maintenance_router,
-    system_config_router
+    system_config_router,
+    reset_router
 )
 
 
@@ -41,85 +42,7 @@ async def lifespan(app: FastAPI):
     api_logger.info("Creando tablas de base de datos si no existen...")
     create_db_and_tables()
     api_logger.info("Base de datos inicializada correctamente")
-    
-    # Inicializar datos de prueba si es necesario
-    from sqlmodel import Session, select
-    from app.db.database import engine
-    from app.models import Usuario, CicloEscolar, Grupo, Estudiante
-    from app.core.security import get_password_hash
-    
-    try:
-        with Session(engine) as session:
-            # 1. Crear o Actualizar Usuario Admin
-            admin = session.exec(select(Usuario).where(Usuario.username == "admin")).first()
-            
-            default_permissions = {
-                "all": True,
-                "canViewDashboard": True,
-                "canManageAlerts": True,
-                "canEditStudents": True,
-                "canManageUsers": True,
-                "canManageMaintenance": True,
-                "canManageAttendance": True
-            }
-
-            if not admin:
-                api_logger.info("Creando usuario admin por defecto...")
-                admin = Usuario(
-                    username="admin",
-                    hashed_password=get_password_hash("admin123"),
-                    full_name="Administrador Sistema",
-                    role="Admin",
-                    permissions=default_permissions
-                )
-                session.add(admin)
-                session.commit()
-                api_logger.info("Usuario admin creado con permisos completos.")
-            else:
-                api_logger.info("Verificando y actualizando permisos del usuario admin...")
-                admin.permissions = default_permissions
-                session.add(admin)
-                session.commit()
-                api_logger.info("Permisos de admin actualizados.")
-            
-            # 2. Crear Ciclo Escolar
-            ciclo = session.exec(select(CicloEscolar).where(CicloEscolar.nombre == "2025-A")).first()
-            if not ciclo:
-                ciclo = CicloEscolar(
-                    nombre="2025-B", 
-                    activo=True,
-                    fecha_inicio=date(2025, 6, 1),
-                    fecha_fin=date(2025, 12, 31)
-                )
-                session.add(ciclo)
-                session.commit()
-                session.refresh(ciclo)
-            
-            # 3. Crear Grupo
-            grupo = session.exec(select(Grupo).where(Grupo.nombre == "1-A")).first()
-            if not grupo:
-                grupo = Grupo(nombre="101", semestre=1, turno="matutino")
-                session.add(grupo)
-                session.commit()
-                session.refresh(grupo)
-                
-            # 4. Crear Estudiante de Prueba
-            matricula = "2025002"
-            estudiante = session.get(Estudiante, matricula)
-            if not estudiante:
-                estudiante = Estudiante(
-                    matricula=matricula,
-                    nombre="Juan Carlos",
-                    apellido="Perez Roldan",
-                    id_grupo=grupo.id,
-                    id_ciclo=ciclo.id
-                )
-                session.add(estudiante)
-                session.commit()
-                api_logger.info(f"Estudiante de prueba creado: {matricula}")
-                
-    except Exception as e:
-        api_logger.error(f"Error al inicializar datos: {e}")
+    api_logger.info("Sistema iniciado. Base de datos lista para configuración inicial.")
         
     yield
     api_logger.info("=== Apagando SIAE API ===")
@@ -130,7 +53,8 @@ app = FastAPI(
     lifespan=lifespan,
     title="SIAE API",
     description="Sistema Inteligente de Asistencia Estudiantil",
-    version="2.0.0"
+    version="2.0.0",
+    redirect_slashes=False  # Evitar redirecciones automáticas por trailing slashes
 )
 
 
@@ -161,6 +85,7 @@ app.include_router(asistencia_router)
 app.include_router(justificaciones_router)
 app.include_router(maintenance_router)
 app.include_router(system_config_router)
+app.include_router(reset_router)
 
 
 @app.get("/")

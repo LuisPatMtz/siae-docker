@@ -35,11 +35,11 @@ const StudentGroupsNav = ({ semesters, selectedGroup, onGroupSelect, showAllOpti
               <div className="group-buttons">
                 {groups.map((group) => (
                   <button
-                    key={group}
-                    className={`group-btn ${selectedGroup === group ? 'active' : ''}`}
-                    onClick={() => onGroupSelect(group)}
+                    key={typeof group === 'object' ? group.id : group}
+                    className={`group-btn ${selectedGroup === (typeof group === 'object' ? group.id : group) ? 'active' : ''}`}
+                    onClick={() => onGroupSelect(typeof group === 'object' ? group.id : group)}
                   >
-                    {group}
+                    {typeof group === 'object' ? group.nombre : group}
                   </button>
                 ))}
               </div>
