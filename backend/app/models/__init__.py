@@ -13,6 +13,7 @@ from app.models.falta import Falta, FaltaCreate, FaltaRead, FaltaUpdate
 from app.models.justificacion import Justificacion, JustificacionCreate, JustificacionRead
 from app.models.auth import Token, TokenData, UserRead, UserReadWithPermissions, AdminUserCreate, UserPermissionsUpdate, UserUpdate, UserPermissionData
 from app.models.dashboard import StatsData, TurnoDataResponse, GrupoAsistenciaResponse
+from app.models.system_config import SystemConfig, SystemConfigRead, SystemConfigUpdate
 # Importar modelos completos después para evitar dependencias circulares
 from app.models.estudiante_complete import EstudianteReadComplete
 
@@ -27,6 +28,7 @@ __all__ = [
     "Alerta",
     "Falta",
     "Justificacion",
+    "SystemConfig",
     # DTOs Ciclo
     "CicloEscolarCreate",
     "CicloEscolarRead",
@@ -61,6 +63,9 @@ __all__ = [
     # DTOs Justificacion
     "JustificacionCreate",
     "JustificacionRead",
+    # DTOs SystemConfig
+    "SystemConfigRead",
+    "SystemConfigUpdate",
     # DTOs Auth
     "Token",
     "TokenData",

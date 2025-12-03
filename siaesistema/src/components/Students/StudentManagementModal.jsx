@@ -48,10 +48,12 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setLoading(true);
       const response = await axiosInstance.get('/api/estudiantes');
-      setStudents(response.data);
+      // Asegurar que siempre sea un array
+      setStudents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error loading students:', error);
       onSuccess('Error al cargar estudiantes', 'error');
+      setStudents([]); // Asegurar array vacío en caso de error
     } finally {
       setLoading(false);
     }
@@ -179,6 +181,20 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
     setShowForm(false);
   };
 
+  // Calcular estudiantes filtrados antes de usarlos
+  const filteredStudents = Array.isArray(students) ? students.filter(student => {
+    const matchesSearch = student.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.matricula?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGroup = !selectedGroup || student.id_grupo == selectedGroup;
+
+    // Filtrar por semestre del grupo
+    const studentGroup = groups.find(g => g.id == student.id_grupo);
+    const matchesSemester = !selectedSemestre || (studentGroup && studentGroup.semestre == selectedSemestre);
+
+    return matchesSearch && matchesGroup && matchesSemester;
+  }) : [];
+
   // Funciones para selección múltiple
   const handleSelectStudent = (matricula) => {
     setSelectedStudents(prev => {
@@ -225,19 +241,6 @@ const StudentManagementModal = ({ isOpen, onClose, onSuccess }) => {
       setLoading(false);
     }
   };
-
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.matricula.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGroup = !selectedGroup || student.id_grupo == selectedGroup;
-
-    // Filtrar por semestre del grupo
-    const studentGroup = groups.find(g => g.id == student.id_grupo);
-    const matchesSemester = !selectedSemestre || (studentGroup && studentGroup.semestre == selectedSemestre);
-
-    return matchesSearch && matchesGroup && matchesSemester;
-  });
 
   const getGroupName = (groupId) => {
     const group = groups.find(g => g.id == groupId);

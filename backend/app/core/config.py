@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "siae_admin"
     POSTGRES_PASSWORD: str = "admin123"
     POSTGRES_DB: str = "siae_db"
-    POSTGRES_HOST: str = "localhost" # Changed default to localhost based on user input
+    POSTGRES_HOST: str = "db"  # Default to 'db' for Docker, can be overridden with env var
     POSTGRES_PORT: int = 5432
     
     # Database URL

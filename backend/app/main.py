@@ -26,7 +26,8 @@ from app.api.v1 import (
     faltas_router,
     asistencia_router,
     justificaciones_router,
-    maintenance_router
+    maintenance_router,
+    system_config_router
 )
 
 
@@ -159,6 +160,7 @@ app.include_router(faltas_router)
 app.include_router(asistencia_router)
 app.include_router(justificaciones_router)
 app.include_router(maintenance_router)
+app.include_router(system_config_router)
 
 
 @app.get("/")

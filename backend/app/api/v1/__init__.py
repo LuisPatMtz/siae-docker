@@ -14,6 +14,7 @@ from app.api.v1.faltas_routes import router as faltas_router
 from app.api.v1.asistencia_routes import router as asistencia_router
 from app.api.v1.justificaciones_routes import router as justificaciones_router
 from app.api.v1.maintenance_routes import router as maintenance_router
+from app.api.v1.system_config import router as system_config_router
 
 __all__ = [
     "auth_router",
@@ -28,4 +29,5 @@ __all__ = [
     "asistencia_router",
     "justificaciones_router",
     "maintenance_router",
+    "system_config_router",
 ]

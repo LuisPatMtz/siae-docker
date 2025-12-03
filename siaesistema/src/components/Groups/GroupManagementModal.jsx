@@ -40,7 +40,8 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       const response = await axiosInstance.get('/api/grupos');
       console.log('Response from /api/grupos:', response.data);
-      setGroups(response.data || []);
+      // Asegurar que siempre sea un array
+      setGroups(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error al cargar grupos:', error);
       console.error('Error response:', error.response);
@@ -53,7 +54,8 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchStudents = async () => {
     try {
       const response = await axiosInstance.get('/api/estudiantes');
-      setStudents(response.data || []);
+      // Asegurar que siempre sea un array
+      setStudents(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error al cargar estudiantes:', error);
       setStudents([]);
@@ -62,16 +64,16 @@ const GroupManagementModal = ({ isOpen, onClose, onSuccess }) => {
 
   // Contar estudiantes por grupo
   const getStudentCount = (groupId) => {
-    return students.filter(student => student.id_grupo === groupId).length;
+    return Array.isArray(students) ? students.filter(student => student.id_grupo === groupId).length : 0;
   };
 
-  // Filtrar grupos
-  const filteredGroups = groups.filter(group => {
+  // Filtrar grupos - asegurar que groups sea un array
+  const filteredGroups = Array.isArray(groups) ? groups.filter(group => {
     const matchesSearch = group.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSemestre = !selectedSemestre || group.semestre?.toString() === selectedSemestre;
     const matchesTurno = !selectedTurno || group.turno === selectedTurno;
     return matchesSearch && matchesSemestre && matchesTurno;
-  });
+  }) : [];
 
   // Manejar cambios en el formulario
   const handleInputChange = (e) => {

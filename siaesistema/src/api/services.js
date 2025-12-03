@@ -546,6 +546,17 @@ export const maintenanceService = {
         return response.data;
     },
 
+    uploadBackup: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await apiClient.post('/api/maintenance/upload-backup', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    },
+
     cleanupLogs: async (days = 30) => {
         const response = await apiClient.post(`/api/maintenance/cleanup-logs?days=${days}`);
         return response.data;
@@ -592,6 +603,25 @@ export const maintenanceService = {
 
     getAvailableTimezones: async () => {
         const response = await apiClient.get('/api/maintenance/timezones');
+        return response.data;
+    },
+
+    // System Configuration endpoints
+    getAllConfigs: async () => {
+        const response = await apiClient.get('/api/system-config/');
+        return response.data;
+    },
+
+    getConfigByKey: async (key) => {
+        const response = await apiClient.get(`/api/system-config/${key}`);
+        return response.data;
+    },
+
+    updateConfig: async (key, value, description) => {
+        const response = await apiClient.put(`/api/system-config/${key}`, {
+            value,
+            description
+        });
         return response.data;
     }
 };

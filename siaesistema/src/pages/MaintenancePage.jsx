@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, Download, RefreshCw, HardDrive, Trash2, RotateCcw, FileText, BarChart3, AlertCircle, X, TrendingUp, Package, Filter, Search, Clock, Globe } from 'lucide-react';
+import { Database, Download, RefreshCw, HardDrive, Trash2, RotateCcw, FileText, BarChart3, AlertCircle, X, TrendingUp, Package, Filter, Search, Clock, Globe, Settings, Upload } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { maintenanceService } from '../api/services';
 import { useToast } from '../contexts/ToastContext.jsx';
@@ -11,6 +11,7 @@ const MaintenancePage = () => {
     const [tableStats, setTableStats] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [isRestoring, setIsRestoring] = useState(false);
     const [selectedBackup, setSelectedBackup] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showRestoreModal, setShowRestoreModal] = useState(false);
@@ -18,6 +19,10 @@ const MaintenancePage = () => {
     const [showStatsModal, setShowStatsModal] = useState(false);
     const [showLogsModal, setShowLogsModal] = useState(false);
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
+    const [showConfigModal, setShowConfigModal] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
     const [cleanupDays, setCleanupDays] = useState(30);
     
     // Estado para reloj
@@ -27,6 +32,13 @@ const MaintenancePage = () => {
     const [timezoneInfo, setTimezoneInfo] = useState(null);
     const [availableTimezones, setAvailableTimezones] = useState([]);
     const [selectedTimezone, setSelectedTimezone] = useState('');
+    
+    // Estados para system config
+    const [systemConfigs, setSystemConfigs] = useState([]);
+    const [exitTimeWindowMin, setExitTimeWindowMin] = useState(5); // Mínimo 5 minutos
+    const [exitTimeWindowMax, setExitTimeWindowMax] = useState(240); // Máximo 4 horas
+    const [isLoadingConfigs, setIsLoadingConfigs] = useState(false);
+    const [isSavingConfig, setIsSavingConfig] = useState(false);
     
     // Estados para logs
     const [logFiles, setLogFiles] = useState([]);
@@ -153,6 +165,7 @@ const MaintenancePage = () => {
     };
 
     const handleRestore = async () => {
+        setIsRestoring(true);
         try {
             await maintenanceService.restoreBackup(selectedBackup);
             showSuccess("Base de datos restaurada exitosamente. Se recomienda recargar la página.");
@@ -161,6 +174,43 @@ const MaintenancePage = () => {
         } catch (error) {
             console.error("Error restoring backup:", error);
             showError(error.response?.data?.detail || "Error al restaurar el respaldo");
+        } finally {
+            setIsRestoring(false);
+        }
+    };
+
+    const handleFileSelect = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            // Validate file type
+            if (!file.name.endsWith('.dump') && !file.name.endsWith('.sql')) {
+                showError("Solo se permiten archivos .dump o .sql");
+                event.target.value = null;
+                return;
+            }
+            setSelectedFile(file);
+        }
+    };
+
+    const handleUploadBackup = async () => {
+        if (!selectedFile) {
+            showError("Por favor selecciona un archivo");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            await maintenanceService.uploadBackup(selectedFile);
+            showSuccess("Respaldo subido exitosamente");
+            setShowUploadModal(false);
+            setSelectedFile(null);
+            fetchBackups();
+            fetchStats();
+        } catch (error) {
+            console.error("Error uploading backup:", error);
+            showError(error.response?.data?.detail || "Error al subir el respaldo");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -245,6 +295,67 @@ const MaintenancePage = () => {
         }
     };
 
+    // System Config handlers
+    const fetchSystemConfigs = async () => {
+        setIsLoadingConfigs(true);
+        try {
+            const configs = await maintenanceService.getAllConfigs();
+            setSystemConfigs(configs);
+            
+            // Find and set exit time window values
+            const minConfig = configs.find(c => c.key === 'exit_time_window_min_minutes');
+            const maxConfig = configs.find(c => c.key === 'exit_time_window_max_minutes');
+            
+            if (minConfig) {
+                setExitTimeWindowMin(parseInt(minConfig.value));
+            }
+            if (maxConfig) {
+                setExitTimeWindowMax(parseInt(maxConfig.value));
+            }
+        } catch (error) {
+            console.error("Error fetching system configs:", error);
+            showError("Error al cargar las configuraciones");
+        } finally {
+            setIsLoadingConfigs(false);
+        }
+    };
+
+    const handleShowConfig = async () => {
+        setShowConfigModal(true);
+        await fetchSystemConfigs();
+    };
+
+    const handleSaveConfig = async () => {
+        // Validación: mínimo debe ser menor que máximo
+        if (exitTimeWindowMin >= exitTimeWindowMax) {
+            showError('El tiempo mínimo debe ser menor que el tiempo máximo');
+            return;
+        }
+
+        setIsSavingConfig(true);
+        try {
+            await Promise.all([
+                maintenanceService.updateConfig(
+                    'exit_time_window_min_minutes',
+                    exitTimeWindowMin.toString(),
+                    'Tiempo mínimo en minutos que debe transcurrir después de una entrada antes de registrar una salida'
+                ),
+                maintenanceService.updateConfig(
+                    'exit_time_window_max_minutes',
+                    exitTimeWindowMax.toString(),
+                    'Tiempo máximo en minutos después de una entrada para poder registrar una salida'
+                )
+            ]);
+            showSuccess('Configuración guardada exitosamente');
+            setShowConfigModal(false);
+        } catch (error) {
+            console.error("Error saving config:", error);
+            showError(error.response?.data?.detail || "Error al guardar la configuración");
+        } finally {
+            setIsSavingConfig(false);
+        }
+    };
+
     const handleFilterChange = (key, value) => {
         setLogFilters(prev => ({ ...prev, [key]: value }));
     };
@@ -273,13 +384,15 @@ const MaintenancePage = () => {
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleString('es-MX', {
+        const date = new Date(dateString);
+        return date.toLocaleString('es-MX', {
             year: 'numeric',
             month: '2-digit',
             day: '2-digit',
             hour: '2-digit',
-            minute: '2-digit'
-        });
+            minute: '2-digit',
+            hour12: true
+        }).replace(',', ' •');
     };
 
     return (
@@ -348,7 +461,15 @@ const MaintenancePage = () => {
                     </div>
                     <div className="stat-card">
                         <div className="stat-value">{stats.database_size}</div>
-                        <div className="stat-label">Tamaño BD</div>
+                        <div className="stat-label">Tamaño BD Completa</div>
+                        <div style={{ 
+                            fontSize: '0.7rem', 
+                            color: '#6b7280', 
+                            marginTop: '4px',
+                            fontStyle: 'italic'
+                        }}>
+                            Los backups pesan menos (comprimidos)
+                        </div>
                     </div>
                     <div className="stat-card">
                         <div className="stat-value">{stats.backup_count}</div>
@@ -371,15 +492,33 @@ const MaintenancePage = () => {
                         <Globe size={18} />
                         Zona Horaria
                     </button>
+                    <button className="users-btn users-btn-secondary" onClick={handleShowConfig}>
+                        <Settings size={18} />
+                        Configuración
+                    </button>
                 </div>
-                <button
-                    className="users-btn users-btn-primary"
-                    onClick={handleCreateBackup}
-                    disabled={isCreating}
-                >
-                    {isCreating ? <RefreshCw className="animate-spin" size={18} /> : <Database size={18} />}
-                    {isCreating ? 'Creando...' : 'Crear Nuevo Respaldo'}
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                        className="users-btn users-btn-secondary"
+                        onClick={() => setShowUploadModal(true)}
+                        style={{
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white',
+                            border: 'none'
+                        }}
+                    >
+                        <Upload size={18} />
+                        Subir Respaldo
+                    </button>
+                    <button
+                        className="users-btn users-btn-primary"
+                        onClick={handleCreateBackup}
+                        disabled={isCreating}
+                    >
+                        {isCreating ? <RefreshCw className="animate-spin" size={18} /> : <Database size={18} />}
+                        {isCreating ? 'Creando...' : 'Crear Nuevo Respaldo'}
+                    </button>
+                </div>
             </div>
 
             <div className="users-grid-container" style={{ display: 'block' }}>
@@ -496,11 +635,12 @@ const MaintenancePage = () => {
             {/* Modal de confirmación para restaurar */}
             <ConfirmModal
                 isOpen={showRestoreModal}
-                onClose={() => setShowRestoreModal(false)}
+                onClose={() => !isRestoring && setShowRestoreModal(false)}
                 onConfirm={handleRestore}
                 title="Confirmar Restauración"
                 icon={AlertCircle}
-                confirmText="Restaurar"
+                confirmText={isRestoring ? "Restaurando..." : "Restaurar"}
+                isProcessing={isRestoring}
             >
                 <p>
                     ¿Estás seguro de que deseas restaurar la base de datos desde <strong className="user-highlight">"{selectedBackup}"</strong>?
@@ -519,6 +659,12 @@ const MaintenancePage = () => {
                 <p className="info-note">
                     💡 Se recomienda crear un respaldo de la base de datos actual antes de continuar.
                 </p>
+                {isRestoring && (
+                    <div style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: '#e0f2fe', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <RefreshCw className="animate-spin" size={18} style={{ color: '#0284c7' }} />
+                        <span style={{ color: '#0c4a6e', fontSize: '0.9rem' }}>Restaurando base de datos, por favor espera...</span>
+                    </div>
+                )}
             </ConfirmModal>
 
             {/* Modal para limpiar logs */}
@@ -1298,6 +1444,309 @@ const MaintenancePage = () => {
                                 }}
                             >
                                 Aplicar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Configuración del Sistema */}
+            {showConfigModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content max-w-3xl">
+                        <div className="modal-header">
+                            <h2 className="modal-title">
+                                <Settings size={24} />
+                                Configuración del Sistema
+                            </h2>
+                            <button
+                                className="close-form-btn"
+                                onClick={() => setShowConfigModal(false)}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="modal-body">
+                            {isLoadingConfigs ? (
+                                <div style={{ 
+                                    textAlign: 'center', 
+                                    padding: '2rem',
+                                    color: '#6b7280'
+                                }}>
+                                    <RefreshCw className="animate-spin" size={32} style={{ margin: '0 auto 1rem' }} />
+                                    <p>Cargando configuraciones...</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Configuración de ventana de tiempo para salidas */}
+                                    <div className="config-section">
+                                        <h3 className="config-section-header">
+                                            Control de Registro de Salidas
+                                        </h3>
+                                        <p className="config-section-description">
+                                            Define el rango de tiempo válido para registrar una salida después de una entrada.
+                                        </p>
+
+                                        {/* Tiempo Mínimo */}
+                                        <div className="modal-input-group" style={{ marginBottom: '24px' }}>
+                                            <label htmlFor="exitTimeWindowMin">
+                                                ⏱️ Tiempo Mínimo (minutos)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="exitTimeWindowMin"
+                                                value={exitTimeWindowMin}
+                                                onChange={(e) => setExitTimeWindowMin(parseInt(e.target.value) || 0)}
+                                                min="0"
+                                                max="1440"
+                                                className="config-time-input"
+                                            />
+                                            <div className="config-info-box min-time">
+                                                <Clock size={20} style={{ color: '#16a34a', flexShrink: 0 }} />
+                                                <div className="config-info-content">
+                                                    <div className="config-info-title">
+                                                        Equivale a: {Math.floor(exitTimeWindowMin / 60)}h {exitTimeWindowMin % 60}min
+                                                    </div>
+                                                    <div className="config-info-text">
+                                                        Tiempo mínimo antes de permitir registrar una salida
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Tiempo Máximo */}
+                                        <div className="modal-input-group" style={{ marginBottom: '24px' }}>
+                                            <label htmlFor="exitTimeWindowMax">
+                                                ⏰ Tiempo Máximo (minutos)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                id="exitTimeWindowMax"
+                                                value={exitTimeWindowMax}
+                                                onChange={(e) => setExitTimeWindowMax(parseInt(e.target.value) || 0)}
+                                                min="0"
+                                                max="1440"
+                                                className="config-time-input"
+                                            />
+                                            <div className="config-info-box max-time">
+                                                <Clock size={20} style={{ color: '#d97706', flexShrink: 0 }} />
+                                                <div className="config-info-content">
+                                                    <div className="config-info-title">
+                                                        Equivale a: {Math.floor(exitTimeWindowMax / 60)}h {exitTimeWindowMax % 60}min
+                                                    </div>
+                                                    <div className="config-info-text">
+                                                        Tiempo máximo después del cual no se permite registrar salida
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Validación visual */}
+                                        {exitTimeWindowMin >= exitTimeWindowMax && (
+                                            <div className="config-validation-error">
+                                                <AlertCircle size={20} style={{ color: '#dc2626', flexShrink: 0, marginTop: '2px' }} />
+                                                <div style={{ flex: 1 }}>
+                                                    <div className="config-validation-error-title">
+                                                        Error de Validación
+                                                    </div>
+                                                    <div className="config-validation-error-text">
+                                                        El tiempo mínimo debe ser menor que el tiempo máximo
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Nota informativa con estilo consistente */}
+                                        <div className="config-how-it-works">
+                                            <div className="config-how-it-works-container">
+                                                <div className="config-how-it-works-header">
+                                                    <AlertCircle size={22} style={{ color: 'white', flexShrink: 0 }} />
+                                                    <h4 className="config-how-it-works-title">
+                                                        ℹ️ Cómo Funciona el Sistema
+                                                    </h4>
+                                                </div>
+                                                <div className="config-how-it-works-body">
+                                                    <ul className="config-how-it-works-list">
+                                                        <li>
+                                                            Si un estudiante registra una <strong style={{ color: '#059669' }}>entrada</strong>, debe esperar al menos <strong style={{ color: '#059669' }}>{exitTimeWindowMin} minutos</strong> antes de poder registrar su <strong style={{ color: '#dc2626' }}>salida</strong>.
+                                                        </li>
+                                                        <li>
+                                                            Después de <strong style={{ color: '#dc2626' }}>{exitTimeWindowMax} minutos</strong> ({Math.floor(exitTimeWindowMax / 60)}h {exitTimeWindowMax % 60}min) desde la entrada, el sistema ya no permitirá registrar la salida automáticamente.
+                                                        </li>
+                                                        <li>
+                                                            Después de una <strong style={{ color: '#dc2626' }}>salida</strong>, debe esperar <strong style={{ color: '#d97706' }}>1 hora (60 minutos)</strong> antes de poder registrar una nueva <strong style={{ color: '#059669' }}>entrada</strong>. Esto previene dobles asistencias.
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="modal-actions">
+                            <button 
+                                type="button" 
+                                className="modal-btn cancel" 
+                                onClick={() => setShowConfigModal(false)}
+                                disabled={isSavingConfig}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="button" 
+                                className="modal-btn save" 
+                                onClick={handleSaveConfig}
+                                disabled={isSavingConfig || isLoadingConfigs || exitTimeWindowMin >= exitTimeWindowMax}
+                            >
+                                {isSavingConfig ? (
+                                    <>
+                                        <RefreshCw className="animate-spin" size={16} />
+                                        Guardando...
+                                    </>
+                                ) : (
+                                    'Guardar Cambios'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de subir backup */}
+            {showUploadModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content max-w-md">
+                        <div className="modal-header">
+                            <h2 className="modal-title">
+                                <Upload size={24} />
+                                Subir Respaldo
+                            </h2>
+                            <button
+                                className="close-form-btn"
+                                onClick={() => {
+                                    setShowUploadModal(false);
+                                    setSelectedFile(null);
+                                }}
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="modal-body">
+                            <div style={{ marginBottom: '20px' }}>
+                                <div style={{
+                                    padding: '16px',
+                                    background: '#eff6ff',
+                                    border: '1px solid #3b82f6',
+                                    borderRadius: '8px',
+                                    marginBottom: '20px'
+                                }}>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'start',
+                                        gap: '12px'
+                                    }}>
+                                        <AlertCircle size={20} style={{ color: '#3b82f6', flexShrink: 0, marginTop: '2px' }} />
+                                        <div>
+                                            <div style={{ 
+                                                fontWeight: '600', 
+                                                color: '#1e40af', 
+                                                marginBottom: '6px',
+                                                fontSize: '0.9rem'
+                                            }}>
+                                                Formatos Permitidos
+                                            </div>
+                                            <div style={{ 
+                                                color: '#1e40af', 
+                                                fontSize: '0.85rem',
+                                                lineHeight: '1.5'
+                                            }}>
+                                                Solo se aceptan archivos <strong>.dump</strong> (formato custom de PostgreSQL) o <strong>.sql</strong> (texto plano).
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="modal-input-group">
+                                    <label htmlFor="backupFile">
+                                        Seleccionar archivo de respaldo
+                                    </label>
+                                    <input
+                                        type="file"
+                                        id="backupFile"
+                                        accept=".dump,.sql"
+                                        onChange={handleFileSelect}
+                                        style={{
+                                            padding: '12px',
+                                            border: '2px dashed #d1d5db',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            width: '100%',
+                                            background: selectedFile ? '#f0fdf4' : '#f9fafb'
+                                        }}
+                                    />
+                                </div>
+
+                                {selectedFile && (
+                                    <div style={{
+                                        marginTop: '16px',
+                                        padding: '12px',
+                                        background: '#f0fdf4',
+                                        border: '1px solid #86efac',
+                                        borderRadius: '8px'
+                                    }}>
+                                        <div style={{ 
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            color: '#166534',
+                                            fontSize: '0.9rem'
+                                        }}>
+                                            <Package size={18} />
+                                            <div>
+                                                <div style={{ fontWeight: '600' }}>{selectedFile.name}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#15803d' }}>
+                                                    {formatSize(selectedFile.size)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button 
+                                type="button" 
+                                className="modal-btn cancel" 
+                                onClick={() => {
+                                    setShowUploadModal(false);
+                                    setSelectedFile(null);
+                                }}
+                                disabled={isUploading}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="button" 
+                                className="modal-btn save" 
+                                onClick={handleUploadBackup}
+                                disabled={!selectedFile || isUploading}
+                            >
+                                {isUploading ? (
+                                    <>
+                                        <RefreshCw className="animate-spin" size={16} />
+                                        Subiendo...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={16} />
+                                        Subir Respaldo
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

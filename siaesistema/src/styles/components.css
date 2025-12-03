@@ -271,7 +271,7 @@ textarea:focus {
 }
 
 .modal-content {
-  background-color: var(--white);
+  background-color: #ffffff !important;
   padding: 0;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-xl);
@@ -370,6 +370,7 @@ textarea:focus {
   flex: 1;
   min-height: 0;
   max-height: calc(95vh - 80px);
+  background-color: #ffffff;
 }
 
 .form-section-title {
@@ -792,4 +793,161 @@ textarea:focus {
 .small-modal .card-title {
   font-size: 1.125rem;
   font-weight: 600;
+}
+
+/* ===== MODAL DE CONFIGURACIÓN DEL SISTEMA ===== */
+.config-section {
+  margin-bottom: 24px;
+}
+
+.config-section-header {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.config-section-description {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.config-time-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 2px solid #d1d5db;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: border-color 0.2s;
+  outline: none;
+  background-color: white;
+}
+
+.config-time-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.config-info-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.config-info-box.min-time {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+}
+
+.config-info-box.max-time {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+}
+
+.config-info-content {
+  flex: 1;
+}
+
+.config-info-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.config-info-box.min-time .config-info-title {
+  color: #166534;
+}
+
+.config-info-box.max-time .config-info-title {
+  color: #92400e;
+}
+
+.config-info-text {
+  font-size: 0.8125rem;
+}
+
+.config-info-box.min-time .config-info-text {
+  color: #15803d;
+}
+
+.config-info-box.max-time .config-info-text {
+  color: #b45309;
+}
+
+.config-validation-error {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  background: #fee2e2;
+  border: 1px solid #f87171;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.config-validation-error-title {
+  font-size: 0.875rem;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.config-validation-error-text {
+  font-size: 0.8125rem;
+  color: #b91c1c;
+  margin-top: 4px;
+}
+
+.config-how-it-works {
+  margin-top: 24px;
+}
+
+.config-how-it-works-container {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.config-how-it-works-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.config-how-it-works-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.config-how-it-works-body {
+  padding: 24px;
+  background: white;
+}
+
+.config-how-it-works-list {
+  margin: 0;
+  padding-left: 24px;
+  line-height: 1.8;
+  color: #374151;
+  font-size: 0.9375rem;
+}
+
+.config-how-it-works-list li {
+  margin-bottom: 12px;
+}
+
+.config-how-it-works-list li:last-child {
+  margin-bottom: 0;
 }

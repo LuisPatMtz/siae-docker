@@ -35,9 +35,10 @@ const SchoolCyclesManagementModal = ({ isOpen, onClose, onSuccess }) => {
     const fetchCycles = async () => {
         setLoading(true);
         try {
-            const response = await axiosInstance.get('/api/ciclos/');
-            console.log('Response from /api/ciclos/:', response.data);
-            setCycles(response.data || []);
+            const response = await axiosInstance.get('/api/ciclos');
+            console.log('Response from /api/ciclos:', response.data);
+            // Asegurar que siempre sea un array
+            setCycles(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Error al cargar ciclos:', error);
             console.error('Error response:', error.response);
@@ -47,11 +48,11 @@ const SchoolCyclesManagementModal = ({ isOpen, onClose, onSuccess }) => {
         }
     };
 
-    // Filtrar ciclos
-    const filteredCycles = cycles.filter(cycle => {
+    // Filtrar ciclos - asegurar que cycles sea un array
+    const filteredCycles = Array.isArray(cycles) ? cycles.filter(cycle => {
         const matchesSearch = cycle.nombre?.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesSearch;
-    });
+    }) : [];
 
     // Manejar cambios en el formulario
     const handleInputChange = (e) => {

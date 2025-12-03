@@ -1,8 +1,7 @@
 # Actualización Frontend: Soporte para campo `full_name`
 
 ## Resumen
-Se ha actualizado el frontend para soportar completamente el campo `full_name` (nombre completo) del usuario en todos los componentes relevantes.
-
+Se ha actualizado el frontend para soportar completamente el campo `full_name` (nombre completo) del usuario en todos los componentes relevantes.asasas
 ---
 
 ## Componentes Actualizados

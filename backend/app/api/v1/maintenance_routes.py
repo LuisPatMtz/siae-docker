@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
 import subprocess
 import os
@@ -289,6 +289,60 @@ async def restore_backup(filename: str):
     except Exception as e:
         error_msg = f"An error occurred during restore: {str(e)}"
         logger.error(error_msg, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=error_msg
+        )
+
+@router.post("/upload-backup", response_model=BackupInfo)
+async def upload_backup(file: UploadFile = File(...)):
+    """
+    Upload a backup file (.dump or .sql).
+    """
+    # Validate file extension
+    if not (file.filename.endswith('.dump') or file.filename.endswith('.sql')):
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Only .dump and .sql files are allowed"
+        )
+    
+    # Security check for filename
+    if ".." in file.filename or "/" in file.filename or "\\" in file.filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    
+    backup_dir = "backups"
+    if not os.path.exists(backup_dir):
+        os.makedirs(backup_dir)
+    
+    # Add timestamp prefix to avoid overwriting
+    timestamp = timezone_manager.now().strftime("%Y%m%d_%H%M%S")
+    safe_filename = f"uploaded_{timestamp}_{file.filename}"
+    filepath = os.path.join(backup_dir, safe_filename)
+    
+    try:
+        # Read and save file
+        content = await file.read()
+        with open(filepath, "wb") as f:
+            f.write(content)
+        
+        logger.info(f"Backup uploaded successfully: {safe_filename} ({len(content)} bytes)")
+        
+        size = os.path.getsize(filepath)
+        created = timezone_manager.from_timestamp(os.path.getctime(filepath)).isoformat()
+        
+        return {
+            "filename": safe_filename,
+            "size": size,
+            "created": created
+        }
+        
+    except Exception as e:
+        # Clean up file if it was partially written
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        
+        error_msg = f"Error uploading backup: {str(e)}"
+        logger.error(error_msg)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=error_msg
