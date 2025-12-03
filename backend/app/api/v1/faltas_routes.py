@@ -223,16 +223,23 @@ def get_estudiantes_con_faltas(
         matricula = falta_info.matricula_estudiante
         
         if matricula not in estudiantes_dict:
+            api_logger.warning(f"Matrícula {matricula} no encontrada en estudiantes_dict")
             continue
         
         est_data = estudiantes_dict[matricula]
         estudiante = est_data['estudiante']
         grupo = est_data['grupo']
         
+        # Log para depuración
+        api_logger.debug(f"Procesando estudiante {estudiante.nombre} - Grupo: {grupo.nombre}, Turno grupo: {grupo.turno}, Turno solicitado: {turno}")
+        
         # Filtrar por turno si no es 'general'
         if turno != "general":
             turno_grupo = grupo.turno.lower() if grupo.turno else ""
-            if turno_grupo != turno.lower():
+            turno_solicitado = turno.lower()
+            api_logger.debug(f"Comparando turnos (lowercase): '{turno_grupo}' vs '{turno_solicitado}'")
+            if turno_grupo != turno_solicitado:
+                api_logger.debug(f"Estudiante {estudiante.nombre} excluido por turno")
                 continue
         
         resultado.append({
@@ -252,6 +259,7 @@ def get_estudiantes_con_faltas(
     # Ordenar por número de faltas (descendente)
     resultado.sort(key=lambda x: x['unjustifiedFaltas'], reverse=True)
     
+    api_logger.info(f"✅ Retornando {len(resultado)} estudiantes con faltas para turno '{turno}'")
     return resultado
 
 

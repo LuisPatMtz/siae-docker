@@ -42,9 +42,20 @@ async def lifespan(app: FastAPI):
     api_logger.info("Creando tablas de base de datos si no existen...")
     create_db_and_tables()
     api_logger.info("Base de datos inicializada correctamente")
+    
+    # Inicializar scheduler para tareas automáticas
+    api_logger.info("Inicializando scheduler de tareas automáticas...")
+    from app.services.scheduler_service import scheduler_service
+    scheduler_service.load_schedules_from_db()
+    api_logger.info("Scheduler inicializado correctamente")
+    
     api_logger.info("Sistema iniciado. Base de datos lista para configuración inicial.")
         
     yield
+    
+    # Detener scheduler al cerrar la aplicación
+    api_logger.info("Deteniendo scheduler...")
+    scheduler_service.shutdown()
     api_logger.info("=== Apagando SIAE API ===")
 
 
@@ -72,20 +83,21 @@ app.add_middleware(LoggingMiddleware)
 
 
 # === REGISTRAR ROUTERS ===
-app.include_router(auth_router)
-app.include_router(users_router)
-app.include_router(estudiantes_router)
-app.include_router(grupos_router)
-app.include_router(ciclos_router)
-app.include_router(dashboard_router)
+# Registrar todos los routers con prefijo /api
+app.include_router(auth_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
+app.include_router(estudiantes_router, prefix="/api")
+app.include_router(grupos_router, prefix="/api")
+app.include_router(ciclos_router, prefix="/api")
+app.include_router(dashboard_router, prefix="/api")
 
-app.include_router(tarjetas_router)
-app.include_router(faltas_router)
-app.include_router(asistencia_router)
-app.include_router(justificaciones_router)
-app.include_router(maintenance_router)
-app.include_router(system_config_router)
-app.include_router(reset_router)
+app.include_router(tarjetas_router, prefix="/api")
+app.include_router(faltas_router, prefix="/api")
+app.include_router(asistencia_router, prefix="/api")
+app.include_router(justificaciones_router, prefix="/api")
+app.include_router(maintenance_router, prefix="/api")
+app.include_router(system_config_router, prefix="/api")
+app.include_router(reset_router, prefix="/api")
 
 
 @app.get("/")

@@ -48,6 +48,13 @@ const MaintenancePage = () => {
     const [isLoadingConfigs, setIsLoadingConfigs] = useState(false);
     const [isSavingConfig, setIsSavingConfig] = useState(false);
     
+    // Estados para tareas programadas
+    const [scheduleConfig, setScheduleConfig] = useState({
+        backup: { enabled: false, time: '02:00' },
+        faltas_cut: { enabled: false, time: '23:55' }
+    });
+    const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+    
     // Estados para logs
     const [logFiles, setLogFiles] = useState([]);
     const [logs, setLogs] = useState([]);
@@ -90,26 +97,19 @@ const MaintenancePage = () => {
             const data = await maintenanceService.getDatabaseStats();
             setStats(data);
             
-            // Obtener ciclo actual
-            const cyclesResponse = await fetch('/api/ciclos');
-            const cycles = await cyclesResponse.json();
+            // Obtener ciclo actual usando apiClient para incluir el token
+            const cyclesResponse = await apiClient.get('/api/ciclos');
+            const cycles = cyclesResponse.data || [];
             const activeCycle = cycles.find(c => c.activo) || cycles[0];
             setCurrentCycle(activeCycle);
             
-            // Si hay ciclo activo, obtener sus estadísticas
+            // Si hay ciclo activo, configurar stats básicas del ciclo
             if (activeCycle) {
-                const cycleStatsResponse = await fetch(`/api/maintenance/stats/cycle/${activeCycle.id}`);
-                if (cycleStatsResponse.ok) {
-                    const cycleData = await cycleStatsResponse.json();
-                    setCycleStats(cycleData);
-                } else {
-                    // Si el endpoint no existe, calcular stats básicas del ciclo
-                    setCycleStats({
-                        cycle_name: activeCycle.nombre,
-                        cycle_start: activeCycle.fecha_inicio,
-                        cycle_end: activeCycle.fecha_fin
-                    });
-                }
+                setCycleStats({
+                    cycle_name: activeCycle.nombre,
+                    cycle_start: activeCycle.fecha_inicio,
+                    cycle_end: activeCycle.fecha_fin
+                });
             }
         } catch (error) {
             console.error("Error fetching stats:", error);
@@ -388,6 +388,7 @@ const MaintenancePage = () => {
     const handleShowConfig = async () => {
         setShowConfigModal(true);
         await fetchSystemConfigs();
+        await fetchScheduleConfig();
     };
 
     const handleSaveConfig = async () => {
@@ -418,6 +419,45 @@ const MaintenancePage = () => {
             showError(error.response?.data?.detail || "Error al guardar la configuración");
         } finally {
             setIsSavingConfig(false);
+        }
+    };
+
+    // Funciones para tareas programadas
+    const fetchScheduleConfig = async () => {
+        try {
+            const response = await apiClient.get('/api/maintenance/schedule/config');
+            setScheduleConfig(response.data);
+        } catch (error) {
+            console.error("Error fetching schedule config:", error);
+            showError("Error al cargar configuración de tareas programadas");
+        }
+    };
+
+    const handleSaveSchedule = async () => {
+        setIsSavingSchedule(true);
+        try {
+            // Guardar configuración de backup
+            const [backupHour, backupMinute] = scheduleConfig.backup.time.split(':').map(Number);
+            await apiClient.post('/api/maintenance/schedule/backup', {
+                enabled: scheduleConfig.backup.enabled,
+                hour: backupHour,
+                minute: backupMinute
+            });
+
+            // Guardar configuración de corte de faltas
+            const [faltasHour, faltasMinute] = scheduleConfig.faltas_cut.time.split(':').map(Number);
+            await apiClient.post('/api/maintenance/schedule/faltas-cut', {
+                enabled: scheduleConfig.faltas_cut.enabled,
+                hour: faltasHour,
+                minute: faltasMinute
+            });
+
+            showSuccess('Horarios de tareas automáticas guardados exitosamente');
+        } catch (error) {
+            console.error("Error saving schedule:", error);
+            showError(error.response?.data?.detail || "Error al guardar horarios");
+        } finally {
+            setIsSavingSchedule(false);
         }
     };
 
@@ -460,22 +500,21 @@ const MaintenancePage = () => {
         }).replace(',', ' •');
     };
 
-    // Convertir timestamp UTC a hora de México (UTC-6)
-    const convertUTCtoMexicoTime = (timestamp) => {
+    // Formatear timestamp (el backend ya lo guarda en hora de México)
+    const formatMexicoTime = (timestamp) => {
         if (!timestamp) return '';
         try {
-            // El timestamp viene en formato ISO o similar desde el backend
-            const utcDate = new Date(timestamp);
-            // Convertir a hora de México (UTC-6)
-            const mexicoTime = new Date(utcDate.getTime() - (6 * 60 * 60 * 1000));
-            return mexicoTime.toLocaleString('es-MX', {
+            // El timestamp ya viene en hora de México desde el backend
+            const date = new Date(timestamp);
+            return date.toLocaleString('es-MX', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: false
+                hour12: false,
+                timeZone: 'America/Mexico_City'
             });
         } catch (error) {
             return timestamp;
@@ -561,37 +600,36 @@ const MaintenancePage = () => {
                                 gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
                                 gap: '16px'
                             }}>
-                                <div className="stat-card" style={{ 
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    color: 'white'
-                                }}>
-                                    <div className="stat-value">{cycleStats?.total_students || stats.total_students}</div>
-                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>Estudiantes Activos</div>
-                                </div>
-                                <div className="stat-card" style={{ 
-                                    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                                    color: 'white'
-                                }}>
-                                    <div className="stat-value">{cycleStats?.total_attendances || stats.total_attendances}</div>
-                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>Asistencias</div>
-                                </div>
-                                <div className="stat-card" style={{ 
-                                    background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                                    color: 'white'
-                                }}>
-                                    <div className="stat-value">{cycleStats?.total_absences || stats.total_absences}</div>
-                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>Faltas</div>
-                                </div>
-                                <div className="stat-card" style={{ 
-                                    background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                                    color: 'white'
-                                }}>
-                                    <div className="stat-value">
-                                        {cycleStats?.total_attendances && cycleStats?.total_absences 
-                                            ? ((cycleStats.total_attendances / (cycleStats.total_attendances + cycleStats.total_absences)) * 100).toFixed(1) + '%'
-                                            : 'N/A'}
+                                <div className="stat-card">
+                                    <div className="stat-value" style={{ color: '#667eea' }}>
+                                        {cycleStats?.total_students || stats.total_students}
                                     </div>
-                                    <div className="stat-label" style={{ color: 'rgba(255,255,255,0.9)' }}>% Asistencia</div>
+                                    <div className="stat-label">Estudiantes Activos</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value" style={{ color: '#10b981' }}>
+                                        {cycleStats?.total_attendances || stats.total_attendances}
+                                    </div>
+                                    <div className="stat-label">Asistencias</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value" style={{ color: '#ef4444' }}>
+                                        {cycleStats?.total_absences || stats.total_absences}
+                                    </div>
+                                    <div className="stat-label">Faltas</div>
+                                </div>
+                                <div className="stat-card">
+                                    <div className="stat-value" style={{ color: '#3b82f6' }}>
+                                        {(() => {
+                                            const attendances = cycleStats?.total_attendances || stats.total_attendances || 0;
+                                            const absences = cycleStats?.total_absences || stats.total_absences || 0;
+                                            const total = attendances + absences;
+                                            return total > 0 
+                                                ? ((attendances / total) * 100).toFixed(1) + '%'
+                                                : 'N/A';
+                                        })()}
+                                    </div>
+                                    <div className="stat-label">% Asistencia</div>
                                 </div>
                             </div>
                         </div>
@@ -659,60 +697,61 @@ const MaintenancePage = () => {
                 </div>
             )}
 
-            <div className="users-toolbar">
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <button className="users-btn users-btn-secondary" onClick={handleShowStats}>
-                        <BarChart3 size={18} />
-                        Ver Estadísticas
-                    </button>
-                    <button className="users-btn users-btn-secondary" onClick={handleShowLogs}>
-                        <FileText size={18} />
-                        Ver Logs
-                    </button>
-                    <button className="users-btn users-btn-secondary" onClick={handleShowTimezone}>
-                        <Globe size={18} />
-                        Zona Horaria
-                    </button>
-                    <button className="users-btn users-btn-secondary" onClick={handleShowConfig}>
-                        <Settings size={18} />
-                        Configuración
-                    </button>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                        className="users-btn"
-                        onClick={() => setShowDeleteAllModal(true)}
-                        style={{
-                            background: 'linear-gradient(135deg, #ff4757 0%, #dc143c 100%)',
-                            color: 'white',
-                            border: 'none',
-                            boxShadow: '0 4px 12px rgba(220, 20, 60, 0.3)'
-                        }}
-                    >
-                        <Trash2 size={18} />
-                        Eliminar Todos los Datos
-                    </button>
-                    <button
-                        className="users-btn users-btn-secondary"
-                        onClick={() => setShowUploadModal(true)}
-                        style={{
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                            color: 'white',
-                            border: 'none'
-                        }}
-                    >
-                        <Upload size={18} />
-                        Subir Respaldo
-                    </button>
-                    <button
-                        className="users-btn users-btn-primary"
-                        onClick={handleCreateBackup}
-                        disabled={isCreating}
-                    >
-                        {isCreating ? <RefreshCw className="animate-spin" size={18} /> : <Database size={18} />}
-                        {isCreating ? 'Creando...' : 'Crear Nuevo Respaldo'}
-                    </button>
-                </div>
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+                gap: '12px',
+                marginBottom: '16px'
+            }}>
+                <button className="users-btn users-btn-secondary" onClick={handleShowStats}>
+                    <BarChart3 size={18} />
+                    <span>Ver Estadísticas</span>
+                </button>
+                <button className="users-btn users-btn-secondary" onClick={handleShowLogs}>
+                    <FileText size={18} />
+                    <span>Ver Logs</span>
+                </button>
+                <button className="users-btn users-btn-secondary" onClick={handleShowTimezone}>
+                    <Globe size={18} />
+                    <span>Zona Horaria</span>
+                </button>
+                <button className="users-btn users-btn-secondary" onClick={handleShowConfig}>
+                    <Settings size={18} />
+                    <span>Configuración</span>
+                </button>
+                <button
+                    className="users-btn"
+                    onClick={() => setShowDeleteAllModal(true)}
+                    style={{
+                        background: 'linear-gradient(135deg, #ff4757 0%, #dc143c 100%)',
+                        color: 'white',
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(220, 20, 60, 0.3)'
+                    }}
+                >
+                    <Trash2 size={18} />
+                    <span>Eliminar Todos los Datos</span>
+                </button>
+                <button
+                    className="users-btn users-btn-secondary"
+                    onClick={() => setShowUploadModal(true)}
+                    style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        border: 'none'
+                    }}
+                >
+                    <Upload size={18} />
+                    <span>Subir Respaldo</span>
+                </button>
+                <button
+                    className="users-btn users-btn-primary"
+                    onClick={handleCreateBackup}
+                    disabled={isCreating}
+                >
+                    {isCreating ? <RefreshCw className="animate-spin" size={18} /> : <Database size={18} />}
+                    <span>{isCreating ? 'Creando...' : 'Crear Nuevo Respaldo'}</span>
+                </button>
             </div>
 
             <div className="users-grid-container" style={{ display: 'block' }}>
@@ -1462,7 +1501,7 @@ const MaintenancePage = () => {
                                                     fontSize: '0.75rem',
                                                     fontWeight: '500'
                                                 }}>
-                                                    {convertUTCtoMexicoTime(log.timestamp).split(' ')[1] || log.timestamp.split(' ')[1]}
+                                                    {formatMexicoTime(log.timestamp).split(' ')[1] || log.timestamp.split(' ')[1]}
                                                 </span>
 
                                                 {/* Nivel con badge */}
@@ -1776,6 +1815,116 @@ const MaintenancePage = () => {
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Configuración de Tareas Programadas */}
+                                    <div className="config-section" style={{ marginTop: '2rem' }}>
+                                        <h3 className="config-section-header">
+                                            🕐 Tareas Automáticas Programadas
+                                        </h3>
+                                        <p className="config-section-description">
+                                            Configura los horarios para ejecutar automáticamente backups y cortes de faltas.
+                                        </p>
+
+                                        {/* Backup Automático */}
+                                        <div style={{ marginBottom: '28px', padding: '20px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                                <Database size={22} style={{ color: '#3b82f6' }} />
+                                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1f2937' }}>
+                                                    Backup Automático
+                                                </h4>
+                                            </div>
+                                            
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={scheduleConfig.backup.enabled}
+                                                        onChange={(e) => setScheduleConfig(prev => ({
+                                                            ...prev,
+                                                            backup: { ...prev.backup, enabled: e.target.checked }
+                                                        }))}
+                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                    />
+                                                    <span style={{ fontWeight: 500 }}>Habilitar backup automático diario</span>
+                                                </label>
+                                            </div>
+
+                                            {scheduleConfig.backup.enabled && (
+                                                <div className="modal-input-group">
+                                                    <label htmlFor="backupTime">
+                                                        ⏰ Horario de ejecución
+                                                    </label>
+                                                    <input
+                                                        type="time"
+                                                        id="backupTime"
+                                                        value={scheduleConfig.backup.time}
+                                                        onChange={(e) => setScheduleConfig(prev => ({
+                                                            ...prev,
+                                                            backup: { ...prev.backup, time: e.target.value }
+                                                        }))}
+                                                        className="config-time-input"
+                                                        style={{ maxWidth: '150px' }}
+                                                    />
+                                                    <p style={{ fontSize: '13px', color: '#6b7280', margin: '8px 0 0 0' }}>
+                                                        Se ejecutará automáticamente todos los días a las {scheduleConfig.backup.time}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Corte de Faltas Automático */}
+                                        <div style={{ padding: '20px', background: '#f9fafb', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                                                <AlertCircle size={22} style={{ color: '#dc2626' }} />
+                                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#1f2937' }}>
+                                                    Corte de Faltas Automático
+                                                </h4>
+                                            </div>
+                                            
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={scheduleConfig.faltas_cut.enabled}
+                                                        onChange={(e) => setScheduleConfig(prev => ({
+                                                            ...prev,
+                                                            faltas_cut: { ...prev.faltas_cut, enabled: e.target.checked }
+                                                        }))}
+                                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                    />
+                                                    <span style={{ fontWeight: 500 }}>Habilitar corte de faltas automático diario</span>
+                                                </label>
+                                            </div>
+
+                                            {scheduleConfig.faltas_cut.enabled && (
+                                                <div className="modal-input-group">
+                                                    <label htmlFor="faltasCutTime">
+                                                        ⏰ Horario de ejecución
+                                                    </label>
+                                                    <input
+                                                        type="time"
+                                                        id="faltasCutTime"
+                                                        value={scheduleConfig.faltas_cut.time}
+                                                        onChange={(e) => setScheduleConfig(prev => ({
+                                                            ...prev,
+                                                            faltas_cut: { ...prev.faltas_cut, time: e.target.value }
+                                                        }))}
+                                                        className="config-time-input"
+                                                        style={{ maxWidth: '150px' }}
+                                                    />
+                                                    <p style={{ fontSize: '13px', color: '#6b7280', margin: '8px 0 0 0' }}>
+                                                        Se ejecutará automáticamente todos los días a las {scheduleConfig.faltas_cut.time}
+                                                    </p>
+                                                    <div className="config-info-box" style={{ marginTop: '12px', background: '#fef3c7', border: '1px solid #fbbf24' }}>
+                                                        <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
+                                                        <div style={{ fontSize: '13px', color: '#92400e' }}>
+                                                            <strong>Recomendación:</strong> Se sugiere programar el corte al final del día (ej: 23:55) para registrar las faltas de los estudiantes que no asistieron.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </>
                             )}
                         </div>
@@ -1785,17 +1934,20 @@ const MaintenancePage = () => {
                                 type="button" 
                                 className="modal-btn cancel" 
                                 onClick={() => setShowConfigModal(false)}
-                                disabled={isSavingConfig}
+                                disabled={isSavingConfig || isSavingSchedule}
                             >
                                 Cancelar
                             </button>
                             <button 
                                 type="button" 
                                 className="modal-btn save" 
-                                onClick={handleSaveConfig}
-                                disabled={isSavingConfig || isLoadingConfigs || exitTimeWindowMin >= exitTimeWindowMax}
+                                onClick={async () => {
+                                    await handleSaveConfig();
+                                    await handleSaveSchedule();
+                                }}
+                                disabled={isSavingConfig || isSavingSchedule || isLoadingConfigs || exitTimeWindowMin >= exitTimeWindowMax}
                             >
-                                {isSavingConfig ? (
+                                {(isSavingConfig || isSavingSchedule) ? (
                                     <>
                                         <RefreshCw className="animate-spin" size={16} />
                                         Guardando...

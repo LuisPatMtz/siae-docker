@@ -3,15 +3,20 @@
 Modelo de Justificación: registro simple de justificaciones de faltas.
 """
 from typing import Optional
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship
+import pytz
 
 
 def mexico_now():
     """Retorna la fecha/hora actual en zona horaria de México (UTC-6)"""
-    # Crear timezone de México (UTC-6)
-    mexico_tz = timezone(timedelta(hours=-6))
-    return datetime.now(mexico_tz)
+    mexico_tz = pytz.timezone('America/Mexico_City')
+    # Crear datetime "naive" (sin timezone) en hora de México
+    # Esto evita que PostgreSQL haga conversión automática a UTC
+    utc_now = datetime.utcnow()
+    mexico_now = utc_now.replace(tzinfo=pytz.UTC).astimezone(mexico_tz)
+    # Retornar sin timezone info para que se guarde tal cual
+    return mexico_now.replace(tzinfo=None)
 
 
 class Justificacion(SQLModel, table=True):

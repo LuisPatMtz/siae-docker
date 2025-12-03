@@ -1,0 +1,5 @@
+# Ignorar todos los archivos .dump (backups)
+*.dump
+
+# Mantener este archivo
+!.gitignore

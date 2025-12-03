@@ -27,13 +27,21 @@ const AlertasPage = () => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                console.log(`Cargando alertas para: ${activeMode}`);
+                console.log(`🔍 Cargando alertas para turno: ${activeMode}`);
 
                 // Obtener alertas del backend
                 const alertas = await alertasService.getEstudiantesConFaltas(activeMode);
+                console.log(`📊 Alertas recibidas:`, alertas);
+                console.log(`📈 Total de alertas: ${alertas.length}`);
 
-                // Obtener historial de justificaciones
-                const historial = await alertasService.getHistorialJustificaciones();
+                // Obtener historial de justificaciones (no bloquear si falla)
+                let historial = [];
+                try {
+                    historial = await alertasService.getHistorialJustificaciones();
+                    console.log(`📜 Historial recibido: ${historial.length} registros`);
+                } catch (histError) {
+                    console.warn('⚠️ No se pudo cargar el historial:', histError.message);
+                }
 
                 setAllAlertsList(alertas);
                 setFilteredAlertsList(alertas);
@@ -44,7 +52,8 @@ const AlertasPage = () => {
                 setIsHistoryModalOpen(false);
 
             } catch (error) {
-                console.error("Error al obtener alertas:", error);
+                console.error("❌ Error al obtener alertas:", error);
+                console.error("Error details:", error.response?.data || error.message);
                 // En caso de error, mostrar lista vacía
                 setAllAlertsList([]);
                 setFilteredAlertsList([]);

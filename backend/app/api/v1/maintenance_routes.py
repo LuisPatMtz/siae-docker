@@ -655,3 +655,216 @@ async def list_available_timezones():
     """
     return timezone_manager.get_available_timezones()
 
+
+# === ENDPOINTS DE TAREAS PROGRAMADAS ===
+
+class ScheduleConfig(BaseModel):
+    enabled: bool
+    hour: int  # 0-23
+    minute: int  # 0-59
+
+class ScheduleInfo(BaseModel):
+    id: str
+    name: str
+    next_run: str
+    trigger: str
+
+@router.post("/schedule/backup")
+async def configure_backup_schedule(config: ScheduleConfig):
+    """
+    Configura el horario para backups automáticos.
+    
+    Args:
+        config: Configuración con enabled, hour y minute
+    """
+    from app.services.scheduler_service import scheduler_service
+    from sqlmodel import Session, select
+    from app.models import SystemConfig
+    
+    # Validar horario
+    if not (0 <= config.hour <= 23):
+        raise HTTPException(status_code=400, detail="La hora debe estar entre 0 y 23")
+    if not (0 <= config.minute <= 59):
+        raise HTTPException(status_code=400, detail="Los minutos deben estar entre 0 y 59")
+    
+    try:
+        # Guardar configuración en la base de datos
+        with Session(engine) as session:
+            # Actualizar o crear configuración de habilitado
+            enabled_config = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_backup_enabled")
+            ).first()
+            if enabled_config:
+                enabled_config.value = str(config.enabled)
+                enabled_config.updated_at = datetime.now()
+            else:
+                enabled_config = SystemConfig(
+                    key="auto_backup_enabled",
+                    value=str(config.enabled),
+                    description="Habilitar backups automáticos",
+                    updated_at=datetime.now()
+                )
+                session.add(enabled_config)
+            
+            # Actualizar o crear configuración de horario
+            time_config = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_backup_time")
+            ).first()
+            time_value = f"{config.hour:02d}:{config.minute:02d}"
+            if time_config:
+                time_config.value = time_value
+                time_config.updated_at = datetime.now()
+            else:
+                time_config = SystemConfig(
+                    key="auto_backup_time",
+                    value=time_value,
+                    description="Horario para backups automáticos (HH:MM)",
+                    updated_at=datetime.now()
+                )
+                session.add(time_config)
+            
+            session.commit()
+        
+        # Programar el job
+        scheduler_service.schedule_backup(config.hour, config.minute, config.enabled)
+        
+        status_msg = "habilitado" if config.enabled else "deshabilitado"
+        return {
+            "message": f"Backup automático {status_msg} para las {config.hour:02d}:{config.minute:02d}",
+            "enabled": config.enabled,
+            "time": f"{config.hour:02d}:{config.minute:02d}"
+        }
+    except Exception as e:
+        logger.error(f"Error al configurar backup automático: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/schedule/faltas-cut")
+async def configure_faltas_cut_schedule(config: ScheduleConfig):
+    """
+    Configura el horario para cortes de faltas automáticos.
+    
+    Args:
+        config: Configuración con enabled, hour y minute
+    """
+    from app.services.scheduler_service import scheduler_service
+    from sqlmodel import Session, select
+    from app.models import SystemConfig
+    
+    # Validar horario
+    if not (0 <= config.hour <= 23):
+        raise HTTPException(status_code=400, detail="La hora debe estar entre 0 y 23")
+    if not (0 <= config.minute <= 59):
+        raise HTTPException(status_code=400, detail="Los minutos deben estar entre 0 y 59")
+    
+    try:
+        # Guardar configuración en la base de datos
+        with Session(engine) as session:
+            # Actualizar o crear configuración de habilitado
+            enabled_config = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_faltas_cut_enabled")
+            ).first()
+            if enabled_config:
+                enabled_config.value = str(config.enabled)
+                enabled_config.updated_at = datetime.now()
+            else:
+                enabled_config = SystemConfig(
+                    key="auto_faltas_cut_enabled",
+                    value=str(config.enabled),
+                    description="Habilitar corte de faltas automático",
+                    updated_at=datetime.now()
+                )
+                session.add(enabled_config)
+            
+            # Actualizar o crear configuración de horario
+            time_config = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_faltas_cut_time")
+            ).first()
+            time_value = f"{config.hour:02d}:{config.minute:02d}"
+            if time_config:
+                time_config.value = time_value
+                time_config.updated_at = datetime.now()
+            else:
+                time_config = SystemConfig(
+                    key="auto_faltas_cut_time",
+                    value=time_value,
+                    description="Horario para corte de faltas automático (HH:MM)",
+                    updated_at=datetime.now()
+                )
+                session.add(time_config)
+            
+            session.commit()
+        
+        # Programar el job
+        scheduler_service.schedule_faltas_cut(config.hour, config.minute, config.enabled)
+        
+        status_msg = "habilitado" if config.enabled else "deshabilitado"
+        return {
+            "message": f"Corte de faltas automático {status_msg} para las {config.hour:02d}:{config.minute:02d}",
+            "enabled": config.enabled,
+            "time": f"{config.hour:02d}:{config.minute:02d}"
+        }
+    except Exception as e:
+        logger.error(f"Error al configurar corte de faltas automático: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/schedule/status", response_model=List[ScheduleInfo])
+async def get_scheduled_jobs():
+    """
+    Obtiene información sobre las tareas programadas activas.
+    """
+    from app.services.scheduler_service import scheduler_service
+    
+    try:
+        jobs = scheduler_service.get_scheduled_jobs()
+        return jobs
+    except Exception as e:
+        logger.error(f"Error al obtener tareas programadas: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/schedule/config")
+async def get_schedule_config():
+    """
+    Obtiene la configuración actual de las tareas programadas.
+    """
+    from sqlmodel import Session, select
+    from app.models import SystemConfig
+    
+    try:
+        with Session(engine) as session:
+            # Backup config
+            backup_enabled = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_backup_enabled")
+            ).first()
+            backup_time = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_backup_time")
+            ).first()
+            
+            # Faltas cut config
+            faltas_enabled = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_faltas_cut_enabled")
+            ).first()
+            faltas_time = session.exec(
+                select(SystemConfig).where(SystemConfig.key == "auto_faltas_cut_time")
+            ).first()
+            
+            return {
+                "backup": {
+                    "enabled": backup_enabled.value.lower() == "true" if backup_enabled else False,
+                    "time": backup_time.value if backup_time else "02:00"
+                },
+                "faltas_cut": {
+                    "enabled": faltas_enabled.value.lower() == "true" if faltas_enabled else False,
+                    "time": faltas_time.value if faltas_time else "23:55"
+                }
+            }
+    except Exception as e:
+        logger.error(f"Error al obtener configuración de tareas programadas: {e}")
+        # Retornar valores por defecto si hay error
+        return {
+            "backup": {"enabled": False, "time": "02:00"},
+            "faltas_cut": {"enabled": False, "time": "23:55"}
+        }
+

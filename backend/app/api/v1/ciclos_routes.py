@@ -45,6 +45,14 @@ def create_ciclo_escolar(
             detail="La fecha de inicio debe ser anterior a la fecha de fin."
         )
     
+    # Si es el primer ciclo escolar, marcarlo como activo automáticamente
+    ciclos_existentes = repo.get_all()
+    if not ciclos_existentes:
+        # Forzar que el primer ciclo sea activo
+        ciclo_data = ciclo.model_dump()
+        ciclo_data['activo'] = True
+        ciclo = CicloEscolarCreate(**ciclo_data)
+    
     db_ciclo = repo.create(ciclo)
     
     # Si el ciclo se creó como activo, actualizar todos los estudiantes

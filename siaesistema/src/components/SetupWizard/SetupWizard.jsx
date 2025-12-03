@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/axios';
 import './SetupWizard.css';
 
-const SetupWizard = ({ step, onComplete, onClose }) => {
+const SetupWizard = ({ step, onComplete, onClose, onOpenCycleModal, onOpenGroupModal }) => {
   const navigate = useNavigate();
   
   // Estados para paso 1: Crear usuario admin
@@ -119,9 +119,9 @@ const SetupWizard = ({ step, onComplete, onClose }) => {
       
       localStorage.setItem('user', JSON.stringify(userResponse.data));
 
-      // Notificar que se completó y recargar para actualizar el sistema
+      // Notificar que se completó y redirigir a gestión de estudiantes para continuar con paso 2
       onComplete();
-      window.location.href = '/dashboard';
+      window.location.href = '/gestion-estudiantes';
     } catch (err) {
       console.error('Error en setup inicial:', err);
       setError(err.response?.data?.detail || 'Error al crear el usuario. Inténtalo de nuevo.');
@@ -133,6 +133,16 @@ const SetupWizard = ({ step, onComplete, onClose }) => {
   const handleNavigateToStep = (path) => {
     navigate(path);
     if (onClose) onClose();
+  };
+
+  const handleOpenModal = (type) => {
+    if (type === 'cycle' && onOpenCycleModal) {
+      onOpenCycleModal();
+      if (onClose) onClose();
+    } else if (type === 'group' && onOpenGroupModal) {
+      onOpenGroupModal();
+      if (onClose) onClose();
+    }
   };
 
   if (!content) return null;
@@ -251,9 +261,9 @@ const SetupWizard = ({ step, onComplete, onClose }) => {
           <div className="setup-wizard-actions">
             <button 
               className="setup-wizard-btn-primary"
-              onClick={() => handleNavigateToStep('/mantenimiento')}
+              onClick={() => onOpenCycleModal ? handleOpenModal('cycle') : handleNavigateToStep('/gestion-estudiantes')}
             >
-              Ir a Crear Ciclo Escolar
+              Crear Ciclo Escolar
             </button>
             <button 
               className="setup-wizard-btn-secondary"
@@ -268,9 +278,9 @@ const SetupWizard = ({ step, onComplete, onClose }) => {
           <div className="setup-wizard-actions">
             <button 
               className="setup-wizard-btn-primary"
-              onClick={() => handleNavigateToStep('/mantenimiento')}
+              onClick={() => onOpenGroupModal ? handleOpenModal('group') : handleNavigateToStep('/gestion-estudiantes')}
             >
-              Ir a Crear Grupos
+              Crear Grupos
             </button>
             <button 
               className="setup-wizard-btn-secondary"

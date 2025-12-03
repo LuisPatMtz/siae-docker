@@ -20,6 +20,7 @@ import DeleteGroupModal from '../components/Groups/DeleteGroupModal.jsx';
 import CreateCycleModal from '../components/SchoolCycles/CreateCycleModal.jsx';
 import PageContainer from '../components/Common/PageContainer.jsx';
 import EditCycleModal from '../components/SchoolCycles/EditCycleModal.jsx';
+import SetupWizard from '../components/SetupWizard/SetupWizard.jsx';
 import DeleteCycleModal from '../components/SchoolCycles/DeleteCycleModal.jsx';
 import StudentManagementModal from '../components/Students/StudentManagementModal.jsx';
 import GroupManagementModal from '../components/Groups/GroupManagementModal.jsx';
@@ -42,6 +43,9 @@ const GestionEstudiantesPage = () => {
     const [isStudentManagementModalOpen, setIsStudentManagementModalOpen] = useState(false);
     const [isGroupManagementModalOpen, setIsGroupManagementModalOpen] = useState(false);
     const [isSchoolCyclesManagementModalOpen, setIsSchoolCyclesManagementModalOpen] = useState(false);
+    const [showSetupWizard, setShowSetupWizard] = useState(false);
+    const [setupStep, setSetupStep] = useState(null);
+    const [isCheckingSystem, setIsCheckingSystem] = useState(true);
 
     // Hooks
     const {
@@ -103,6 +107,34 @@ const GestionEstudiantesPage = () => {
     const [isProcessingBulkChange, setIsProcessingBulkChange] = useState(false);
 
     const { showSuccess, showError, showWarning } = useToast();
+
+    // Función para verificar el estado del sistema
+    const checkSystemStatus = async () => {
+        setIsCheckingSystem(true);
+        try {
+            const response = await apiClient.get('/api/auth/check-system');
+            const { has_cycles, has_groups } = response.data;
+
+            if (!has_cycles) {
+                setSetupStep('create-cycle');
+                setShowSetupWizard(true);
+            } else if (!has_groups) {
+                setSetupStep('create-groups');
+                setShowSetupWizard(true);
+            } else {
+                setShowSetupWizard(false);
+            }
+        } catch (error) {
+            console.error('Error al verificar estado del sistema:', error);
+        } finally {
+            setIsCheckingSystem(false);
+        }
+    };
+
+    // Verificar estado del sistema al cargar
+    useEffect(() => {
+        checkSystemStatus();
+    }, []);
 
     // Helper for modals
     const addToast = (message, type) => {
@@ -982,15 +1014,52 @@ const GestionEstudiantesPage = () => {
 
             <GroupManagementModal
                 isOpen={isGroupManagementModalOpen}
-                onClose={() => setIsGroupManagementModalOpen(false)}
-                onSuccess={addToast}
+                onClose={() => {
+                    setIsGroupManagementModalOpen(false);
+                    // Verificar el estado del sistema para cerrar el setup wizard si todo está completo
+                    checkSystemStatus();
+                }}
+                onSuccess={(message, type) => {
+                    addToast(message, type);
+                    // Verificar el estado después de crear un grupo
+                    checkSystemStatus();
+                }}
             />
 
             <SchoolCyclesManagementModal
                 isOpen={isSchoolCyclesManagementModalOpen}
-                onClose={() => setIsSchoolCyclesManagementModalOpen(false)}
-                onSuccess={addToast}
+                onClose={() => {
+                    setIsSchoolCyclesManagementModalOpen(false);
+                    // Verificar el estado del sistema para continuar con el setup wizard
+                    checkSystemStatus();
+                }}
+                onSuccess={(message, type) => {
+                    addToast(message, type);
+                    // Verificar el estado después de crear un ciclo
+                    checkSystemStatus();
+                }}
             />
+
+            {/* Modal de configuración inicial del sistema */}
+            {showSetupWizard && setupStep && (
+                <SetupWizard
+                    step={setupStep}
+                    onComplete={() => {
+                        setShowSetupWizard(false);
+                        // Solo recargar si el setup está realmente completo
+                        checkSystemStatus();
+                    }}
+                    onClose={() => setShowSetupWizard(false)}
+                    onOpenCycleModal={() => {
+                        setShowSetupWizard(false);
+                        setIsSchoolCyclesManagementModalOpen(true);
+                    }}
+                    onOpenGroupModal={() => {
+                        setShowSetupWizard(false);
+                        setIsGroupManagementModalOpen(true);
+                    }}
+                />
+            )}
             </main>
         </PageContainer>
     );

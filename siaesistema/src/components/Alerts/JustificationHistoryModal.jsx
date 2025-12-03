@@ -64,19 +64,15 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
 
   if (!isOpen) return null;
 
-  // Función para convertir UTC a hora local de México (UTC-6)
-  const toMexicoTime = (dateString) => {
-    const date = new Date(dateString);
-    // Si la fecha viene sin zona horaria, asumimos que es UTC y restamos 6 horas
-    if (!dateString.includes('Z') && !dateString.includes('+') && !dateString.includes('-', 10)) {
-      date.setHours(date.getHours() - 6);
-    }
-    return date;
+  // El backend ya guarda las fechas en hora de México (UTC-6)
+  // Solo necesitamos parsear y formatear, sin conversiones adicionales
+  const parseDate = (dateString) => {
+    return new Date(dateString);
   };
 
   // Obtener meses únicos del historial
   const months = [...new Set(history.map(item => {
-    const date = toMexicoTime(item.justifiedAt);
+    const date = parseDate(item.justifiedAt);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   }))];
 
@@ -84,19 +80,20 @@ const JustificationHistoryModal = ({ isOpen, onClose, history }) => {
   const filteredHistory = filterMonth === 'all'
     ? history
     : history.filter(item => {
-      const date = toMexicoTime(item.justifiedAt);
+      const date = parseDate(item.justifiedAt);
       const itemMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       return itemMonth === filterMonth;
     });
 
   const formatDate = (dateString) => {
-    const date = toMexicoTime(dateString);
+    const date = parseDate(dateString);
     return date.toLocaleDateString('es-MX', {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'America/Mexico_City' // Asegurar que se interprete en zona horaria de México
     });
   };
 

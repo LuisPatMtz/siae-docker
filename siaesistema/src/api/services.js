@@ -419,8 +419,8 @@ export const alertasService = {
     // Justifica todas las faltas de un estudiante usando el sistema normalizado
     justificarFaltas: async (faltasIds, textoJustificacion, usuarioRegistro = 'admin') => {
         try {
-            // 1. Crear registro de justificación
-            const justificacionResponse = await apiClient.post('/api/justificaciones', {
+            // 1. Crear registro de justificación (con barra al final)
+            const justificacionResponse = await apiClient.post('/api/justificaciones/', {
                 justificacion: textoJustificacion,
                 usuario_registro: usuarioRegistro
             });
@@ -458,8 +458,8 @@ export const alertasService = {
                 cicloId = cicloActivo.id;
             }
             
-            // Obtener todas las justificaciones
-            const justificacionesResponse = await apiClient.get('/api/justificaciones');
+            // Obtener todas las justificaciones (con barra al final)
+            const justificacionesResponse = await apiClient.get('/api/justificaciones/');
             const justificaciones = Array.isArray(justificacionesResponse.data) ? justificacionesResponse.data : [];
             
             // Obtener estudiantes para mapear nombres
